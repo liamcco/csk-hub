@@ -4,7 +4,6 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "prebuild": "bun run scripts/ops/pre-build.ts",
     "build": "next build",
     "start": "next start",
     "tst": "bun test --dots",
@@ -13,7 +12,7 @@
     "format": "biome check --write --linter-enabled=false",
     "auth:generate": "auth generate --config src/core/auth/index.ts --output src/core/db/schema/auth.ts -y",
     "db:generate": "drizzle-kit generate",
-    "ops": "bun run scripts/ops/index.ts",
+    "db": "bun --conditions=react-server scripts/dev/index.ts",
     "api:contract": "bun --conditions=react-server scripts/api/export-contract.ts",
     "api:generate": "bun run api:contract && bun install --cwd tools/api-client --frozen-lockfile && bun run --cwd tools/api-client generate",
     "pr": "bun tst && bun lint && bun run build",

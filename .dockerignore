@@ -1,0 +1,15 @@
+# The Docker build context is the repository root (see deploy/Dockerfile).
+.git
+.github
+.claude
+.next
+node_modules
+# Contract and client generation tooling; not part of the release.
+tools
+dist
+coverage
+.env*
+!.env.example
+deploy/stack.env
+*.log
+.DS_Store

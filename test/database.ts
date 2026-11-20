@@ -1,15 +1,13 @@
-import { defineRelations } from "drizzle-orm"
-import { drizzle } from "drizzle-orm/node-postgres"
-import { migrate } from "drizzle-orm/node-postgres/migrator"
 import { Client } from "pg"
 import type { db as applicationDb } from "@/core/db"
-import * as authSchema from "@/core/db/schema/auth"
+import { createDb } from "@/core/db/client"
+import { migrateDatabase } from "@/core/db/migrate"
 import { isLocalDatabase } from "@/core/db/tls"
 
 export type TestDatabase = {
   /** Typed as the application client, so modules that take one accept it. */
   db: typeof applicationDb
-  /** The connection string, for code that connects on its own, such as the ops commands. */
+  /** The connection string, for code that connects on its own, such as the dev CLI. */
   url: string
   /** Closes the connections and drops the database. */
   drop: () => Promise<void>
@@ -40,11 +38,8 @@ export async function createTestDatabase(migrationsFolder = "drizzle"): Promise<
 
   const url = new URL(baseUrl)
   url.pathname = `/${name}`
-  const db = drizzle({
-    connection: url.toString(),
-    relations: { ...defineRelations(authSchema), ...authSchema.authRelations }
-  })
-  await migrate(db, { migrationsFolder })
+  const db = createDb(url.toString())
+  await migrateDatabase(db, { migrationsFolder })
 
   return {
     db,

@@ -26,8 +26,8 @@ Messaging/Post workflows. Transport and scheduling tests live beside their core 
 
 ## Setup
 
-1. Run `docker compose up -d` locally to start PostgreSQL and Redis 7.
-2. Run `bun run ops migrate` to apply the delivery migration and earlier migrations.
+1. Run `docker compose -f deploy/compose.dev.yml up -d` locally to start PostgreSQL and Redis 7.
+2. Run `bun run db migrate` to apply the delivery migration and earlier migrations.
 3. Configure `REDIS_URL=redis://localhost:6379` and
    `REDIS_KEY_PREFIX=csk-hub-development` in `.env`. Leave `REDIS_URL` unset to disable
    realtime. Use a different database and prefix in production, preview and development.
