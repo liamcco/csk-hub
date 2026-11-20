@@ -1,0 +1,86 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "CSK Hub API",
+    "version": "1.0.0",
+    "description": "Authentication endpoints under /api/auth belong to Better Auth and are used through its client."
+  },
+  "components": {
+    "schemas": {
+      "CurrentActor": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string"
+          },
+          "isAdmin": {
+            "type": "boolean"
+          },
+          "impersonatedBy": {
+            "type": "string",
+            "nullable": true,
+            "description": "The impersonating Admin's User ID, or null for the User's own session."
+          }
+        },
+        "required": [
+          "userId",
+          "isAdmin",
+          "impersonatedBy"
+        ]
+      },
+      "ApiError": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "UNAUTHENTICATED",
+              "FORBIDDEN",
+              "NOT_FOUND",
+              "VALIDATION_FAILED",
+              "INTERNAL"
+            ],
+            "description": "Stable error code. Clients must tolerate unknown codes."
+          }
+        },
+        "required": [
+          "code"
+        ]
+      }
+    },
+    "parameters": {}
+  },
+  "paths": {
+    "/api/v1/me": {
+      "get": {
+        "operationId": "getCurrentActor",
+        "summary": "The signed-in, active User behind this request, freshly resolved.",
+        "tags": [
+          "session"
+        ],
+        "responses": {
+          "200": {
+            "description": "The current actor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CurrentActor"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No active signed-in User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

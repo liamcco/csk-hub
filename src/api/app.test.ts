@@ -27,6 +27,14 @@ describe("API assembly", () => {
     expect(document.paths["/api/v1/me"]?.get?.operationId).toBe("getCurrentActor")
   })
 
+  test("matches the committed contract", async () => {
+    const committed = await Bun.file("contract/openapi.json").json()
+    const api = createApi({ handleAuth: unavailable, resolveRequest: unavailable })
+
+    // On failure, run `bun run api:generate` and commit the contract and client.
+    expect(JSON.parse(JSON.stringify(getApiContract(api)))).toEqual(committed)
+  })
+
   test("delegates every auth URL to Better Auth unchanged", async () => {
     const seen: string[] = []
     const api = createApi({

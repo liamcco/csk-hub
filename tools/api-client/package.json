@@ -1,0 +1,12 @@
+{
+  "name": "csk-hub-api-client-generator",
+  "private": true,
+  "description": "Generates contract/client from contract/openapi.json. Isolated because Hey API needs the TypeScript 6 compiler API, which the repository's TypeScript 7 does not provide.",
+  "scripts": {
+    "generate": "openapi-ts"
+  },
+  "devDependencies": {
+    "@hey-api/openapi-ts": "0.99.0",
+    "typescript": "6.0.3"
+  }
+}
