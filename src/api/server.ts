@@ -4,7 +4,8 @@ import { env, isProduction } from "@/core/config/env"
 import { db } from "@/core/db"
 import { createApiDependencies } from "@/core/http"
 import { logger } from "@/core/logging"
-import { scheduleActivityDispatch } from "@/features/messaging/activity"
+import { startActivityWorker } from "@/core/realtime/worker"
+import { conversationActivityPolicy } from "@/features/messaging/activity"
 import { createApi } from "./app"
 
 /**
@@ -15,31 +16,42 @@ import { createApi } from "./app"
  * `BETTER_AUTH_URL` is the public origin browsers use; Hub's own servers call the API by service
  * name and send that origin.
  */
+
+// Outbox delivery runs here, independently of requests; writes wake it after they commit.
+const worker = startActivityWorker(conversationActivityPolicy)
+const shutdown = new AbortController()
+
 const api = createApi(
   createApiDependencies({
     auth: createAuth({ database: db, baseURL: getBaseURL(env), production: isProduction }),
     database: db,
     secret: env.BETTER_AUTH_SECRET,
-    // A long-running process: post-commit delivery simply continues after the response.
-    scheduleDelivery: () => scheduleActivityDispatch(),
-    publicOrigin: new URL(env.BETTER_AUTH_URL).origin
+    scheduleDelivery: worker.wake,
+    publicOrigin: new URL(env.BETTER_AUTH_URL).origin,
+    shutdown: shutdown.signal
   })
 )
 
 const server = Bun.serve({
   hostname: "0.0.0.0",
   port: Number(process.env.PORT ?? 3000),
+  // Seconds without traffic before Bun closes a connection: above the event stream's 15-second
+  // heartbeat, so idle streams stay open.
+  idleTimeout: 60,
   fetch: api.fetch
 })
 logger.info("api.started", { port: server.port })
 
-async function shutdown(signal: string) {
+async function stop(signal: string) {
   logger.info("api.stopping", { signal })
-  // Finish in-flight requests, then release the database pool.
+  // Event streams end so browsers reconnect to another runner; the worker finishes its wave and
+  // releases its leases; in-flight requests finish; then the database pool closes.
+  shutdown.abort()
+  await worker.stop()
   await server.stop()
   await db.$client.end().catch(() => {})
   process.exit(0)
 }
 
-process.once("SIGTERM", () => void shutdown("SIGTERM"))
-process.once("SIGINT", () => void shutdown("SIGINT"))
+process.once("SIGTERM", () => void stop("SIGTERM"))
+process.once("SIGINT", () => void stop("SIGINT"))

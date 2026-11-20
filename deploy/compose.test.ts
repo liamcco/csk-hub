@@ -8,6 +8,7 @@ type Service = {
   depends_on?: Record<string, { condition: string }>
   environment?: Record<string, string>
   ports?: string[]
+  stop_grace_period?: string
 }
 
 const stack = Bun.YAML.parse(readFileSync(new URL("compose.yml", import.meta.url), "utf8")) as {
@@ -62,5 +63,18 @@ describe("Compose stack", () => {
     expect(caddyfile).toMatch(/handle @api \{\s*reverse_proxy api:3000/)
     expect(caddyfile).toMatch(/handle \{\s*reverse_proxy web:3000/)
     expect(caddyfile).not.toMatch(/\bencode\b/)
+  })
+
+  test("event streams reach the API unbuffered, with a read timeout above the 15-second heartbeat", () => {
+    const realtime = caddyfile.match(/handle \/api\/realtime\/\* \{([\s\S]*?)\n\t\}/)?.[1] ?? ""
+    expect(realtime).toMatch(/reverse_proxy api:3000/)
+    expect(realtime).toMatch(/flush_interval -1/)
+    const timeout = Number(realtime.match(/read_timeout (\d+)s/)?.[1])
+    expect(timeout).toBeGreaterThan(15)
+    expect(caddyfile).not.toMatch(/\/api\/realtime[\s\S]*?web:3000[\s\S]*?@api/)
+  })
+
+  test("the API has time to end streams and finish its delivery wave before it is killed", () => {
+    expect(Number.parseInt(String(api?.stop_grace_period), 10)).toBeGreaterThanOrEqual(30)
   })
 })

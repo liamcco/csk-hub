@@ -41,6 +41,8 @@ export type ApiDependencies = Readonly<{
    * must match the request's own host.
    */
   publicOrigin?: string
+  /** Aborts when the host begins shutting down: long-lived event streams end so clients reconnect. */
+  shutdown?: AbortSignal
 }>
 
 /** The Better Auth operations the API's features may call. */

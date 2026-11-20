@@ -915,6 +915,46 @@ export type MemberIdVerificationRequest = {
     token: string;
 };
 
+/**
+ * One server-sent event: `event`, `id` and `retry` are SSE fields and `data` is JSON. `ready` opens every stream; `reset: true` asks the client to refresh authoritative state. `activity` carries an `ActivityEvent`. `unauthorized` ends the stream when the session stops being valid; `unavailable` (with `retry: 5000`) when the broker is unreachable. Heartbeat comments (`: heartbeat`) carry the current `id` at most every 15 seconds; the server closes the stream after four minutes and EventSource reconnects with `Last-Event-ID`.
+ */
+export type ActivityStreamFrame = {
+    event: 'ready';
+    retry: 3000;
+    id: string;
+    data: {
+        reset: boolean;
+    };
+} | {
+    event: 'activity';
+    id: string;
+    data: {
+        kind: 'message.created' | 'conversation.changed' | 'unread.changed' | 'posts.changed' | 'notification.created';
+        conversationId?: string;
+        sequence?: number;
+        id: string;
+        notify: boolean;
+        notifyUntil?: number;
+        href?: string;
+        body?: string;
+    };
+} | {
+    event: 'unauthorized';
+    data: {
+        [key: string]: unknown;
+    };
+} | {
+    event: 'unavailable';
+    retry: 5000;
+    data: {
+        [key: string]: unknown;
+    };
+};
+
+export type ActivityAcknowledgement = {
+    id: string;
+};
+
 export type GetCurrentActorData = {
     body?: never;
     path?: never;
@@ -3579,3 +3619,73 @@ export type VerifyMemberIdResponses = {
 };
 
 export type VerifyMemberIdResponse = VerifyMemberIdResponses[keyof VerifyMemberIdResponses];
+
+export type StreamActivityData = {
+    body?: never;
+    headers?: {
+        /**
+         * The last received `id`; retained events after it are replayed.
+         */
+        'last-event-id'?: string;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/realtime/events';
+};
+
+export type StreamActivityErrors = {
+    /**
+     * The request came from another origin.
+     */
+    403: unknown;
+};
+
+export type StreamActivityResponses = {
+    /**
+     * An event stream. Each frame is an `ActivityStreamFrame`.
+     */
+    200: ActivityStreamFrame;
+    /**
+     * Real-time delivery is off, or there is no own, valid session.
+     */
+    204: void;
+};
+
+export type StreamActivityResponse = StreamActivityResponses[keyof StreamActivityResponses];
+
+export type AcknowledgeActivityData = {
+    body: ActivityAcknowledgement;
+    path?: never;
+    query?: never;
+    url: '/api/realtime/ack';
+};
+
+export type AcknowledgeActivityErrors = {
+    /**
+     * Invalid input.
+     */
+    400: ValidationError;
+    /**
+     * No own, valid session.
+     */
+    401: unknown;
+    /**
+     * The request did not come from Hub's origin.
+     */
+    403: unknown;
+    /**
+     * No such delivery for this User, or it is no longer deliverable.
+     */
+    404: unknown;
+};
+
+export type AcknowledgeActivityError = AcknowledgeActivityErrors[keyof AcknowledgeActivityErrors];
+
+export type AcknowledgeActivityResponses = {
+    /**
+     * Acknowledged, or already acknowledged.
+     */
+    204: void;
+};
+
+export type AcknowledgeActivityResponse = AcknowledgeActivityResponses[keyof AcknowledgeActivityResponses];

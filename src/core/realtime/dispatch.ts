@@ -168,6 +168,18 @@ export async function nextActivityDelay(): Promise<number | null> {
   return row?.delay === null || row?.delay === undefined ? null : Math.max(0, Number(row.delay))
 }
 
+/** Records still awaiting publication or a due push, and how long the oldest has waited. */
+export async function pendingActivityStats() {
+  const result = await db.execute<{ pending: number; oldest_age_ms: number | null }>(sql`select
+    count(*)::int as pending,
+    extract(epoch from now() - min(${activityDelivery.createdAt})) * 1000 as oldest_age_ms
+    from ${activityDelivery}
+    where ${activityDelivery.publishedAt} is null or (${activityDelivery.pushAfter} is not null
+      and ${activityDelivery.pushCompletedAt} is null and ${activityDelivery.acknowledgedAt} is null)`)
+  const row = result.rows[0]
+  return { pending: Number(row?.pending ?? 0), oldestAgeMs: Math.max(0, Number(row?.oldest_age_ms ?? 0)) }
+}
+
 /** Removes deliveries older than seven days and reports expired unfinished work. */
 export async function pruneActivity() {
   const result = await db.execute<{ removed: number; unfinished: number }>(sql`with expired as (

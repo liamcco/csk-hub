@@ -146,7 +146,7 @@ A notification may carry a `url`: a same-origin path, such as `/news/<id>`, that
 A feature that notifies Users on its own events, such as a published Post or a new Message, calls the send functions from its server-side write path. Keep these rules:
 
 - The feature decides who is notified and authorizes the actor; this module only delivers.
-- Send after the write has committed, inside `after()` from `next/server`, so slow or failed delivery never delays or fails the User's action.
+- Send after the write has committed, so slow or failed delivery never delays or fails the User's action. Prefer queueing activity with a notification body in the write's transaction (`core/realtime/outbox.ts`) and calling `scheduleDelivery()` after commit: the API's delivery worker then sends the push, with retries.
 - Send only when the write created something. An idempotent retry, such as `appendMessage` returning `created: false`, must not notify twice.
 - Write the text in each recipient's Language (ADR-0004): group recipients by their locale and send each group its own body.
 - Set `url` to the item's permalink and `tag` to `<feature>:<id>`.

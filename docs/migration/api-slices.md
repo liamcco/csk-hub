@@ -22,7 +22,7 @@ How a slice lands:
 Cross-cutting rules every slice keeps: `/api/v1` responses are `private, no-store`; unsafe
 methods need the Hub `Origin` (cookie-authenticated CSRF guard); permissions in responses are UI
 hints for the current User and every operation re-resolves the actor; post-commit delivery stays
-behind `scheduleActivityDispatch()` (see "Delivery boundary").
+behind the `scheduleDelivery` dependency (see "Delivery boundary").
 
 ## Slices
 
@@ -61,11 +61,11 @@ Auth's `/api/auth` (ADR 0008 draft) and are not part of this migration.
 ## Delivery boundary
 
 Writes that queue outbox rows do so inside their own transaction (`queueActivity`,
-`queuePublicActivity`). After the transaction commits, routes call `scheduleActivityDispatch()`,
-the single explicit boundary that today runs dispatch through Next.js `after()`. Admin broadcasts
-keep their own path: `push: false` outbox rows plus direct Web Push, and the broadcast route wakes
-delivery through the API's `scheduleDelivery` dependency, which `src/api/runtime.ts` binds to
-`scheduleActivityDispatch()`. Push subscriptions (`/account/push-subscriptions`) stay separate from
+`queuePublicActivity`). After the transaction commits, routes call `c.var.scheduleDelivery()`,
+the single explicit boundary: it wakes the process's supervised delivery worker
+(`core/realtime/worker.ts`), which `src/api/server.ts` starts with the API and which also runs
+without any request (ticket #6). Admin broadcasts keep their own path: `push: false` outbox rows
+plus direct Web Push, then the same wake. Push subscriptions (`/account/push-subscriptions`) stay separate from
 broadcasts (`/broadcasts`).
 
 ## Gaps
@@ -81,8 +81,8 @@ broadcasts (`/broadcasts`).
 - The account settings screen reads profile, two-factor and session details from Better Auth's
   session (`/api/auth`), which stays outside `/api/v1`.
 
-- Real-time delivery (`/api/realtime/events`, `/api/realtime/ack`, `ActivityConnection`) stays on
-  its Next.js route handlers; moving it onto Hono and a supervised worker is ticket #6.
+- Real-time delivery: `/api/realtime/events` and `/api/realtime/ack` are served by the API
+  (`core/realtime/http.ts`, ticket #6); `ActivityConnection` keeps calling them by path.
 - `src/proxy.ts` still reads the Better Auth session and locale preference for routing; it goes
   away with the Next.js host.
 - Group departure, Direct Conversations with an inactive member and Message retries are verified

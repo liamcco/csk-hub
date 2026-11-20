@@ -4,8 +4,9 @@
 # https://localhost:8443 (APP_PORT).
 #
 #   deploy/local-stack.sh up        build the image from the working tree and start the stack
-#   deploy/local-stack.sh validate  check routing, Better Auth, Member ID and a protected read and
-#                                   write through the proxy against the running stack
+#   deploy/local-stack.sh validate  check routing, Better Auth, Member ID, a protected read and
+#                                   write and real-time delivery through the proxy against the
+#                                   running stack (restarts api and redis on the way)
 #   deploy/local-stack.sh reset     stop the stack and delete its data (database, Redis, Caddy CA)
 #   deploy/local-stack.sh down      stop the stack and keep its data
 #   deploy/local-stack.sh logs      follow every service's logs

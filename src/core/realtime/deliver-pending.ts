@@ -11,9 +11,9 @@ import type { DispatchWakeup } from "./dispatch-wakeup"
 let maintenanceAt = 0
 
 /**
- * Attempts pending delivery for up to 30 seconds, including the push grace period and
- * retries. Stops claiming on abort and finishes the current delivery. Pending work stays
- * in Postgres for a later invocation; there is no independent recovery while idle.
+ * Delivers pending work until none is due or scheduled, waiting for push grace periods, retries
+ * and leases in between (by default for up to 30 seconds). Stops claiming on abort and finishes
+ * the current wave; what remains stays in Postgres. The worker runs it in a loop.
  */
 export async function deliverPendingActivity(
   policy: ActivityDeliveryPolicy,

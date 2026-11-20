@@ -1,5 +1,5 @@
 # The stack's single origin. Routing is by path only:
-#   /api/realtime/*  the web server, until real-time delivery moves to the API
+#   /api/realtime/*  the standalone API's event stream and acknowledgements
 #   /api, /api/*     the standalone API, which answers unknown API paths itself (404 NOT_FOUND)
 #   everything else  the web server
 # Nothing is compressed or buffered, so server-sent events stream as they are written.
@@ -12,11 +12,12 @@
 
 {$SITE_ADDRESS} {
 	handle /api/realtime/* {
-		reverse_proxy web:3000 {
+		reverse_proxy api:3000 {
 			flush_interval -1
-			# Longer than the event stream's keep-alive, so idle streams are not cut.
+			# Longer than the event stream's 15-second heartbeat, so idle streams are not cut, yet a
+			# stream whose upstream went silent is closed and EventSource reconnects.
 			transport http {
-				read_timeout 0
+				read_timeout 60s
 			}
 		}
 	}
