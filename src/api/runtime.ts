@@ -14,6 +14,7 @@ import { createApi } from "./app"
 export const api = createApi(
   createApiDependencies({
     auth: createAuth({ database: db, baseURL: getBaseURL(env), production: isProduction }),
-    database: db
+    database: db,
+    secret: env.BETTER_AUTH_SECRET
   })
 )

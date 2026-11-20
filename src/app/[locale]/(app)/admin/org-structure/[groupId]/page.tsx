@@ -2,7 +2,7 @@ import { notFound } from "next/navigation"
 import { Suspense } from "react"
 import { z } from "zod"
 import { requirePermission } from "@/core/authz"
-import { GroupDetailScreen, GroupDetailScreenSkeleton } from "@/features/org-structure"
+import { GroupDetailScreen, GroupDetailScreenSkeleton } from "@/features/org-structure/ui"
 
 const groupIdSchema = z.uuid()
 

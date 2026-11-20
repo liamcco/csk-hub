@@ -67,7 +67,8 @@ Use `src/core` for infrastructure and app shell modules:
 - `src/core/http`: framework-neutral API infrastructure: `createRouter` for feature routers,
   stable error codes, and the request context that resolves fresh authority from explicit
   request headers. A feature exposes its operations by exporting a router from its public
-  entrypoint; `src/api` mounts it under `/api/v1`. Run `bun run api:generate` after changing
+  entrypoint; `src/api` mounts it under `/api/v1` (Member ID keeps its released
+  `/api/member-id` paths). Run `bun run api:generate` after changing
   route schemas and commit `contract/`.
 - `src/core/email`: email delivery adapters.
 - `src/core/i18n`: locale definitions, locale-cookie handling, next-intl routing/request configuration, and translation loading. See `src/core/i18n/README.md` before adding translated UI.

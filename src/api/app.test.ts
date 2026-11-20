@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test"
 import { AuthorizationDeniedError, type RequestAuthorization } from "@/core/authz/authorization"
 import { evaluatePermission } from "@/core/authz/policy-registry"
+import type { Database } from "@/core/db"
 import { createApi, getApiContract } from "./app"
 
 function authorizationFor(actor: RequestAuthorization["actor"]): RequestAuthorization {
@@ -18,9 +19,16 @@ function unavailable(): never {
   throw new Error("Assembly must not touch request dependencies")
 }
 
+const offline = {
+  handleAuth: unavailable,
+  resolveRequest: unavailable,
+  database: new Proxy({} as Database, { get: unavailable }),
+  secret: "unused"
+}
+
 describe("API assembly", () => {
   test("assembles and exports its contract without request dependencies", async () => {
-    const api = createApi({ handleAuth: unavailable, resolveRequest: unavailable })
+    const api = createApi(offline)
     const document = getApiContract(api)
 
     expect(document.openapi).toBe("3.0.3")
@@ -29,7 +37,7 @@ describe("API assembly", () => {
 
   test("matches the committed contract", async () => {
     const committed = await Bun.file("contract/openapi.json").json()
-    const api = createApi({ handleAuth: unavailable, resolveRequest: unavailable })
+    const api = createApi(offline)
 
     // On failure, run `bun run api:generate` and commit the contract and client.
     expect(JSON.parse(JSON.stringify(getApiContract(api)))).toEqual(committed)
@@ -38,6 +46,7 @@ describe("API assembly", () => {
   test("delegates every auth URL to Better Auth unchanged", async () => {
     const seen: string[] = []
     const api = createApi({
+      ...offline,
       handleAuth: async (request) => {
         seen.push(`${request.method} ${new URL(request.url).pathname} ${request.headers.get("cookie")}`)
         return new Response("from auth", { status: 299, headers: { "set-cookie": "better-auth.session_token=x" } })
@@ -60,8 +69,8 @@ describe("API assembly", () => {
 
   test("answers a signed-out caller with a stable error code and no shared caching", async () => {
     const api = createApi({
-      handleAuth: unavailable,
-      resolveRequest: async () => ({ authorization: authorizationFor(null), impersonatedBy: null })
+      ...offline,
+      resolveRequest: async () => ({ authorization: authorizationFor(null), impersonatedBy: null, sessionId: null })
     })
 
     const response = await api.request("/api/v1/me")
@@ -73,10 +82,11 @@ describe("API assembly", () => {
 
   test("returns the current actor's trusted facts", async () => {
     const api = createApi({
-      handleAuth: unavailable,
+      ...offline,
       resolveRequest: async () => ({
         authorization: authorizationFor({ userId: "user-1", isAdmin: true }),
-        impersonatedBy: "admin-2"
+        impersonatedBy: "admin-2",
+        sessionId: "session-1"
       })
     })
 
@@ -87,7 +97,7 @@ describe("API assembly", () => {
   })
 
   test("answers unknown API paths with a stable error code", async () => {
-    const api = createApi({ handleAuth: unavailable, resolveRequest: unavailable })
+    const api = createApi(offline)
 
     const response = await api.request("/api/v1/does-not-exist")
 

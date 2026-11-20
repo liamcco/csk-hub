@@ -20,6 +20,69 @@ export type ApiError = {
     code: 'UNAUTHENTICATED' | 'FORBIDDEN' | 'NOT_FOUND' | 'VALIDATION_FAILED' | 'INTERNAL';
 };
 
+export type MemberIdSession = {
+    member: MemberIdMember;
+    /**
+     * A UI hint only; verification re-checks authority.
+     */
+    canVerify: boolean;
+};
+
+export type MemberIdMember = {
+    id: string;
+    name: string;
+    /**
+     * The User's photo URL, or null when none is set.
+     */
+    image: string | null;
+    accountStatus: 'active';
+    /**
+     * Current Choir affiliations, excluding archived Groups. May be empty.
+     */
+    choirs: Array<{
+        id: string;
+        name: string;
+    }>;
+};
+
+export type MemberIdError = {
+    /**
+     * Stable error code. Clients must tolerate unknown codes.
+     */
+    code: 'UNAUTHENTICATED' | 'FORBIDDEN' | 'INVALID_CODE' | 'INVALID_REQUEST' | 'UNAVAILABLE';
+};
+
+export type MemberIdCode = {
+    /**
+     * The opaque QR value. Never put it in a URL, log or storage.
+     */
+    token: string;
+    /**
+     * Unix milliseconds.
+     */
+    issuedAt: number;
+    /**
+     * Unix milliseconds, exclusive; `issuedAt` + 10,000.
+     */
+    expiresAt: number;
+    /**
+     * Fetch the next code after this many milliseconds.
+     */
+    rotateAfterMs: number;
+};
+
+export type MemberIdVerification = {
+    member: MemberIdMember;
+    /**
+     * Unix milliseconds. A snapshot, not a lasting grant.
+     */
+    verifiedAt: number;
+};
+
+export type MemberIdVerificationRequest = {
+    token: string;
+};
+
 export type GetCurrentActorData = {
     body?: never;
     path?: never;
@@ -44,3 +107,114 @@ export type GetCurrentActorResponses = {
 };
 
 export type GetCurrentActorResponse = GetCurrentActorResponses[keyof GetCurrentActorResponses];
+
+export type GetMemberIdSessionData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/member-id/session';
+};
+
+export type GetMemberIdSessionErrors = {
+    /**
+     * `UNAUTHENTICATED`: no active, signed-in User, including Inactive Users.
+     */
+    401: MemberIdError;
+    /**
+     * `FORBIDDEN`: the User may not hold a Member ID.
+     */
+    403: MemberIdError;
+    /**
+     * `UNAVAILABLE`: Member ID is temporarily unavailable.
+     */
+    503: MemberIdError;
+};
+
+export type GetMemberIdSessionError = GetMemberIdSessionErrors[keyof GetMemberIdSessionErrors];
+
+export type GetMemberIdSessionResponses = {
+    /**
+     * The caller's profile.
+     */
+    200: MemberIdSession;
+};
+
+export type GetMemberIdSessionResponse = GetMemberIdSessionResponses[keyof GetMemberIdSessionResponses];
+
+export type IssueMemberIdData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/member-id/issue';
+};
+
+export type IssueMemberIdErrors = {
+    /**
+     * `UNAUTHENTICATED`: no active, signed-in User, including Inactive Users.
+     */
+    401: MemberIdError;
+    /**
+     * `FORBIDDEN`: the User may not hold a Member ID.
+     */
+    403: MemberIdError;
+    /**
+     * `UNAVAILABLE`: Member ID is temporarily unavailable.
+     */
+    503: MemberIdError;
+};
+
+export type IssueMemberIdError = IssueMemberIdErrors[keyof IssueMemberIdErrors];
+
+export type IssueMemberIdResponses = {
+    /**
+     * A fresh code.
+     */
+    200: MemberIdCode;
+};
+
+export type IssueMemberIdResponse = IssueMemberIdResponses[keyof IssueMemberIdResponses];
+
+export type VerifyMemberIdData = {
+    body: MemberIdVerificationRequest;
+    path?: never;
+    query?: never;
+    url: '/api/member-id/verify';
+};
+
+export type VerifyMemberIdErrors = {
+    /**
+     * `INVALID_CODE`: expired, forged or revoked code, or an inactive subject. `INVALID_REQUEST`: malformed JSON or token.
+     */
+    400: MemberIdError;
+    /**
+     * `UNAUTHENTICATED`: no active, signed-in User, including Inactive Users.
+     */
+    401: MemberIdError;
+    /**
+     * `FORBIDDEN`: the caller is not an Admin.
+     */
+    403: MemberIdError;
+    /**
+     * `INVALID_REQUEST`: the body exceeds 4 KiB.
+     */
+    413: MemberIdError;
+    /**
+     * `INVALID_REQUEST`: the body is not JSON.
+     */
+    415: MemberIdError;
+    /**
+     * `UNAVAILABLE`: Member ID is temporarily unavailable.
+     */
+    503: MemberIdError;
+};
+
+export type VerifyMemberIdError = VerifyMemberIdErrors[keyof VerifyMemberIdErrors];
+
+export type VerifyMemberIdResponses = {
+    /**
+     * The verified member.
+     */
+    200: MemberIdVerification;
+};
+
+export type VerifyMemberIdResponse = VerifyMemberIdResponses[keyof VerifyMemberIdResponses];

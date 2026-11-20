@@ -1,11 +1,9 @@
 import "server-only"
 
 import { and, eq, gt, isNull } from "drizzle-orm"
-import { getFreshRequestSession } from "@/core/auth/session.server"
-import { forCurrentRequest } from "@/core/authz"
-import { env } from "@/core/config/env"
-import { db } from "@/core/db"
+import type { Database } from "@/core/db"
 import { session, user } from "@/core/db/schema/auth"
+import type { ResolvedRequest } from "@/core/http"
 import { listCurrentChoirAffiliationsOfUsers } from "@/features/org-structure"
 import { issueMemberIdToken, MEMBER_ID_ROTATION_MS, MEMBER_ID_VALIDITY_MS, readMemberIdToken } from "./token"
 
@@ -15,20 +13,27 @@ export class MemberIdError extends Error {
   }
 }
 
-async function getAccess() {
-  const access = await forCurrentRequest()
-  if (!access.actor) throw new MemberIdError("UNAUTHENTICATED")
-  if (!access.can({ action: "memberId.issue" })) throw new MemberIdError("FORBIDDEN")
-  return access
+/** One Member ID operation: the caller's freshly resolved authority and where to read facts. */
+export type MemberIdContext = Readonly<{
+  request: ResolvedRequest
+  database: Database
+  /** The server secret; Member ID derives its own encryption key from it. */
+  secret: string
+}>
+
+function requireAccess({ authorization }: ResolvedRequest) {
+  if (!authorization.actor) throw new MemberIdError("UNAUTHENTICATED")
+  if (!authorization.can({ action: "memberId.issue" })) throw new MemberIdError("FORBIDDEN")
+  return authorization.requirePermission({ action: "memberId.issue" })
 }
 
-async function getProfile(userId: string) {
-  const [member] = await db
+async function getProfile(database: Database, userId: string) {
+  const [member] = await database
     .select({ id: user.id, name: user.name, image: user.image, banned: user.banned })
     .from(user)
     .where(eq(user.id, userId))
   if (!member || member.banned === true) throw new MemberIdError("INVALID_CODE")
-  const affiliations = await listCurrentChoirAffiliationsOfUsers(db, [userId])
+  const affiliations = await listCurrentChoirAffiliationsOfUsers(database, [userId])
   return {
     id: member.id,
     name: member.name,
@@ -39,26 +44,21 @@ async function getProfile(userId: string) {
 }
 
 /** Fresh, minimal own-account data and scanner availability; never trusts session-cached roles. */
-export async function getMemberIdSession() {
-  const access = await getAccess()
-  const actor = access.requirePermission({ action: "memberId.issue" })
-  return { member: await getProfile(actor.userId), canVerify: access.can({ action: "memberId.verify" }) }
+export async function getMemberIdSession({ request, database }: MemberIdContext) {
+  const actor = requireAccess(request)
+  return {
+    member: await getProfile(database, actor.userId),
+    canVerify: request.authorization.can({ action: "memberId.verify" })
+  }
 }
 
 /** Issues a ten-second ID tied to the caller's current, non-impersonated login session. */
-export async function issueMemberId() {
-  const access = await getAccess()
-  const actor = access.requirePermission({ action: "memberId.issue" })
-  const current = await getFreshRequestSession()
-  if (!current || current.user.id !== actor.userId || current.session.impersonatedBy) {
-    throw new MemberIdError("UNAUTHENTICATED")
-  }
+export async function issueMemberId({ request, secret }: MemberIdContext) {
+  const actor = requireAccess(request)
+  if (!request.sessionId || request.impersonatedBy) throw new MemberIdError("UNAUTHENTICATED")
   const issuedAt = Date.now()
   return {
-    token: issueMemberIdToken(
-      { userId: actor.userId, sessionId: current.session.id, issuedAt },
-      env.BETTER_AUTH_SECRET
-    ),
+    token: issueMemberIdToken({ userId: actor.userId, sessionId: request.sessionId, issuedAt }, secret),
     issuedAt,
     expiresAt: issuedAt + MEMBER_ID_VALIDITY_MS,
     rotateAfterMs: MEMBER_ID_ROTATION_MS
@@ -66,12 +66,12 @@ export async function issueMemberId() {
 }
 
 /** Admin-only visual verification. Rechecks the subject's stored session and current User/Choir facts; writes no history. */
-export async function verifyMemberId(token: string) {
-  const access = await getAccess()
-  if (!access.can({ action: "memberId.verify" })) throw new MemberIdError("FORBIDDEN")
-  const claims = readMemberIdToken(token, env.BETTER_AUTH_SECRET, Date.now())
+export async function verifyMemberId({ request, database, secret }: MemberIdContext, token: string) {
+  requireAccess(request)
+  if (!request.authorization.can({ action: "memberId.verify" })) throw new MemberIdError("FORBIDDEN")
+  const claims = readMemberIdToken(token, secret, Date.now())
   if (!claims) throw new MemberIdError("INVALID_CODE")
-  const [stored] = await db
+  const [stored] = await database
     .select({ id: session.id })
     .from(session)
     .where(
@@ -83,9 +83,9 @@ export async function verifyMemberId(token: string) {
       )
     )
   if (!stored) throw new MemberIdError("INVALID_CODE")
-  const member = await getProfile(claims.userId)
+  const member = await getProfile(database, claims.userId)
   // Check again after database reads so a slow lookup cannot validate an expired QR.
   const verifiedAt = Date.now()
-  if (!readMemberIdToken(token, env.BETTER_AUTH_SECRET, verifiedAt)) throw new MemberIdError("INVALID_CODE")
+  if (!readMemberIdToken(token, secret, verifiedAt)) throw new MemberIdError("INVALID_CODE")
   return { member, verifiedAt }
 }

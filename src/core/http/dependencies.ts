@@ -8,20 +8,33 @@ import type { ApiDependencies } from "./request-context"
  * session afresh and reloads the User, so revocation, expiry, deactivation and role changes apply
  * to the very next protected operation. No Next.js request APIs are involved.
  */
-export function createApiDependencies({ auth, database }: { auth: Auth; database: AuthorizationDatabase }) {
+export function createApiDependencies({
+  auth,
+  database,
+  secret
+}: {
+  auth: Auth
+  database: AuthorizationDatabase
+  secret: string
+}) {
   return {
+    database,
+    secret,
     handleAuth: (request) => auth.handler(request),
     async resolveRequest(headers) {
       let impersonatedBy: string | null = null
+      let sessionId: string | null = null
       const authorization = await createAuthorization({
         database,
         readSession: async () => {
           const session = await readFreshSession(auth, headers)
           impersonatedBy = session?.session.impersonatedBy ?? null
+          sessionId = session?.session.id ?? null
           return session
         }
       }).forCurrentRequest()
-      return { authorization, impersonatedBy: authorization.actor ? impersonatedBy : null }
+      if (!authorization.actor) return { authorization, impersonatedBy: null, sessionId: null }
+      return { authorization, impersonatedBy, sessionId }
     }
   } satisfies ApiDependencies
 }
