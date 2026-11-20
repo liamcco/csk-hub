@@ -70,6 +70,17 @@
               "image"
             ]
           },
+          "locale": {
+            "type": "string",
+            "nullable": true,
+            "enum": [
+              "en",
+              "sv",
+              "de",
+              null
+            ],
+            "description": "The User's saved locale, or null. A browser's own locale choice takes precedence."
+          },
           "permissions": {
             "type": "object",
             "properties": {
@@ -104,6 +115,7 @@
         },
         "required": [
           "user",
+          "locale",
           "permissions"
         ]
       },

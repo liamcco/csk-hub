@@ -1,13 +1,14 @@
-import Link from "next/link"
+import { useSuspenseQuery } from "@tanstack/react-query"
 import { Suspense } from "react"
-import { getCapabilities } from "@/core/api-client/capabilities"
-import { getFormatter, getTranslations } from "@/core/i18n/server"
+import { capabilitiesQuery } from "@/core/api-client/capabilities"
+import { useFormatter, useTranslations } from "@/core/i18n/translations"
 import { ROUTES } from "@/core/navigation/site"
-import { ComingUpCard, NextEventCard } from "@/features/events"
+import { ComingUpCard, NextEventCard } from "@/features/events/ui"
 import { LatestPostsCard } from "@/features/posts"
 import { ContentPage } from "@/shared/layouts/content-page"
 import { OverviewCardSkeleton } from "@/shared/layouts/overview-card"
 import { Skeleton } from "@/shared/ui/base/skeleton"
+import { Link } from "@/core/navigation/router"
 
 const WIDE = "md:col-span-2"
 
@@ -16,8 +17,8 @@ const WIDE = "md:col-span-2"
  * what's coming up beside the latest News, each card linking on to its full page. Every card loads
  * under its own boundary, so a slow read never holds up the rest.
  */
-export async function HomeScreen() {
-  const info = await getTranslations("Public.info")
+export function HomeScreen() {
+  const info = useTranslations("Public.info")
 
   return (
     <ContentPage>
@@ -47,8 +48,10 @@ export async function HomeScreen() {
   )
 }
 
-async function Greeting() {
-  const [capabilities, t, format] = await Promise.all([getCapabilities(), getTranslations("HomePage"), getFormatter()])
+function Greeting() {
+  const { data: capabilities } = useSuspenseQuery(capabilitiesQuery)
+  const t = useTranslations("HomePage")
+  const format = useFormatter()
   const firstName = capabilities?.user.name.trim().split(/\s+/)[0]
 
   return (

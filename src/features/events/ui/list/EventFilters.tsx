@@ -1,12 +1,11 @@
 "use client"
 
-import Link from "next/link"
-import { usePathname, useRouter } from "next/navigation"
 import { useTranslations } from "@/core/i18n/translations"
 import { SelectField } from "@/shared/forms/fields"
 import { buttonVariants } from "@/shared/ui/base/button"
 import { EVENT_STATUSES, EVENT_TYPES } from "../../model"
 import type { EventListFilters } from "./query"
+import { Link, useAppRouter, usePathname } from "@/core/navigation/router"
 
 /** The list's filters live in the address, so a filtered list can be linked and reloaded. */
 export function eventListSearch(filters: EventListFilters) {
@@ -22,7 +21,7 @@ export function EventFilters({ filters }: { filters: EventListFilters }) {
   const t = useTranslations("Events.list")
   const types = useTranslations("Events.types")
   const statuses = useTranslations("Events.statuses")
-  const router = useRouter()
+  const router = useAppRouter()
   const pathname = usePathname()
 
   const apply = (next: Partial<EventListFilters>) => {

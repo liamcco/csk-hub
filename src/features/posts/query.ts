@@ -1,10 +1,7 @@
-import "server-only"
-
 import { getEditablePost, getPost, getPostUnread, listLatestPosts, listNewsFeed, listOwnDrafts } from "@contract/client"
-import { cache } from "react"
-import { getServerApiClient, readForScreen } from "@/core/api-client/server"
-import { newsPostEditPath, newsPostPath } from "@/core/navigation/navigation-utils"
-import { ROUTES } from "@/core/navigation/site"
+import { queryOptions, useQuery } from "@tanstack/react-query"
+import { browserApiClient as client } from "@/core/api-client/browser"
+import { read } from "@/core/api-client/result"
 import type { RichTextDocument } from "@/features/rich-text/document"
 
 /** Screens render instants as dates and a Post body as the editor's document. */
@@ -20,35 +17,59 @@ function document(body: { [key: string]: unknown }) {
   return body as RichTextDocument
 }
 
-export async function readNewsFeed() {
-  const feed = await readForScreen(listNewsFeed({ client: await getServerApiClient() }), ROUTES.news)
-  return { ...feed, items: feed.items.map((entry) => ({ ...published(entry), body: document(entry.body) })) }
-}
+/** Every Post read lives under this key, so a Posts change refreshes them together. */
+export const postsKey = ["posts"] as const
 
-export async function readOwnDrafts() {
-  const drafts = await readForScreen(listOwnDrafts({ client: await getServerApiClient() }), ROUTES.news)
-  return drafts.items.map((draft) => ({ ...draft, savedAt: new Date(draft.savedAt) }))
-}
-
-export async function readLatestPosts(limit: number) {
-  const client = await getServerApiClient()
-  return (await readForScreen(listLatestPosts({ client, query: { limit } }), ROUTES.home)).items.map(published)
-}
-
-export async function readPost(postId: string) {
-  const client = await getServerApiClient()
-  const view = await readForScreen(getPost({ client, path: { postId } }), newsPostPath(postId))
-  return { ...view, post: { ...published(view.post), body: document(view.post.body) } }
-}
-
-export async function readEditablePost(postId: string) {
-  const client = await getServerApiClient()
-  const post = await readForScreen(getEditablePost({ client, path: { postId } }), newsPostEditPath(postId))
-  return { ...post, body: document(post.body), savedAt: new Date(post.savedAt) }
-}
-
-/** The caller's unread Posts for badges; nothing when signed out. */
-export const readPostUnread = cache(async () => {
-  const { data } = await getPostUnread({ client: await getServerApiClient() })
-  return data ?? { count: 0, nextChangeAt: null }
+export const newsFeedQuery = queryOptions({
+  queryKey: [...postsKey, "feed"],
+  queryFn: async () => {
+    const feed = await read(listNewsFeed({ client }))
+    return { ...feed, items: feed.items.map((entry) => ({ ...published(entry), body: document(entry.body) })) }
+  }
 })
+
+export const ownDraftsQuery = queryOptions({
+  queryKey: [...postsKey, "drafts"],
+  queryFn: async () =>
+    (await read(listOwnDrafts({ client }))).items.map((draft) => ({ ...draft, savedAt: new Date(draft.savedAt) }))
+})
+
+export function latestPostsQuery(limit: number) {
+  return queryOptions({
+    queryKey: [...postsKey, "latest", limit],
+    queryFn: async () => (await read(listLatestPosts({ client, query: { limit } }))).items.map(published)
+  })
+}
+
+export function postQuery(postId: string) {
+  return queryOptions({
+    queryKey: [...postsKey, "post", postId],
+    queryFn: async () => {
+      const view = await read(getPost({ client, path: { postId } }))
+      return { ...view, post: { ...published(view.post), body: document(view.post.body) } }
+    }
+  })
+}
+
+export function editablePostQuery(postId: string) {
+  return queryOptions({
+    queryKey: [...postsKey, "editable", postId],
+    queryFn: async () => {
+      const post = await read(getEditablePost({ client, path: { postId } }))
+      return { ...post, body: document(post.body), savedAt: new Date(post.savedAt) }
+    },
+    // The editor keeps its own state; a background refresh must not reset it.
+    staleTime: Number.POSITIVE_INFINITY
+  })
+}
+
+/** The caller's unread Posts, for the navigation badge and its expiry. */
+export const postUnreadQuery = queryOptions({
+  queryKey: [...postsKey, "unread"],
+  queryFn: () => read(getPostUnread({ client }))
+})
+
+/** The caller's unread Post count, for the navigation badge; undefined while loading. */
+export function usePostUnreadCount() {
+  return useQuery(postUnreadQuery).data?.count
+}

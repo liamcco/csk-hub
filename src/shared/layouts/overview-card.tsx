@@ -1,8 +1,8 @@
-import Link from "next/link"
 import type { ReactNode } from "react"
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/shared/ui/base/card"
 import { Skeleton } from "@/shared/ui/base/skeleton"
 import { cn } from "@/shared/utils"
+import { Link } from "@/core/navigation/router"
 
 /**
  * One card of an overview page: a heading, a link onward to the full page, and a few short rows.

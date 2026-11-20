@@ -1,6 +1,5 @@
 "use client"
 
-import { useRouter } from "next/navigation"
 import { useTranslations } from "@/core/i18n/translations"
 import { ROUTES } from "@/core/navigation/site"
 import { Button } from "@/shared/ui/base/button"
@@ -9,6 +8,7 @@ import type { EventDeletionImpact } from "../../lifecycle"
 import { type EventStatus, statusChangesFrom } from "../../model"
 import { EventCommandDialog } from "../EventCommandDialog"
 import { useEventCommand } from "../use-event-command"
+import { useAppRouter } from "@/core/navigation/router"
 
 /** What moving from one status to another is called. */
 const STATUS_CHANGE: Record<EventStatus, Partial<Record<EventStatus, "publish" | "cancel" | "reinstate">>> = {
@@ -33,7 +33,7 @@ export function EventLifecycle({
   const recorded = impact.responses + impact.registrations + impact.attendance
   const changeStatus = useEventCommand({ kind: "changeEventStatus" })
   const remove = useEventCommand({ kind: "deleteEvent" })
-  const router = useRouter()
+  const router = useAppRouter()
 
   return (
     <Card>

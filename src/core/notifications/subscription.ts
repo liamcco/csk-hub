@@ -1,5 +1,3 @@
-import "server-only"
-
 import { and, eq, ilike, isNull, or } from "drizzle-orm"
 import { type Database, db } from "@/core/db"
 import { user } from "@/core/db/schema/auth"

@@ -27,6 +27,10 @@ export type CurrentCapabilities = {
         image: string | null;
     };
     /**
+     * The User's saved locale, or null. A browser's own locale choice takes precedence.
+     */
+    locale: 'en' | 'sv' | 'de' | null;
+    /**
      * UI hints for the current User, computed per request. Operations re-check authority.
      */
     permissions: {

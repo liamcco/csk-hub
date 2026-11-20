@@ -1,9 +1,10 @@
-import { getTranslations } from "@/core/i18n/server"
+import { useSuspenseQuery } from "@tanstack/react-query"
+import { useTranslations } from "@/core/i18n/translations"
 import { timeZone } from "@/core/i18n/time-zone"
 import { PageBreadcrumb } from "@/core/navigation/PageBreadcrumb"
 import { Badge } from "@/shared/ui/base/badge"
 import { Skeleton } from "@/shared/ui/base/skeleton"
-import { readGroupDetail } from "../screen-reads"
+import { groupDetailQuery } from "../queries"
 import { GroupHeaderActions } from "./group-header-actions"
 import { MembersSection } from "./members-section"
 import { PositionsSection } from "./positions-section"
@@ -13,12 +14,10 @@ function today() {
   return new Intl.DateTimeFormat("sv-SE", { timeZone }).format(new Date())
 }
 
-export async function GroupDetailScreen({ groupId }: { groupId: string }) {
-  const [detail, t, types] = await Promise.all([
-    readGroupDetail(groupId),
-    getTranslations("Groups"),
-    getTranslations("Groups.types")
-  ])
+export function GroupDetailScreen({ groupId }: { groupId: string }) {
+  const { data: detail } = useSuspenseQuery(groupDetailQuery(groupId))
+  const t = useTranslations("Groups")
+  const types = useTranslations("Groups.types")
   const { group } = detail
   const isChoirOrSection = group.type === "Choir" || group.type === "Section"
   const date = today()
@@ -59,8 +58,8 @@ export async function GroupDetailScreen({ groupId }: { groupId: string }) {
   )
 }
 
-export async function GroupDetailScreenSkeleton() {
-  const t = await getTranslations("Groups")
+export function GroupDetailScreenSkeleton() {
+  const t = useTranslations("Groups")
   return (
     <main className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 py-8 sm:px-6 lg:px-8" aria-busy="true">
       <span className="sr-only">{t("detail.loading")}</span>

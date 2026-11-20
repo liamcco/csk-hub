@@ -1,18 +1,20 @@
+import { useSuspenseQuery } from "@tanstack/react-query"
 import { ExternalLink } from "lucide-react"
-import { getTranslations } from "@/core/i18n/server"
+import { useTranslations } from "@/core/i18n/translations"
 import { PageBreadcrumb } from "@/core/navigation/PageBreadcrumb"
 import { Badge } from "@/shared/ui/base/badge"
 import { Button } from "@/shared/ui/base/button"
 import { Card } from "@/shared/ui/base/card"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/shared/ui/base/collapsible"
 import { Skeleton } from "@/shared/ui/base/skeleton"
-import { readLocations } from "../screen-reads"
+import { locationsQuery } from "../queries"
 import { ArchiveLocationDialog, CreateLocationDialog, EditLocationDialog } from "./LocationDialogs"
 import type { LocationRow } from "./query"
 
 /** The reusable venues Events are held at. Archived ones stay on their Events but are not offered for new ones. */
-export async function LocationsScreen() {
-  const [locations, t] = await Promise.all([readLocations(), getTranslations("Events.locations")])
+export function LocationsScreen() {
+  const { data: locations } = useSuspenseQuery(locationsQuery)
+  const t = useTranslations("Events.locations")
   const active = locations.filter((location) => location.active)
   const archived = locations.filter((location) => !location.active)
 
@@ -51,8 +53,8 @@ export async function LocationsScreen() {
   )
 }
 
-async function LocationList({ locations }: { locations: LocationRow[] }) {
-  const t = await getTranslations("Events.locations")
+function LocationList({ locations }: { locations: LocationRow[] }) {
+  const t = useTranslations("Events.locations")
   return (
     <Card className="gap-0 divide-y py-0">
       {locations.map((location) => (
@@ -90,8 +92,8 @@ async function LocationList({ locations }: { locations: LocationRow[] }) {
   )
 }
 
-export async function LocationsScreenSkeleton() {
-  const t = await getTranslations("Events.locations")
+export function LocationsScreenSkeleton() {
+  const t = useTranslations("Events.locations")
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-8 sm:px-6 lg:px-8" aria-busy="true">
       <div className="flex flex-col gap-2">

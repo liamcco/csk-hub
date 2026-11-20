@@ -1,7 +1,6 @@
 "use client"
 
 import { PlusIcon, XIcon } from "lucide-react"
-import { useRouter } from "next/navigation"
 import { type ReactNode, useActionState, useState } from "react"
 import { useTranslations } from "@/core/i18n/translations"
 import { conversationPath } from "@/core/navigation/navigation-utils"
@@ -23,6 +22,7 @@ import { startConversationCommand } from "../api-commands"
 import { createMessageIdempotencyKey } from "../composer/idempotency-key"
 import type { MessageCommandState } from "../composer/message-command-state"
 import { MemberSelection, type SelectedMember } from "../member-selection"
+import { useAppRouter } from "@/core/navigation/router"
 
 const initialState: MessageCommandState = { status: "idle" }
 /** Opens the shared composer, optionally with a member selected from their profile. */
@@ -81,7 +81,7 @@ function StartConversationForm({
   onStarted: () => void
 }) {
   const t = useTranslations("Messages")
-  const router = useRouter()
+  const router = useAppRouter()
   const [selected, setSelected] = useState<SelectedMember[]>(initialMember ? [initialMember] : [])
   const [idempotencyKey, setIdempotencyKey] = useState(createMessageIdempotencyKey)
   const [name, setName] = useState("")

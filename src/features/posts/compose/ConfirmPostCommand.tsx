@@ -1,6 +1,5 @@
 "use client"
 
-import { useRouter } from "next/navigation"
 import { useState, useTransition } from "react"
 import { useTranslations } from "@/core/i18n/translations"
 import {
@@ -16,6 +15,7 @@ import {
 } from "@/shared/ui/base/alert-dialog"
 import { Button } from "@/shared/ui/base/button"
 import { type PostCommand, type PostCommandError, runPostCommand } from "./submit"
+import { useAppRouter } from "@/core/navigation/router"
 
 const COPY = {
   unpublish: {
@@ -34,7 +34,7 @@ const COPY = {
 export function ConfirmPostCommand({ command, postId }: { command: PostCommand; postId: string }) {
   const t = useTranslations("Posts")
   const common = useTranslations("Common")
-  const router = useRouter()
+  const router = useAppRouter()
   const copy = COPY[command]
   const [open, setOpen] = useState(false)
   const [error, setError] = useState<PostCommandError | null>(null)

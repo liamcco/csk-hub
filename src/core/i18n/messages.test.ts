@@ -1,6 +1,5 @@
 import { describe, expect, mock, test } from "bun:test"
 
-mock.module("server-only", () => ({}))
 
 const { getMessages } = await import("./messages")
 

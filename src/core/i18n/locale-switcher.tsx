@@ -1,10 +1,7 @@
-"use client"
-
-import { useRouter } from "next/navigation"
-import { useLocale, useTranslations } from "next-intl"
 import { useOptimistic, useTransition } from "react"
+import { useLocale, useTranslations } from "use-intl"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/base/select"
-import { writeBrowserLocaleCookie } from "./locale-cookie"
+import { useLocaleControl } from "./client"
 import { LocaleFlag } from "./locale-flag"
 import { defaultLocale, getLocaleName, isLocale, type Locale, localeNames, locales } from "./locales"
 
@@ -19,9 +16,9 @@ export interface LocaleSwitcherProps {
   persistLocale?: (locale: Locale) => Promise<boolean>
 }
 
-/** Renders the locale control and refreshes the current route after an explicit selection. */
+/** Renders the locale control and switches the app's locale after an explicit selection. */
 export function LocaleSwitcher({ id, className, size = "sm", persistLocale }: LocaleSwitcherProps) {
-  const router = useRouter()
+  const { changeLocale: switchLocale } = useLocaleControl()
   const locale = useLocale()
   const t = useTranslations("Navigation")
   const [isPending, startTransition] = useTransition()
@@ -34,8 +31,7 @@ export function LocaleSwitcher({ id, className, size = "sm", persistLocale }: Lo
       setOptimisticLocale(nextLocale)
       if (persistLocale && !(await persistLocale(nextLocale))) return
 
-      writeBrowserLocaleCookie(nextLocale)
-      router.refresh()
+      await switchLocale(nextLocale)
     })
   }
 

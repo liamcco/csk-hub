@@ -1,5 +1,5 @@
 import { afterAll, describe, expect, test } from "bun:test"
-import { getCurrentCapabilities } from "../../contract/client"
+import { getCurrentCapabilities, updateLocalePreference } from "../../contract/client"
 import { createApiHarness } from "../../test/api"
 import { createTestDatabase } from "../../test/database"
 
@@ -25,7 +25,20 @@ describe.skipIf(!database)("Current User capabilities over HTTP", () => {
 
     expect(response?.status).toBe(200)
     expect(response?.headers.get("cache-control")).toBe("private, no-store")
-    expect(data).toEqual({ user: { id: member.id, name: "Ordinary Olle", image: null }, permissions: none })
+    expect(data).toEqual({
+      user: { id: member.id, name: "Ordinary Olle", image: null },
+      locale: null,
+      permissions: none
+    })
+  })
+
+  test("carries the saved locale preference, so the web app can start in it", async () => {
+    const { client } = await h.signedIn()
+    await updateLocalePreference({ client, body: { locale: "de" } })
+
+    const { data } = await getCurrentCapabilities({ client })
+
+    expect(data?.locale).toBe("de")
   })
 
   test("grants an Admin every administrative capability", async () => {

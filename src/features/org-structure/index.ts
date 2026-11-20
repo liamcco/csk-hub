@@ -1,5 +1,3 @@
-import "server-only"
-
 export { endLinkedPosition, startLinkedPosition } from "./linked-positions"
 export { changeVoice, endMembership, placeSinger, placeSingerInSection, startMembership } from "./membership"
 export type { GroupType, IsoDate, OrgStructureResult, OrgStructureViolation } from "./model"

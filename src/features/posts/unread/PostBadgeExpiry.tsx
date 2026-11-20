@@ -1,11 +1,11 @@
 "use client"
 
-import { useRouter } from "next/navigation"
 import { useEffect, useTransition } from "react"
+import { useAppRouter } from "@/core/navigation/router"
 
 /** A one-shot predicate expiry, rather than periodic badge polling. */
 export function PostBadgeExpiry({ at }: { at: number | null }) {
-  const router = useRouter()
+  const router = useAppRouter()
   const [, startTransition] = useTransition()
   useEffect(() => {
     if (at === null) return

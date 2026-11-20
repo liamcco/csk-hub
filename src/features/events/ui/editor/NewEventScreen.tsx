@@ -1,20 +1,42 @@
-import { notFound } from "next/navigation"
-import { getTranslations } from "@/core/i18n/server"
+import { useSuspenseQuery } from "@tanstack/react-query"
+import { useTranslations } from "@/core/i18n/translations"
 import { PageBreadcrumb } from "@/core/navigation/PageBreadcrumb"
 import { ROUTES } from "@/core/navigation/site"
 import { Skeleton } from "@/shared/ui/base/skeleton"
 import { DEFAULT_PARTICIPATION_MODE, EVENT_TYPES, type EventType } from "../../model"
-import { readEventFormOptions } from "../screen-reads"
+import { eventFormOptionsQuery } from "../queries"
 import { EventForm } from "./EventForm"
-import { EMPTY_EVENT_FORM } from "./query"
+import type { EventFormValues } from "./query"
 
 const FIRST_TYPE = EVENT_TYPES[0] as EventType
 
-/** The form for a new Event, which is saved as a Draft. */
-export async function NewEventScreen() {
-  const [options, t] = await Promise.all([readEventFormOptions(), getTranslations("Events")])
+/** A new Event's form: a timed Draft of the first type, with nothing filled in. */
+export const EMPTY_EVENT_FORM: Omit<EventFormValues, "type" | "participationMode"> = {
+  title: "",
+  description: null,
+  allDay: false,
+  startsAt: "",
+  endsAt: "",
+  firstDay: "",
+  lastDay: "",
+  callTime: "",
+  respondBy: "",
+  locationId: "",
+  locationText: "",
+  organiserGroupId: "",
+  leaderUserId: "",
+  responsibleUserId: "",
+  contactName: "",
+  contactDetails: "",
+  costInfo: "",
+  targets: [],
+  details: []
+}
 
-  if (!options.canCreate) notFound()
+/** The form for a new Event, which is saved as a Draft. Its route answers not found to callers who may not create one. */
+export function NewEventScreen() {
+  const { data: options } = useSuspenseQuery(eventFormOptionsQuery)
+  const t = useTranslations("Events")
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-8 sm:px-6 lg:px-8">
@@ -35,8 +57,8 @@ export async function NewEventScreen() {
   )
 }
 
-export async function NewEventScreenSkeleton() {
-  const t = await getTranslations("Events")
+export function NewEventScreenSkeleton() {
+  const t = useTranslations("Events")
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-8 sm:px-6 lg:px-8" aria-busy="true">
       <div className="flex flex-col gap-2">

@@ -1,11 +1,10 @@
 "use client"
 
-import Link from "next/link"
-import { usePathname } from "next/navigation"
 import { Suspense } from "react"
 import { buttonVariants } from "@/shared/ui/base/button"
 import { cn } from "@/shared/utils"
 import { isActiveRoute } from "./navigation-utils"
+import { Link, usePathname } from "@/core/navigation/router"
 
 export type NavLinkItem = { id: string; href: string; label: string; badge?: React.ReactNode }
 

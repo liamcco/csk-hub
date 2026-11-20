@@ -1,10 +1,10 @@
 "use client"
 
-import { useRouter } from "next/navigation"
 import { useTranslations } from "@/core/i18n/translations"
 import { CommandDialog, type CommandDialogProps } from "@/shared/forms/CommandDialog"
 import type { EventCommandError } from "./command-state"
 import { useEventErrorMessage } from "./errors"
+import { useAppRouter } from "@/core/navigation/router"
 
 type EventCommandDialogProps = Omit<
   CommandDialogProps<EventCommandError>,
@@ -16,7 +16,7 @@ type EventCommandDialogProps = Omit<
  * after the success toast, since the refreshed screen may no longer hold this dialog.
  */
 export function EventCommandDialog(props: EventCommandDialogProps) {
-  const router = useRouter()
+  const router = useAppRouter()
   const t = useTranslations("Events")
   const common = useTranslations("Common")
   const errorMessage = useEventErrorMessage()

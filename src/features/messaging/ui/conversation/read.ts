@@ -1,5 +1,3 @@
-import "server-only"
-
 import { and, eq, lt } from "drizzle-orm"
 import { conversation, conversationReadState, directConversation, groupMembership } from "@/core/db/schema/messaging"
 import { queueActivity } from "@/core/realtime/outbox"

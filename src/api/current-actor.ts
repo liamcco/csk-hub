@@ -2,6 +2,8 @@ import { createRoute, z } from "@hono/zod-openapi"
 import { eq } from "drizzle-orm"
 import { user } from "@/core/db/schema/auth"
 import { createRouter, errorResponses } from "@/core/http"
+import { locales } from "@/core/i18n/locales"
+import { getUserPreferences } from "@/core/preferences"
 
 const CurrentActorSchema = z
   .object({
@@ -29,6 +31,10 @@ const getCurrentActor = createRoute({
 const CurrentCapabilitiesSchema = z
   .object({
     user: z.object({ id: z.string(), name: z.string(), image: z.string().nullable() }),
+    locale: z
+      .enum(locales)
+      .nullable()
+      .openapi({ description: "The User's saved locale, or null. A browser's own locale choice takes precedence." }),
     permissions: z
       .object({
         admin: z.boolean().openapi({ description: "May open the administration area." }),
@@ -71,9 +77,11 @@ export const currentActorRouter = createRouter()
       .from(user)
       .where(eq(user.id, actor.userId))
     if (!profile) return c.json({ code: "UNAUTHENTICATED" as const }, 401)
+    const { locale } = await getUserPreferences(actor.userId, c.var.database)
     return c.json(
       {
         user: profile,
+        locale,
         permissions: {
           admin: authorization.can({ action: "admin.access" }),
           administerUsers: authorization.can({ action: "user.administer" }),

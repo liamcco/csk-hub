@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react"
 import { authClient } from "@/core/auth/auth-client"
 import { useFormatter, useTranslations } from "@/core/i18n/translations"
 import { logout } from "@/core/navigation/logout"
+import { useAppRouter } from "@/core/navigation/router"
 import { ROUTES } from "@/core/navigation/site"
 import { Alert, AlertDescription } from "@/shared/ui/base/alert"
 import { Badge } from "@/shared/ui/base/badge"
@@ -13,6 +14,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/sha
 type Session = NonNullable<Awaited<ReturnType<typeof authClient.listSessions>>["data"]>[number]
 
 export function SessionsSettings({ currentSessionToken }: { currentSessionToken: string }) {
+  const router = useAppRouter()
   const t = useTranslations("AccountSettings")
   const common = useTranslations("Common")
   const format = useFormatter()
@@ -38,7 +40,7 @@ export function SessionsSettings({ currentSessionToken }: { currentSessionToken:
       const current = token === currentSessionToken
       const result = current ? await logout() : await authClient.revokeSession({ token })
       if (result.error) setError(t("sessionRevokeFailed"))
-      else if (current) window.location.assign(ROUTES.login)
+      else if (current) await router.sessionChanged(ROUTES.login)
       else await loadSessions()
     } catch {
       setError(t("sessionRevokeFailed"))

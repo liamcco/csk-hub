@@ -1,8 +1,6 @@
 "use client"
 
 import { useForm, useSelector } from "@tanstack/react-form"
-import Link from "next/link"
-import { useRouter, useSearchParams } from "next/navigation"
 import { useState } from "react"
 import type z from "zod"
 import { useTranslations } from "@/core/i18n/translations"
@@ -16,10 +14,11 @@ import { Field, FieldGroup, FieldLabel } from "@/shared/ui/base/field"
 import { Spinner } from "@/shared/ui/base/spinner"
 import { loginSchema } from "./schemas"
 import { type LoginResult, signInWithIdentifier, signInWithPasskey } from "./service"
+import { Link, useAppRouter, useSearchParams } from "@/core/navigation/router"
 
 export function LoginForm() {
   const t = useTranslations("Public.login")
-  const router = useRouter()
+  const router = useAppRouter()
   const searchParams = useSearchParams()
   const returnTo = searchParams.get("returnTo") ?? undefined
   const [formError, setFormError] = useState<string | null>(null)
@@ -35,7 +34,7 @@ export function LoginForm() {
       return
     }
 
-    router.replace(getPostLoginPath(result.role, returnTo))
+    router.sessionChanged(getPostLoginPath(result.role, returnTo))
   }
 
   async function handlePasskeySignIn() {

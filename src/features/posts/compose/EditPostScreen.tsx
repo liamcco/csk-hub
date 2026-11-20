@@ -1,18 +1,19 @@
-import { getTranslations } from "@/core/i18n/server"
+import { useSuspenseQuery } from "@tanstack/react-query"
+import { useTranslations } from "@/core/i18n/translations"
 import { newsPostPath } from "@/core/navigation/navigation-utils"
 import { ROUTES } from "@/core/navigation/site"
 import { ContentPage } from "@/shared/layouts/content-page"
 import { Skeleton } from "@/shared/ui/base/skeleton"
 import { PostTime } from "../PostTime"
-import { readEditablePost } from "../query"
+import { editablePostQuery } from "../query"
 import { ConfirmPostCommand } from "./ConfirmPostCommand"
 import { PostForm } from "./PostForm"
 
-export async function EditPostScreen({ postId }: { postId: string }) {
+export function EditPostScreen({ postId }: { postId: string }) {
   // Someone else's draft, and a Post the reader may not change, look like no Post at all.
-  const post = await readEditablePost(postId)
+  const { data: post } = useSuspenseQuery(editablePostQuery(postId))
 
-  const t = await getTranslations("Posts")
+  const t = useTranslations("Posts")
   const draft = post.state === "draft"
 
   return (

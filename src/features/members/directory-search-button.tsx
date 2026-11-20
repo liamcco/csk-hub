@@ -1,12 +1,28 @@
-"use client"
-
+import { useRouterState } from "@tanstack/react-router"
 import { LoaderCircle, Search } from "lucide-react"
-import { useFormStatus } from "react-dom"
+import type { FormEvent, ReactNode } from "react"
 import { useTranslations } from "@/core/i18n/translations"
+import { useAppRouter } from "@/core/navigation/router"
+import { ROUTES } from "@/core/navigation/site"
 import { Button } from "@/shared/ui/base/button"
 
+/** Searching navigates to the directory with the query in the URL, so a search can be bookmarked. */
+export function DirectorySearchForm({ className, children }: { className?: string; children: ReactNode }) {
+  const router = useAppRouter()
+  function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    const query = String(new FormData(event.currentTarget).get("query") ?? "").trim()
+    void router.push(query ? `${ROUTES.members}?${new URLSearchParams({ query })}` : ROUTES.members)
+  }
+  return (
+    <form role="search" onSubmit={submit} className={className}>
+      {children}
+    </form>
+  )
+}
+
 export function DirectorySearchButton() {
-  const { pending } = useFormStatus()
+  const pending = useRouterState({ select: (state) => state.status === "pending" })
   const t = useTranslations("MemberProfiles")
   return (
     <Button type="submit" disabled={pending} aria-busy={pending}>

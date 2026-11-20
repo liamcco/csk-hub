@@ -1,6 +1,7 @@
+import type { MemberProfileView } from "@contract/client"
+import { useSuspenseQuery } from "@tanstack/react-query"
 import { ArrowLeft, Award, MessageCircle, Music2, PencilLine, Settings, Users } from "lucide-react"
-import Link from "next/link"
-import { getTranslations } from "@/core/i18n/server"
+import { useTranslations } from "@/core/i18n/translations"
 import { conversationPath } from "@/core/navigation/navigation-utils"
 import { ROUTES } from "@/core/navigation/site"
 import { StartConversationDialog } from "@/features/messaging"
@@ -10,13 +11,15 @@ import { Card, CardContent } from "@/shared/ui/base/card"
 import { Skeleton } from "@/shared/ui/base/skeleton"
 import { ChoirCard, MemberGroupsCard } from "./affiliation-cards"
 import { MemberAvatar } from "./member-avatar"
-import { getProfile } from "./query"
+import { memberProfileQuery } from "./queries"
+import { Link } from "@/core/navigation/router"
 
-type ProfileData = Awaited<ReturnType<typeof getProfile>>
+type ProfileData = MemberProfileView
 type Profile = ProfileData["profile"]
 
-export async function MemberProfileScreen({ memberId }: { memberId?: string }) {
-  const [data, t] = await Promise.all([getProfile(memberId), getTranslations("MemberProfiles")])
+export function MemberProfileScreen({ memberId }: { memberId?: string }) {
+  const { data } = useSuspenseQuery(memberProfileQuery(memberId))
+  const t = useTranslations("MemberProfiles")
   const { profile } = data
   return (
     <main className="mx-auto flex w-full max-w-4xl flex-col gap-8 px-4 py-8 sm:px-6">
@@ -36,9 +39,9 @@ export async function MemberProfileScreen({ memberId }: { memberId?: string }) {
   )
 }
 
-async function ProfileHeader({ data }: { data: ProfileData }) {
+function ProfileHeader({ data }: { data: ProfileData }) {
   const { profile } = data
-  const t = await getTranslations("MemberProfiles")
+  const t = useTranslations("MemberProfiles")
   return (
     <Card className="relative bg-linear-to-br from-primary/8 via-card to-card">
       <CardContent className="flex flex-col gap-6 sm:flex-row sm:items-center">
@@ -64,10 +67,10 @@ async function ProfileHeader({ data }: { data: ProfileData }) {
   )
 }
 
-async function ProfileActions({ data }: { data: ProfileData }) {
+function ProfileActions({ data }: { data: ProfileData }) {
   const { profile, permissions, messageConversationId } = data
   const { message: canMessage, editProfile: canEditProfile } = permissions
-  const t = await getTranslations("MemberProfiles")
+  const t = useTranslations("MemberProfiles")
   return (
     <div className="flex flex-wrap gap-2">
       {canEditProfile ? (
@@ -97,9 +100,9 @@ async function ProfileActions({ data }: { data: ProfileData }) {
   )
 }
 
-async function ProfilePositions({ positions }: { positions: Profile["positions"] }) {
+function ProfilePositions({ positions }: { positions: Profile["positions"] }) {
   if (positions.length === 0) return null
-  const t = await getTranslations("MemberProfiles")
+  const t = useTranslations("MemberProfiles")
   return (
     <section aria-labelledby="positions-title">
       <h2 id="positions-title" className="mb-4 flex items-center gap-2 font-heading text-xl font-semibold">
@@ -126,8 +129,8 @@ async function ProfilePositions({ positions }: { positions: Profile["positions"]
   )
 }
 
-async function ProfileChoirs({ choirs }: { choirs: Profile["choirs"] }) {
-  const t = await getTranslations("MemberProfiles")
+function ProfileChoirs({ choirs }: { choirs: Profile["choirs"] }) {
+  const t = useTranslations("MemberProfiles")
   return (
     <section aria-labelledby="choirs-title">
       <h2 id="choirs-title" className="mb-4 flex items-center gap-2 font-heading text-xl font-semibold">
@@ -147,8 +150,8 @@ async function ProfileChoirs({ choirs }: { choirs: Profile["choirs"] }) {
   )
 }
 
-async function ProfileGroups({ groups, otherGroups }: Pick<Profile, "groups" | "otherGroups">) {
-  const t = await getTranslations("MemberProfiles")
+function ProfileGroups({ groups, otherGroups }: Pick<Profile, "groups" | "otherGroups">) {
+  const t = useTranslations("MemberProfiles")
   return (
     <>
       {groups.length ? (
@@ -172,8 +175,8 @@ async function ProfileGroups({ groups, otherGroups }: Pick<Profile, "groups" | "
   )
 }
 
-async function ProfileVoices({ capabilities }: { capabilities: Profile["capabilities"] }) {
-  const t = await getTranslations("MemberProfiles")
+function ProfileVoices({ capabilities }: { capabilities: Profile["capabilities"] }) {
+  const t = useTranslations("MemberProfiles")
   return (
     <section aria-labelledby="voices-title">
       <h2 id="voices-title" className="mb-4 font-heading text-xl font-semibold">

@@ -1,5 +1,3 @@
-import "server-only"
-
 import { and, asc, eq, gte, inArray, isNull, or, sql } from "drizzle-orm"
 import { alias } from "drizzle-orm/pg-core"
 import { group, groupMember, position, positionHolder, section } from "@/core/db/schema/org-structure"

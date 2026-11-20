@@ -1,5 +1,3 @@
-import "server-only"
-
 import { eq } from "drizzle-orm"
 import { AUTHORIZATION_DENIED, type AuthorizationDatabase } from "@/core/authz/authorization"
 import type { PermissionRequest } from "@/core/authz/model"

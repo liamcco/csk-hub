@@ -1,5 +1,3 @@
-import "server-only"
-
 import { getBaseURL } from "@/core/auth/base-url"
 import { createAuth } from "@/core/auth/create-auth"
 import { env, isProduction } from "@/core/config/env"

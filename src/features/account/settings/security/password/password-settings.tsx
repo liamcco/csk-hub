@@ -1,7 +1,6 @@
 "use client"
 
 import { type AnyFieldApi, useForm, useSelector } from "@tanstack/react-form"
-import { useRouter } from "next/navigation"
 import { useRef, useState } from "react"
 import type z from "zod"
 import { authClient } from "@/core/auth/auth-client"
@@ -14,10 +13,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/sha
 import { FieldGroup } from "@/shared/ui/base/field"
 import { toast } from "@/shared/ui/base/toast"
 import { changePasswordSchema } from "./schemas"
+import { useAppRouter } from "@/core/navigation/router"
 
 export function PasswordSettings() {
   const t = useTranslations("AccountSettings")
-  const router = useRouter()
+  const router = useAppRouter()
   const [message, setMessage] = useState<string | null>(null)
   const submissionInProgress = useRef(false)
 

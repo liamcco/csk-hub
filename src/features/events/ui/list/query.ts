@@ -1,5 +1,3 @@
-import "server-only"
-
 import { and, asc, desc, eq, gt, inArray, lte, sql } from "drizzle-orm"
 import type { Database } from "@/core/db"
 import { event, eventTarget } from "@/core/db/schema/events"

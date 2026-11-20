@@ -1,5 +1,3 @@
-import "server-only"
-
 import { inArray } from "drizzle-orm"
 import type { Database } from "@/core/db"
 import { user } from "@/core/db/schema/auth"

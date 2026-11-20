@@ -1,15 +1,18 @@
+import { useSuspenseQuery } from "@tanstack/react-query"
 import { UserRoundIcon, UsersRoundIcon } from "lucide-react"
-import Link from "next/link"
-import { getFormatter, getTranslations } from "@/core/i18n/server"
+import { useFormatter, useTranslations } from "@/core/i18n/translations"
 import { conversationPath } from "@/core/navigation/navigation-utils"
 import { Card, CardContent } from "@/shared/ui/base/card"
 import { Skeleton } from "@/shared/ui/base/skeleton"
 import { formatMessageSentAt } from "../message-timestamp"
-import { readInbox } from "../screen-reads"
+import { inboxQuery } from "../queries"
 import { StartConversationDialog } from "./start-conversation-dialog"
+import { Link } from "@/core/navigation/router"
 
-export async function MessagesScreen() {
-  const [conversations, t, format] = await Promise.all([readInbox(), getTranslations("Messages"), getFormatter()])
+export function MessagesScreen() {
+  const { data: conversations } = useSuspenseQuery(inboxQuery)
+  const t = useTranslations("Messages")
+  const format = useFormatter()
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-8 sm:px-6">

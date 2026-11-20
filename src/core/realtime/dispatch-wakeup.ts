@@ -1,5 +1,3 @@
-import "server-only"
-
 import { setTimeout as sleep } from "node:timers/promises"
 
 /** Wakes a waiting dispatcher without losing signals that arrive before it starts waiting. */

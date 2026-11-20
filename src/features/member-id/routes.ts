@@ -1,5 +1,3 @@
-import "server-only"
-
 import { createRoute, z } from "@hono/zod-openapi"
 import type { Context, MiddlewareHandler } from "hono"
 import { type ApiEnv, createRouter } from "@/core/http"

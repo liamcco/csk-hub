@@ -1,5 +1,3 @@
-import "server-only"
-
 import { and, eq, isNull } from "drizzle-orm"
 import { group, groupMember } from "@/core/db/schema/org-structure"
 import { type OrgStructureTransaction, RuleViolation } from "./operation"

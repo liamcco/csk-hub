@@ -1,7 +1,6 @@
 "use client"
 
 import { LogOutIcon, SettingsIcon, UserRoundIcon } from "lucide-react"
-import Link from "next/link"
 import { useState } from "react"
 import { useTranslations } from "@/core/i18n/translations"
 import { Avatar, AvatarFallback, AvatarImage } from "@/shared/ui/base/avatar"
@@ -18,11 +17,13 @@ import {
 import { toast } from "@/shared/ui/base/toast"
 import { logout } from "./logout"
 import { ROUTES } from "./site"
+import { Link, useAppRouter } from "@/core/navigation/router"
 
 /** Combines account navigation and sign-out. */
 export function AccountMenu({ user }: { user: { name: string; image?: string | null } }) {
   const t = useTranslations("Navigation")
   const [isPending, setIsPending] = useState(false)
+  const router = useAppRouter()
 
   async function handleLogout() {
     setIsPending(true)
@@ -32,7 +33,7 @@ export function AccountMenu({ user }: { user: { name: string; image?: string | n
         toast.add({ type: "error", title: t("logoutFailed") })
         return
       }
-      window.location.assign(ROUTES.login)
+      await router.sessionChanged(ROUTES.login)
     } catch {
       toast.add({ type: "error", title: t("logoutFailed") })
     } finally {

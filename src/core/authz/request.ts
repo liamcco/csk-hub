@@ -1,5 +1,3 @@
-import "server-only"
-
 import { getFreshRequestSession } from "@/core/auth/session.server"
 import { db } from "@/core/db"
 import { createAuthorization } from "./authorization"

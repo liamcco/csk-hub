@@ -1,7 +1,5 @@
 "use client"
 
-import Link from "next/link"
-import { useRouter, useSearchParams } from "next/navigation"
 import { useState } from "react"
 import { useTranslations } from "@/core/i18n/translations"
 import { getPostLoginPath, twoFactorPath } from "@/core/navigation/navigation-utils"
@@ -10,6 +8,7 @@ import { Alert, AlertDescription } from "@/shared/ui/base/alert"
 import { PasswordResetForm } from "./password-reset-form"
 import { PasswordResetRequestForm } from "./password-reset-request-form"
 import type { PasswordResetCompletion } from "./service"
+import { Link, useAppRouter, useSearchParams } from "@/core/navigation/router"
 
 export function PasswordResetRequest() {
   const t = useTranslations("Public.passwordReset")
@@ -40,7 +39,7 @@ export function PasswordResetRequest() {
 
 export function PasswordReset() {
   const t = useTranslations("Public.passwordReset")
-  const router = useRouter()
+  const router = useAppRouter()
   const searchParams = useSearchParams()
   const token = searchParams.get("token") ?? undefined
   const email = searchParams.get("email") ?? ""
@@ -71,7 +70,7 @@ export function PasswordReset() {
 
   function handleResetSuccess(completion: PasswordResetCompletion) {
     if ("signIn" in completion) {
-      router.replace(getPostLoginPath(completion.signIn.role))
+      router.sessionChanged(getPostLoginPath(completion.signIn.role))
       return
     }
 

@@ -1,13 +1,15 @@
+import { useSuspenseQuery } from "@tanstack/react-query"
 import { ArrowLeft } from "lucide-react"
-import Link from "next/link"
-import { getTranslations } from "@/core/i18n/server"
+import { useTranslations } from "@/core/i18n/translations"
 import { ROUTES } from "@/core/navigation/site"
 import { Skeleton } from "@/shared/ui/base/skeleton"
-import { getProfileEditor } from "../query"
+import { profileEditorQuery } from "../queries"
 import { EditProfileForm } from "./form"
+import { Link } from "@/core/navigation/router"
 
-export async function EditProfileScreen() {
-  const [voices, t] = await Promise.all([getProfileEditor(), getTranslations("MemberProfiles")])
+export function EditProfileScreen() {
+  const { data: voices } = useSuspenseQuery(profileEditorQuery)
+  const t = useTranslations("MemberProfiles")
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-4 py-8 sm:px-6">
       <Link

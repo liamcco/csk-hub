@@ -1,5 +1,3 @@
-import "server-only"
-
 import { asc, eq } from "drizzle-orm"
 import { alias } from "drizzle-orm/pg-core"
 import type { Database } from "@/core/db"

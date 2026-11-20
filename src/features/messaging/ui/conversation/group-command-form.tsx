@@ -1,6 +1,5 @@
 "use client"
 
-import { useRouter } from "next/navigation"
 import { useActionState, useEffect, useRef, useState } from "react"
 import { useTranslations } from "@/core/i18n/translations"
 import { Button } from "@/shared/ui/base/button"
@@ -9,6 +8,7 @@ import { MAX_GROUP_NAME_LENGTH } from "../../model/group-conversation"
 import { groupConversationCommand } from "../api-commands"
 import type { MessageCommandState } from "../composer/message-command-state"
 import { MemberSelection } from "../member-selection"
+import { useAppRouter } from "@/core/navigation/router"
 
 type Member = { id: string; name: string }
 const initialState: MessageCommandState = { status: "idle" }
@@ -30,7 +30,7 @@ export function GroupCommandForm({
 }) {
   const t = useTranslations("Messages")
   const common = useTranslations("Common")
-  const router = useRouter()
+  const router = useAppRouter()
   const nameInput = useRef<HTMLInputElement>(null)
   const [editing, setEditing] = useState(false)
   const [draftName, setDraftName] = useState(name ?? "")

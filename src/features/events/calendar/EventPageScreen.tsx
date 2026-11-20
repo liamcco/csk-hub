@@ -1,7 +1,6 @@
-import { io } from "next/cache"
-import Link from "next/link"
+import { useSuspenseQuery } from "@tanstack/react-query"
 import type { ReactNode } from "react"
-import { getFormatter, getTranslations } from "@/core/i18n/server"
+import { useFormatter, useTranslations } from "@/core/i18n/translations"
 import { PageBreadcrumb } from "@/core/navigation/PageBreadcrumb"
 import { RichTextContent } from "@/features/rich-text/view"
 import { ContentPage } from "@/shared/layouts/content-page"
@@ -11,18 +10,19 @@ import { Skeleton } from "@/shared/ui/base/skeleton"
 import { stockholmInstant } from "../model"
 import { eventManagementPath } from "../ui/command-state"
 import { StatusBadge } from "../ui/StatusBadge"
-import { readEventPage } from "../ui/screen-reads"
+import { eventPageQuery } from "../ui/queries"
 import { eventDays } from "./days"
 import { EventKind } from "./EventKind"
 import type { EventPage } from "./query"
+import { Link } from "@/core/navigation/router"
 
 /**
  * One Event as its Audience reads it. Anything the viewer may not see, including every Draft, is
  * answered as a missing page.
  */
-export async function EventPageScreen({ eventId }: { eventId: string }) {
-  await io()
-  const [page, t] = await Promise.all([readEventPage(eventId), getTranslations("Events.calendar.page")])
+export function EventPageScreen({ eventId }: { eventId: string }) {
+  const { data: page } = useSuspenseQuery(eventPageQuery(eventId))
+  const t = useTranslations("Events.calendar.page")
 
   return (
     <ContentPage>
@@ -58,12 +58,10 @@ export async function EventPageScreen({ eventId }: { eventId: string }) {
   )
 }
 
-async function EventFacts({ page }: { page: EventPage }) {
-  const [t, format, audience] = await Promise.all([
-    getTranslations("Events.calendar.page"),
-    getFormatter(),
-    describeAudience(page.targets)
-  ])
+function EventFacts({ page }: { page: EventPage }) {
+  const t = useTranslations("Events.calendar.page")
+  const format = useFormatter()
+  const audience = useAudienceDescription(page.targets)
   const { firstDay, lastDay } = eventDays(page)
   const when = page.allDay
     ? format.dateTimeRange(stockholmInstant(firstDay) as Date, stockholmInstant(lastDay) as Date, {
@@ -125,8 +123,9 @@ function Fact({ label, children }: { label: string; children: ReactNode }) {
 }
 
 /** Who the Event is for, in words: "KK", "Basses in KK", "Everyone in CSK". */
-async function describeAudience(targets: EventPage["targets"]) {
-  const [t, format] = await Promise.all([getTranslations("Events.calendar"), getFormatter()])
+function useAudienceDescription(targets: EventPage["targets"]) {
+  const t = useTranslations("Events.calendar")
+  const format = useFormatter()
   if (targets.length === 0) return t("everyoneInCsk")
   const words = targets.map(({ groupName, voiceFamily }) => {
     if (!voiceFamily) return groupName ?? ""

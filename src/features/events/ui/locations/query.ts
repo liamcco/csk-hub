@@ -1,5 +1,3 @@
-import "server-only"
-
 import { asc, count, desc, eq } from "drizzle-orm"
 import type { PermissionRequest } from "@/core/authz"
 import type { Database } from "@/core/db"

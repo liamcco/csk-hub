@@ -1094,5 +1094,15 @@
     "newMessage": "Nytt meddelande",
     "notification": "Avisering",
     "open": "Öppna"
+  },
+  "Errors": {
+    "notFoundTitle": "Sidan hittades inte",
+    "notFoundDescription": "Sidan finns inte, eller så har du inte tillgång till den.",
+    "forbiddenTitle": "Ingen behörighet",
+    "forbiddenDescription": "Du har inte tillgång till den här sidan.",
+    "failedTitle": "Något gick fel",
+    "failedDescription": "Sidan kunde inte laddas. Kontrollera din anslutning och försök igen.",
+    "retry": "Försök igen",
+    "home": "Till startsidan"
   }
 }

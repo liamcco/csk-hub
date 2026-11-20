@@ -15,14 +15,10 @@ Object.defineProperty(globalThis, "window", {
   configurable: true
 })
 
-// Server modules guard themselves with `server-only`, which throws outside a server
-// runtime. The guard protects the bundler, not the tests.
-mock.module("server-only", () => ({}))
-
 // Bun fixes a module's export names when it is first loaded. Tests that mock these modules
 // with only the exports they use would otherwise hide the rest from every later test file,
 // depending on run order. Loading the real modules first keeps every name available.
-await import("next/navigation")
+await import("@/core/navigation/router")
 // The activity suite mocks the database and session modules before loading them itself.
 if (process.env.POSTGRES_URL && !process.env.CSK_ACTIVITY_TEST) await import("@/core/authz")
 

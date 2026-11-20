@@ -1,5 +1,3 @@
-import "server-only"
-
 import nodemailer from "nodemailer"
 import { env } from "@/core/config/env"
 import type { EmailBatchResult, EmailClientOptions, EmailMessage, EmailSendResult, SmtpConfig } from "./types"

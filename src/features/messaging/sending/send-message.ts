@@ -1,5 +1,3 @@
-import "server-only"
-
 import { eq } from "drizzle-orm"
 import { conversation } from "@/core/db/schema/messaging"
 import { requireActiveGroupMember } from "../group-conversations"

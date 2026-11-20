@@ -1,6 +1,5 @@
 "use client"
 
-import { useRouter } from "next/navigation"
 import { useActionState, useEffect, useRef } from "react"
 import { useTranslations } from "@/core/i18n/translations"
 import { InputField } from "@/shared/forms/fields"
@@ -9,13 +8,14 @@ import { DialogClose } from "@/shared/ui/base/dialog"
 import { FieldError, FieldGroup } from "@/shared/ui/base/field"
 import { toast } from "@/shared/ui/base/toast"
 import { type AddUserState, addUser } from "../user-commands"
+import { useAppRouter } from "@/core/navigation/router"
 
 export function AddUserForm() {
   const t = useTranslations("Members")
   const common = useTranslations("Common")
   const [state, action, pending] = useActionState<AddUserState, FormData>(addUser, { status: "idle" })
   const formRef = useRef<HTMLFormElement>(null)
-  const router = useRouter()
+  const router = useAppRouter()
 
   useEffect(() => {
     if (state.status === "success" || state.status === "email-failed") {

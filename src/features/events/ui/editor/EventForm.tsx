@@ -1,7 +1,6 @@
 "use client"
 
 import { ArrowDown, ArrowUp, Plus, X } from "lucide-react"
-import Link from "next/link"
 import { type FormEvent, startTransition, useActionState, useEffect, useId, useRef, useState } from "react"
 import { useTranslations } from "@/core/i18n/translations"
 import { RichTextEditor } from "@/features/rich-text"
@@ -29,6 +28,7 @@ import { DETAIL_LABEL_MAX_LENGTH, LONG_TEXT_MAX_LENGTH, SHORT_TEXT_MAX_LENGTH, T
 import { type EventCommand, useEventCommand } from "../use-event-command"
 import type { EventFormOptions, EventFormValues } from "./query"
 import { eventFormVersion, parseStoredEvent, snapshotEventForm } from "./unsaved-event"
+import { Link } from "@/core/navigation/router"
 
 const VOICE_FAMILIES = ["S", "A", "T", "B"]
 

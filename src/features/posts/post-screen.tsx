@@ -1,5 +1,5 @@
-import Link from "next/link"
-import { getTranslations } from "@/core/i18n/server"
+import { useSuspenseQuery } from "@tanstack/react-query"
+import { useTranslations } from "@/core/i18n/translations"
 import { newsPostEditPath } from "@/core/navigation/navigation-utils"
 import { PageBreadcrumb } from "@/core/navigation/PageBreadcrumb"
 import { RichTextContent } from "@/features/rich-text/view"
@@ -9,12 +9,13 @@ import { Skeleton } from "@/shared/ui/base/skeleton"
 import { cn } from "@/shared/utils"
 import { ConfirmPostCommand } from "./compose/ConfirmPostCommand"
 import { PostByline } from "./post-byline"
-import { readPost } from "./query"
+import { postQuery } from "./query"
 import { PostReadMarker } from "./unread"
+import { Link } from "@/core/navigation/router"
 
 /** Changing a published Post, offered only to whoever may make the change. */
-async function PostControls({ postId, canChange }: { postId: string; canChange: boolean }) {
-  const t = await getTranslations("Posts")
+function PostControls({ postId, canChange }: { postId: string; canChange: boolean }) {
+  const t = useTranslations("Posts")
   if (!canChange) return null
 
   return (
@@ -30,8 +31,10 @@ async function PostControls({ postId, canChange }: { postId: string; canChange: 
   )
 }
 
-export async function PostScreen({ postId }: { postId: string }) {
-  const { post, permissions } = await readPost(postId)
+export function PostScreen({ postId }: { postId: string }) {
+  const {
+    data: { post, permissions }
+  } = useSuspenseQuery(postQuery(postId))
 
   return (
     <ContentPage>

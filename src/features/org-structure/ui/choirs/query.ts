@@ -1,5 +1,3 @@
-import "server-only"
-
 import type { Database } from "@/core/db"
 import { compareVoices, type Voice } from "@/features/voice/model"
 import { type GroupSummary, listGroupSummaries } from "../group-summaries"

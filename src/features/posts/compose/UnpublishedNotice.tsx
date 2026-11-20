@@ -1,10 +1,10 @@
 "use client"
 
-import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useEffect, useRef } from "react"
 import { useTranslations } from "@/core/i18n/translations"
 import { toast } from "@/shared/ui/base/toast"
 import { isUnpublishedTo, UNPUBLISHED_NOTICE_PARAM } from "./unpublished-notice"
+import { useAppRouter, usePathname, useSearchParams } from "@/core/navigation/router"
 
 /**
  * Confirms an unpublish once the User lands on the feed, naming whose drafts the Post went
@@ -12,7 +12,7 @@ import { isUnpublishedTo, UNPUBLISHED_NOTICE_PARAM } from "./unpublished-notice"
  */
 export function UnpublishedNotice() {
   const t = useTranslations("Posts")
-  const router = useRouter()
+  const router = useAppRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const shown = useRef(false)

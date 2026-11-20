@@ -1,5 +1,3 @@
-import "server-only"
-
 import { ECDH } from "node:crypto"
 import { z } from "zod"
 import type { NotificationSubscription } from "./types"

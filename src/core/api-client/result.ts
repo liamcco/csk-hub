@@ -21,3 +21,23 @@ export function errorCode(error: unknown): string | null {
   if (typeof error === "object" && error && "code" in error && typeof error.code === "string") return error.code
   return null
 }
+
+/**
+ * Unwraps a read for a query: the data, or an `ApiRequestError` carrying the status, which the
+ * router turns into the login redirect (401) or the not-found screen (403 and 404).
+ */
+export async function read<T>(call: Promise<ApiResult<T>>): Promise<T> {
+  const { data, error, response } = await call
+  if (data !== undefined && response?.ok) return data
+  throw new ApiRequestError(response?.status ?? 0, error)
+}
+
+/** Whether a failed read means the caller is signed out or no longer active. */
+export function isUnauthenticated(error: unknown) {
+  return error instanceof ApiRequestError && error.status === 401
+}
+
+/** Whether a failed read means the resource is missing or not the caller's to see. */
+export function isUnavailable(error: unknown) {
+  return error instanceof ApiRequestError && (error.status === 403 || error.status === 404)
+}

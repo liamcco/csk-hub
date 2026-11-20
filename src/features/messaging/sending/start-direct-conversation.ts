@@ -1,5 +1,3 @@
-import "server-only"
-
 import { and, eq, sql } from "drizzle-orm"
 import { conversation, conversationReadState, directConversation } from "@/core/db/schema/messaging"
 import type { MessagingContext } from "../model/context"

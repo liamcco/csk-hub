@@ -1,6 +1,4 @@
-import Link from "next/link"
-import { Suspense } from "react"
-import { getCapabilities } from "@/core/api-client/capabilities"
+import { useCapabilities } from "@/core/api-client/capabilities"
 import { app } from "@/core/config/app"
 import { useTranslations } from "@/core/i18n/translations"
 import { type NavigationRouteId, ROUTES } from "@/core/navigation/site"
@@ -10,9 +8,9 @@ import { AccountMenu } from "./AccountMenu"
 import { MobileNavigation } from "./MobileNavigation"
 import { NavLinks } from "./NavLinks"
 import { QuickAccessBar } from "./QuickAccessBar"
-import { RefreshOnReturn } from "./RefreshOnReturn"
 import { UnreadBadge, UnreadIndicator } from "./UnreadBadge"
 import type { UnreadSources } from "./unread-sources"
+import { Link } from "@/core/navigation/router"
 
 export type NavigationRoute = {
   id: NavigationRouteId
@@ -54,7 +52,6 @@ export function AppNavigationTemplate({ config, unreadSources = {} }: AppNavigat
     id: item.id,
     href: ROUTES[item.id],
     label: item.label,
-    // Only render unread badge when not in suspense fallback.
     badge: config ? <UnreadBadge count={unreadSources[item.id]} /> : undefined
   }))
 
@@ -83,7 +80,6 @@ export function AppNavigationTemplate({ config, unreadSources = {} }: AppNavigat
                 <MobileNavigation items={items} indicator={<UnreadIndicator counts={Object.values(unreadSources)} />} />
               </div>
             ) : null}
-            {config ? <RefreshOnReturn /> : null}
           </div>
           {config ? (
             <div className="col-start-1 row-start-1 flex">
@@ -101,16 +97,9 @@ export interface AppNavigationProps {
   unreadSources: UnreadSources
 }
 
+/** The signed-in shell's header; it shows the signed-out header until the capabilities load. */
 export function AppNavigation({ unreadSources }: AppNavigationProps) {
-  return (
-    <Suspense fallback={<AppNavigationTemplate config={null} />}>
-      <RuntimeAppNavigation unreadSources={unreadSources} />
-    </Suspense>
-  )
-}
-
-export async function RuntimeAppNavigation({ unreadSources }: AppNavigationProps) {
-  const capabilities = await getCapabilities()
+  const capabilities = useCapabilities()
   return (
     <AppNavigationTemplate
       unreadSources={unreadSources}
@@ -128,13 +117,5 @@ export async function RuntimeAppNavigation({ unreadSources }: AppNavigationProps
 
 /** The quick-access bar for signed-in members on small screens. Render it after the page content, spacer last. */
 export function AppQuickAccessBar() {
-  return (
-    <Suspense fallback={null}>
-      <RuntimeQuickAccessBar />
-    </Suspense>
-  )
-}
-
-async function RuntimeQuickAccessBar() {
-  return (await getCapabilities()) ? <QuickAccessBar /> : null
+  return useCapabilities() ? <QuickAccessBar /> : null
 }

@@ -1,5 +1,3 @@
-import "server-only"
-
 import type { AuthorizationActor, PermissionRequest } from "@/core/authz"
 import { listVoiceCapabilities, setVoiceCapabilities } from "@/features/voice"
 import { isVoiceDivision, VOICE_DIVISIONS } from "@/features/voice/model"

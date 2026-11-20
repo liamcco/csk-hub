@@ -1,5 +1,3 @@
-import "server-only"
-
 import { env } from "@/core/config/env"
 import { logger } from "@/core/logging"
 import { getErrorCode, getErrorName } from "@/shared/errors"

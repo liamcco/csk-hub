@@ -1,28 +1,18 @@
-import "server-only"
-
 import { type CurrentCapabilities, getCurrentCapabilities } from "@contract/client"
-import { notFound } from "next/navigation"
-import { cache } from "react"
-import { ApiRequestError } from "./result"
-import { getServerApiClient } from "./server"
+import { queryOptions, useQuery } from "@tanstack/react-query"
+import { browserApiClient } from "./browser"
+import { read } from "./result"
 
 /**
- * The signed-in User's capabilities for this render, or null when signed out or inactive. React's
- * cache scopes it to one request, so permissions are never shared between Users or requests.
+ * The signed-in User's name, photo, saved locale and application-wide capabilities. They are UI
+ * hints for the shell and page gates only: every API operation enforces authority again.
  */
-export const getCapabilities = cache(async (): Promise<CurrentCapabilities | null> => {
-  const { data, error, response } = await getCurrentCapabilities({ client: await getServerApiClient() })
-  if (data) return data
-  if (response?.status === 401) return null
-  throw new ApiRequestError(response?.status ?? 0, error)
+export const capabilitiesQuery = queryOptions({
+  queryKey: ["capabilities"],
+  queryFn: () => read(getCurrentCapabilities({ client: browserApiClient }))
 })
 
-/**
- * A page-level gate for administration screens. It only hides the page; every API operation the
- * page uses enforces authority again.
- */
-export async function requireCapability(permission: keyof CurrentCapabilities["permissions"]) {
-  const capabilities = await getCapabilities()
-  if (!capabilities?.permissions[permission]) notFound()
-  return capabilities
+/** The current capabilities, or undefined while they load or when signed out. */
+export function useCapabilities(): CurrentCapabilities | undefined {
+  return useQuery(capabilitiesQuery).data
 }

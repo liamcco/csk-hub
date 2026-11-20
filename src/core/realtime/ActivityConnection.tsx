@@ -1,51 +1,41 @@
-"use client"
-
-import { usePathname, useRouter, useSearchParams } from "next/navigation"
-import { useEffect, useRef, useTransition } from "react"
+import { type QueryKey, useQueryClient } from "@tanstack/react-query"
+import { useEffect, useRef } from "react"
 import { useTranslations } from "@/core/i18n/translations"
 import { parseSafeInternalPath } from "@/core/navigation/navigation-utils"
-import { type ActivityEvent, activityEventSchema, activityReadySchema } from "@/core/realtime/events"
+import { type ActivityChange, type ActivityEvent, activityEventSchema, activityReadySchema } from "@/core/realtime/events"
 import { toast } from "@/shared/ui/base/toast"
 import { canPresentActivity } from "./presentation"
+import { refreshReads, useAppRouter, usePathname, useSearchParams } from "@/core/navigation/router"
 
-/** One SSE connection for this session. Hidden clients never acknowledge notifications. */
-export function ActivityConnection({ userId }: { userId: string }) {
-  const router = useRouter()
+/** The cached reads an activity change affects, composed by the app from its features. */
+export type AffectedReads = (change: ActivityChange) => QueryKey[]
+
+/**
+ * One SSE connection for this session. Each change invalidates the cached reads it affects, so
+ * pages on screen refetch and others refresh when next shown. Hidden clients never acknowledge
+ * notifications.
+ */
+export function ActivityConnection({ userId, affectedReads }: { userId: string; affectedReads: AffectedReads }) {
+  const router = useAppRouter()
+  const queryClient = useQueryClient()
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const t = useTranslations("Realtime")
   const translate = useRef(t)
   translate.current = t
-  const [pending, startTransition] = useTransition()
   const route = useRef({ pathname, older: searchParams.has("before") })
   route.current = { pathname, older: searchParams.has("before") }
-  const refreshing = useRef(pending)
-  refreshing.current = pending
+  const affected = useRef(affectedReads)
+  affected.current = affectedReads
 
   useEffect(() => {
     let disposed = false
-    let timer: ReturnType<typeof setTimeout> | undefined
-    let dirty = false
     const deferred = new Map<string, ActivityEvent>()
     const seen = new Set<string>()
     const source = new EventSource("/api/realtime/events")
 
-    const refresh = () => {
-      dirty = true
-      if (timer) return
-      const run = () => {
-        timer = undefined
-        if (disposed || document.visibilityState !== "visible") return
-        if (refreshing.current) {
-          timer = setTimeout(run, 150)
-          return
-        }
-        if (dirty) {
-          dirty = false
-          startTransition(() => router.refresh())
-        }
-      }
-      timer = setTimeout(run, 100)
+    const invalidate = (change: ActivityChange) => {
+      for (const queryKey of affected.current(change)) void queryClient.invalidateQueries({ queryKey })
     }
 
     const present = async (event: ActivityEvent) => {
@@ -93,13 +83,12 @@ export function ActivityConnection({ userId }: { userId: string }) {
         const event = parsed.data
         seen.add(event.id)
         if (seen.size > 2_000) seen.delete(seen.values().next().value ?? "")
+        invalidate(event)
         if (document.visibilityState !== "visible") {
           if (event.notify && deferred.size < 100) deferred.set(event.id, event)
-          dirty = true
           return
         }
         void present(event)
-        refresh()
       } catch {
         /* Malformed transport data does not mutate UI or acknowledge anything. */
       }
@@ -108,16 +97,17 @@ export function ActivityConnection({ userId }: { userId: string }) {
       if (document.visibilityState !== "visible") return
       for (const event of deferred.values()) void present(event)
       deferred.clear()
-      refresh()
     }
     const unauthorized = () => {
+      // The account changed status or the session ended: establish who is signed in again.
       source.close()
-      refresh()
+      void router.reauthenticate()
     }
     const ready = (message: MessageEvent<string>) => {
       try {
         const parsed = activityReadySchema.safeParse(JSON.parse(message.data))
-        if (parsed.success && parsed.data.reset) refresh()
+        // The server could not replay what this client missed: every cached read may be stale.
+        if (parsed.success && parsed.data.reset) void refreshReads(queryClient)
       } catch {
         /* Invalid handshakes do not trigger a route refresh. */
       }
@@ -143,12 +133,11 @@ export function ActivityConnection({ userId }: { userId: string }) {
     return () => {
       disposed = true
       source.close()
-      clearTimeout(timer)
       window.removeEventListener("online", resume)
       window.removeEventListener("focus", resume)
       document.removeEventListener("visibilitychange", resume)
     }
-  }, [router, userId])
+  }, [router, queryClient, userId])
 
   return null
 }

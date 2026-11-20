@@ -1,5 +1,3 @@
-import "server-only"
-
 import { createHash } from "node:crypto"
 import { and, eq, inArray, sql } from "drizzle-orm"
 import { user } from "@/core/db/schema/auth"

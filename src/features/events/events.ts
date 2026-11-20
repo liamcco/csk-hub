@@ -1,5 +1,3 @@
-import "server-only"
-
 import { eq } from "drizzle-orm"
 import { user } from "@/core/db/schema/auth"
 import { event, eventDetail, eventTarget, gig, location, rehearsal, socialEvent } from "@/core/db/schema/events"

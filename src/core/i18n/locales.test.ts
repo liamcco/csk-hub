@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test"
 import { getLocaleCookieValue, localeCookie, writeLocaleCookie } from "./locale-cookie"
-import { resolveLocalePreference } from "./locale-preference"
+import { negotiateLocale, resolveLocalePreference } from "./locale-preference"
 import { localeSchema } from "./locale-validation"
 import { getLocaleName, isLocale } from "./locales"
 
@@ -32,6 +32,13 @@ describe("locale validation", () => {
 
   test("leaves locale resolution to the browser when the saved locale is unset", () => {
     expect(resolveLocalePreference(getLocaleCookieValue(undefined), null)).toBeUndefined()
+  })
+
+  test("falls back to the browser's languages, then the default locale", () => {
+    expect(negotiateLocale(["fr-FR", "de-AT", "en"])).toBe("de")
+    expect(negotiateLocale(["en-GB"])).toBe("en")
+    expect(negotiateLocale(["fr", "es"])).toBe("sv")
+    expect(negotiateLocale([])).toBe("sv")
   })
 
   test("uses only supported browser locale cookies", () => {

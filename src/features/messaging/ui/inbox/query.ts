@@ -1,5 +1,3 @@
-import "server-only"
-
 import { and, count, desc, eq, or, sql } from "drizzle-orm"
 import { alias } from "drizzle-orm/pg-core"
 import { user } from "@/core/db/schema/auth"

@@ -1,5 +1,3 @@
-import "server-only"
-
 import type { ActivityDeliveryPolicy } from "@/core/realtime/delivery-access"
 import { canReceiveConversationActivity, hasOpenedMessage } from "./events"
 

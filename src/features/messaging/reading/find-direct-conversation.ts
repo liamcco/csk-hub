@@ -1,5 +1,3 @@
-import "server-only"
-
 import { and, eq } from "drizzle-orm"
 import type { Database } from "@/core/db"
 import { directConversation } from "@/core/db/schema/messaging"

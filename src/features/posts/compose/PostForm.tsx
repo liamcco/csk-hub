@@ -1,7 +1,5 @@
 "use client"
 
-import Link from "next/link"
-import { useRouter } from "next/navigation"
 import { type FormEvent, useState, useTransition } from "react"
 import { useTranslations } from "@/core/i18n/translations"
 import { type RichTextDocument, RichTextEditor } from "@/features/rich-text"
@@ -13,6 +11,7 @@ import { postDocument } from "../post-document"
 import { POST_TITLE_MAX_LENGTH } from "./schemas"
 import { type PostFormState, type PostFormTarget, submitPost } from "./submit"
 import { useUnsavedPost } from "./use-unsaved-post"
+import { Link, useAppRouter } from "@/core/navigation/router"
 
 const POST_BODY_LABEL_ID = "post-body-label"
 
@@ -36,7 +35,7 @@ const NOTHING_WRITTEN = { title: "", body: undefined }
 export function PostForm({ target, stage, initial, unsaved: storage, cancelHref }: PostFormProps) {
   const t = useTranslations("Posts")
   const common = useTranslations("Common")
-  const router = useRouter()
+  const router = useAppRouter()
   const [state, setState] = useState<PostFormState>({ status: "idle" })
   const [pendingIntent, setPendingIntent] = useState<"draft" | "publish" | null>(null)
   const [, startTransition] = useTransition()

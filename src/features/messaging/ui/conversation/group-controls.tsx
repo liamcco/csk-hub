@@ -1,5 +1,5 @@
 import { SettingsIcon, XIcon } from "lucide-react"
-import { getTranslations } from "@/core/i18n/server"
+import { useTranslations } from "@/core/i18n/translations"
 import { Button } from "@/shared/ui/base/button"
 import {
   Dialog,
@@ -13,7 +13,7 @@ import {
 import { GroupCommandForm } from "./group-command-form"
 import { LeaveGroupDialog } from "./leave-group-dialog"
 
-export async function GroupControls({
+export function GroupControls({
   conversationId,
   name,
   members
@@ -22,7 +22,8 @@ export async function GroupControls({
   name: string
   members: { id: string; name: string }[]
 }) {
-  const [t, ui] = await Promise.all([getTranslations("Messages"), getTranslations("Ui")])
+  const t = useTranslations("Messages")
+  const ui = useTranslations("Ui")
   return (
     <Dialog>
       <DialogTrigger

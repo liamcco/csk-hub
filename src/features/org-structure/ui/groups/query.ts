@@ -1,5 +1,3 @@
-import "server-only"
-
 import type { Database } from "@/core/db"
 import { type GroupSummary, listGroupSummaries } from "../group-summaries"
 

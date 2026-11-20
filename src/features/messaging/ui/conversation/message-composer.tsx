@@ -1,7 +1,6 @@
 "use client"
 
 import { ArrowUpIcon } from "lucide-react"
-import { useRouter } from "next/navigation"
 import { useActionState, useEffect, useState } from "react"
 import { useTranslations } from "@/core/i18n/translations"
 import { conversationPath } from "@/core/navigation/navigation-utils"
@@ -13,12 +12,13 @@ import { sendMessageCommand } from "../api-commands"
 import { createMessageIdempotencyKey, nextMessageIdempotencyKey } from "../composer/idempotency-key"
 import type { MessageCommandState } from "../composer/message-command-state"
 import { submitOnEnter } from "../composer/submit-on-enter"
+import { useAppRouter } from "@/core/navigation/router"
 
 const initialState: MessageCommandState = { status: "idle" }
 
 export function MessageComposer({ conversationId, readOnly }: { conversationId: string; readOnly: boolean }) {
   const t = useTranslations("Messages")
-  const router = useRouter()
+  const router = useAppRouter()
   const { scrollToEnd } = useMessageScroller()
 
   const [idempotencyKey, setIdempotencyKey] = useState(createMessageIdempotencyKey)

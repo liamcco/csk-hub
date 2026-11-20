@@ -1,5 +1,3 @@
-import "server-only"
-
 import type { db } from "@/core/db"
 import type { EventResult, EventViolation } from "./model"
 

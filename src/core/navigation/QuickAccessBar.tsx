@@ -1,14 +1,13 @@
 "use client"
 
 import { CalendarDays, CircleUser, EllipsisIcon, House, type LucideIcon, MessageCircle, Newspaper } from "lucide-react"
-import Link from "next/link"
-import { usePathname, useRouter } from "next/navigation"
 import { type MouseEvent, type PointerEvent, type RefObject, Suspense, useEffect, useRef, useState } from "react"
 import { useTranslations } from "@/core/i18n/translations"
 import { cn } from "@/shared/utils"
 import { isActiveRoute } from "./navigation-utils"
 import { slotIndexAt } from "./quick-access"
 import { ROUTES } from "./site"
+import { Link, useAppRouter, usePathname } from "@/core/navigation/router"
 
 type ShortcutLabel = "events" | "routes.news" | "routes.home" | "routes.messages" | "profile"
 
@@ -92,7 +91,7 @@ function CurrentBar() {
 
 function Bar({ pathname }: { pathname: string | null }) {
   const t = useTranslations("Navigation")
-  const router = useRouter()
+  const router = useAppRouter()
   const [collapsed, setCollapsed] = useCollapseOnScroll(pathname)
   useBottomBarOffset()
 

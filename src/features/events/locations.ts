@@ -1,5 +1,3 @@
-import "server-only"
-
 import { eq } from "drizzle-orm"
 import { location } from "@/core/db/schema/events"
 import {

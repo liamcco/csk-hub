@@ -1,5 +1,3 @@
-import "server-only"
-
 import { and, asc, desc, eq, exists, isNotNull, isNull, notExists, or } from "drizzle-orm"
 import { alias } from "drizzle-orm/pg-core"
 import type { Database } from "@/core/db"

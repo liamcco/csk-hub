@@ -1,6 +1,6 @@
-import Link from "next/link"
+import { useSuspenseQuery } from "@tanstack/react-query"
 import { Fragment } from "react"
-import { getFormatter, getTimeZone, getTranslations } from "@/core/i18n/server"
+import { useFormatter, useTimeZone, useTranslations } from "@/core/i18n/translations"
 import { conversationPath, memberProfilePath } from "@/core/navigation/navigation-utils"
 import { PageBreadcrumb } from "@/core/navigation/PageBreadcrumb"
 import { Message, MessageContent, MessageGroup } from "@/shared/ui/base/message"
@@ -15,12 +15,13 @@ import {
 import { Skeleton } from "@/shared/ui/base/skeleton"
 import { cn } from "@/shared/utils"
 import { formatMessageSentAt } from "../message-timestamp"
-import { readConversation } from "../screen-reads"
+import { conversationQuery } from "../queries"
 import { GroupControls } from "./group-controls"
 import { MessageComposer } from "./message-composer"
 import { ReadMarker } from "./read-marker"
 import { getMessageLayout } from "./timeline-layout"
 import { createMessageCalendarDayKey, formatMessageDay, formatMessageTime } from "./timestamp"
+import { Link } from "@/core/navigation/router"
 
 /**
  * Below `md` the conversation is a chat screen: it takes the height left under the header (and above the quick-access
@@ -34,19 +35,17 @@ const screenClass =
 /** Fills the screen's spare height on small screens, but never shrinks below a few lines of messages. */
 const paneClass = "min-h-40 flex-1 md:h-[min(60vh,40rem)] md:flex-none"
 
-export async function ConversationScreen({
+export function ConversationScreen({
   conversationId,
   beforeSequence
 }: {
   conversationId: string
   beforeSequence?: number
 }) {
-  const [conversation, t, format, timeZone] = await Promise.all([
-    readConversation(conversationId, beforeSequence),
-    getTranslations("Messages"),
-    getFormatter(),
-    getTimeZone()
-  ])
+  const { data: conversation } = useSuspenseQuery(conversationQuery(conversationId, beforeSequence))
+  const t = useTranslations("Messages")
+  const format = useFormatter()
+  const timeZone = useTimeZone()
   const layout = getMessageLayout(conversation.messages, createMessageCalendarDayKey(timeZone))
   return (
     <main className={screenClass}>

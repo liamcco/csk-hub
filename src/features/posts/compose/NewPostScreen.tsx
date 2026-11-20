@@ -1,14 +1,13 @@
-import { Suspense } from "react"
-import { getCapabilities } from "@/core/api-client/capabilities"
-import { getTranslations } from "@/core/i18n/server"
+import { useCapabilities } from "@/core/api-client/capabilities"
+import { useTranslations } from "@/core/i18n/translations"
 import { PageBreadcrumb } from "@/core/navigation/PageBreadcrumb"
 import { ROUTES } from "@/core/navigation/site"
 import { ContentPage } from "@/shared/layouts/content-page"
 import { Skeleton } from "@/shared/ui/base/skeleton"
 import { PostForm } from "./PostForm"
 
-async function ComposeHeader() {
-  const t = await getTranslations("Posts")
+function ComposeHeader() {
+  const t = useTranslations("Posts")
 
   return (
     <div>
@@ -18,9 +17,9 @@ async function ComposeHeader() {
   )
 }
 
-async function ComposeForm() {
+function ComposeForm() {
   // Every active member may write a Post; the API checks again on submit.
-  if (!(await getCapabilities())) return null
+  if (!useCapabilities()) return <Skeleton className="h-56 w-full" />
   return (
     <PostForm
       target={{ kind: "new" }}
@@ -36,9 +35,7 @@ export function NewPostScreen() {
     <ContentPage fill>
       <PageBreadcrumb route="newsCompose" />
       <ComposeHeader />
-      <Suspense fallback={<Skeleton className="h-56 w-full" />}>
-        <ComposeForm />
-      </Suspense>
+      <ComposeForm />
     </ContentPage>
   )
 }

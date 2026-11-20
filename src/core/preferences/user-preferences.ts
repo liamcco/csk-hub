@@ -1,5 +1,3 @@
-import "server-only"
-
 import { eq, sql } from "drizzle-orm"
 import { type Database, db } from "@/core/db"
 import { userPreferences } from "@/core/db/schema/user-preferences"
@@ -14,13 +12,14 @@ import {
  * Loads and validates the preferences stored for a user.
  *
  * @param userId - The Better Auth user whose preferences should be loaded.
+ * @param database - The database to read from; the application database by default.
  * Missing fields and rows receive application defaults. Malformed documents safely resolve to all defaults.
  *
  * @returns A complete, validated preferences object.
  * @throws A database error when the preferences query fails.
  */
-export async function getUserPreferences(userId: string): Promise<UserPreferences> {
-  const [record] = await db
+export async function getUserPreferences(userId: string, database: Database = db): Promise<UserPreferences> {
+  const [record] = await database
     .select({ preferences: userPreferences.preferences })
     .from(userPreferences)
     .where(eq(userPreferences.userId, userId))

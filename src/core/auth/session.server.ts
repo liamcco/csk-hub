@@ -1,5 +1,3 @@
-import "server-only"
-
 import { io } from "next/cache"
 import { headers } from "next/headers"
 import { cache } from "react"

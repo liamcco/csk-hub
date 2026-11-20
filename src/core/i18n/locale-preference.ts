@@ -1,4 +1,4 @@
-import type { Locale } from "./locales"
+import { defaultLocale, isLocale, type Locale } from "./locales"
 
 /**
  * Resolves the locale for a request from its browser-specific choice and the member's saved default.
@@ -13,4 +13,16 @@ export function resolveLocalePreference(
   savedLocale: Locale | null | undefined
 ): Locale | undefined {
   return cookieLocale ?? savedLocale ?? undefined
+}
+
+/**
+ * The locale for a browser with neither a locale cookie nor a saved member locale: its first
+ * supported language, matched by primary subtag (`de-AT` is `de`), else the default locale.
+ */
+export function negotiateLocale(languages: readonly string[]): Locale {
+  for (const language of languages) {
+    const primary = language.toLowerCase().split("-")[0]
+    if (isLocale(primary)) return primary
+  }
+  return defaultLocale
 }

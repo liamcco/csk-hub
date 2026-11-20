@@ -1,5 +1,5 @@
 import type { MemberProfile } from "@contract/client"
-import { getFormatter, getTranslations } from "@/core/i18n/server"
+import { useFormatter, useTranslations } from "@/core/i18n/translations"
 import { Badge } from "@/shared/ui/base/badge"
 import { Card, CardContent, CardHeader } from "@/shared/ui/base/card"
 
@@ -17,8 +17,8 @@ function Positions({ positions }: { positions: Group["positions"] }) {
   ) : null
 }
 
-async function GroupList({ groups, showContext = false }: { groups: Group[]; showContext?: boolean }) {
-  const t = await getTranslations("MemberProfiles")
+function GroupList({ groups, showContext = false }: { groups: Group[]; showContext?: boolean }) {
+  const t = useTranslations("MemberProfiles")
   return (
     <ul className="divide-y">
       {groups.map((group) => (
@@ -46,8 +46,9 @@ export function MemberGroupsCard({ groups, showContext = false }: { groups: Grou
 }
 
 /** Keeps Choir tenure, Section Voice and the singer's assignment distinct. */
-export async function ChoirCard({ choir }: { choir: MemberProfile["choirs"][number] }) {
-  const [t, format] = await Promise.all([getTranslations("MemberProfiles"), getFormatter()])
+export function ChoirCard({ choir }: { choir: MemberProfile["choirs"][number] }) {
+  const t = useTranslations("MemberProfiles")
+  const format = useFormatter()
   return (
     <Card className="border-t-4 border-primary/40">
       <CardHeader>

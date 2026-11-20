@@ -1,5 +1,3 @@
-import "server-only"
-
 import { eq } from "drizzle-orm"
 import { event, eventAttendance, eventRegistration, eventResponse } from "@/core/db/schema/events"
 import { type EventStatus, statusChangesFrom } from "./model"

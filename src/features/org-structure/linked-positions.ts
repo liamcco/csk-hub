@@ -1,5 +1,3 @@
-import "server-only"
-
 import { findCurrentMembership } from "./lookup"
 import { addMembership } from "./membership"
 import type { IsoDate } from "./model"

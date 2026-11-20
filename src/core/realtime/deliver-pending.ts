@@ -1,5 +1,3 @@
-import "server-only"
-
 import { setTimeout as sleep } from "node:timers/promises"
 import { env } from "@/core/config/env"
 import { logger } from "@/core/logging"

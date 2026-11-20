@@ -1,5 +1,3 @@
-import "server-only"
-
 import { group, position } from "@/core/db/schema/org-structure"
 import type { Voice } from "@/features/voice/model"
 import type { GroupType } from "../model"

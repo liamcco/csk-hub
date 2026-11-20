@@ -1,15 +1,15 @@
 "use client"
 
-import { useRouter, useSearchParams } from "next/navigation"
 import { useRef, useState } from "react"
 import { authClient } from "@/core/auth/auth-client"
 import { useTranslations } from "@/core/i18n/translations"
 import { getPostLoginPath } from "@/core/navigation/navigation-utils"
 import { getAvailableMethods, sendTwoFactorOtp, type TwoFactorMethod, verifyTwoFactorMethod } from "./service"
+import { useAppRouter, useSearchParams } from "@/core/navigation/router"
 
 export function useTwoFactorForm() {
   const t = useTranslations("Public.twoFactor")
-  const router = useRouter()
+  const router = useAppRouter()
   const searchParams = useSearchParams()
   const methods = searchParams.get("methods")?.split(",") ?? ["totp", "otp"]
   const returnTo = searchParams.get("returnTo") ?? undefined
@@ -51,7 +51,7 @@ export function useTwoFactorForm() {
           try {
             const session = await authClient.getSession()
             if (session.data?.user) {
-              router.replace(getPostLoginPath(session.data.user.role, returnTo))
+              router.sessionChanged(getPostLoginPath(session.data.user.role, returnTo))
               return
             }
           } catch {
@@ -65,7 +65,7 @@ export function useTwoFactorForm() {
         return
       }
 
-      router.replace(getPostLoginPath(result.role, returnTo))
+      router.sessionChanged(getPostLoginPath(result.role, returnTo))
     } finally {
       setPending(false)
       operationInProgress.current = false

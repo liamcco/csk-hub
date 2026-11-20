@@ -1,6 +1,5 @@
-import { io } from "next/cache"
-import Link from "next/link"
-import { getFormatter, getTranslations } from "@/core/i18n/server"
+import { useSuspenseQuery } from "@tanstack/react-query"
+import { useFormatter, useTranslations } from "@/core/i18n/translations"
 import { eventPath } from "@/core/navigation/navigation-utils"
 import { ROUTES } from "@/core/navigation/site"
 import { ContentPage } from "@/shared/layouts/content-page"
@@ -9,14 +8,15 @@ import { Skeleton } from "@/shared/ui/base/skeleton"
 import { cn } from "@/shared/utils"
 import { EVENT_TYPES, stockholmInstant } from "../model"
 import { StatusBadge } from "../ui/StatusBadge"
-import { readUpcomingEvents } from "../ui/screen-reads"
+import { upcomingEventsQuery } from "../ui/queries"
 import { eventDays, groupByDay } from "./days"
 import { EventKind } from "./EventKind"
 import type { UpcomingEvent } from "./query"
 import { UpcomingEventsFilter } from "./UpcomingEventsFilter"
+import { Link } from "@/core/navigation/router"
 
-async function UpcomingEventsHeader() {
-  const t = await getTranslations("Events.calendar")
+function UpcomingEventsHeader() {
+  const t = useTranslations("Events.calendar")
 
   return (
     <div>
@@ -26,18 +26,15 @@ async function UpcomingEventsHeader() {
   )
 }
 
-type SearchParams = Record<string, string | string[] | undefined>
-
 /** The signed-in User's upcoming Events, by month and day in Europe/Stockholm, optionally of one type. */
-export async function UpcomingEventsScreen({ searchParams }: { searchParams: SearchParams }) {
-  await io()
-  const [{ events: upcoming }, t, format] = await Promise.all([
-    readUpcomingEvents(),
-    getTranslations("Events.calendar"),
-    getFormatter()
-  ])
+export function UpcomingEventsScreen({ search }: { search: Record<string, unknown> }) {
+  const {
+    data: { events: upcoming, canCreate }
+  } = useSuspenseQuery(upcomingEventsQuery)
+  const t = useTranslations("Events.calendar")
+  const format = useFormatter()
   // An unknown type in the address is ignored, as in the admin list's filters.
-  const type = EVENT_TYPES.find((value) => value === searchParams.type)
+  const type = EVENT_TYPES.find((value) => value === search.type)
   // Only the types the User has coming up are worth offering, plus the one already chosen.
   const types = EVENT_TYPES.filter((value) => value === type || upcoming.some((event) => event.type === value))
   const months = groupByDay(type ? upcoming.filter((event) => event.type === type) : upcoming)
@@ -47,7 +44,7 @@ export async function UpcomingEventsScreen({ searchParams }: { searchParams: Sea
   return (
     <ContentPage>
       <UpcomingEventsHeader />
-      <ManagementLink />
+      <ManagementLink canCreate={canCreate} />
       {types.length > 1 || type ? <UpcomingEventsFilter type={type} types={types} /> : null}
       {months.length === 0 ? (
         <Empty>
@@ -85,8 +82,9 @@ export async function UpcomingEventsScreen({ searchParams }: { searchParams: Sea
   )
 }
 
-async function UpcomingEventEntry({ event }: { event: UpcomingEvent }) {
-  const [t, format] = await Promise.all([getTranslations("Events.calendar"), getFormatter()])
+function UpcomingEventEntry({ event }: { event: UpcomingEvent }) {
+  const t = useTranslations("Events.calendar")
+  const format = useFormatter()
   const { firstDay, lastDay } = eventDays(event)
   const multiDay = lastDay !== firstDay
   const time = event.allDay
@@ -134,7 +132,7 @@ async function UpcomingEventEntry({ event }: { event: UpcomingEvent }) {
   )
 }
 
-export async function UpcomingEventsScreenSkeleton() {
+export function UpcomingEventsScreenSkeleton() {
   return (
     <ContentPage busy>
       <UpcomingEventsHeader />
@@ -148,9 +146,8 @@ export async function UpcomingEventsScreenSkeleton() {
   )
 }
 
-async function ManagementLink() {
-  const t = await getTranslations("Navigation.routes")
-  const { canCreate } = await readUpcomingEvents()
+function ManagementLink({ canCreate }: { canCreate: boolean }) {
+  const t = useTranslations("Navigation.routes")
   return canCreate ? (
     <Link href={ROUTES.eventsManage} className="text-sm underline">
       {t("eventsManage")}

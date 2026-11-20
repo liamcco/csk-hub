@@ -1,5 +1,3 @@
-import "server-only"
-
 import { and, desc, eq, isNotNull, isNull } from "drizzle-orm"
 import { z } from "zod"
 import { type AuthorizationDatabase, AuthorizationDeniedError } from "@/core/authz/authorization"

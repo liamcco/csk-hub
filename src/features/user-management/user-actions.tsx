@@ -1,7 +1,6 @@
 "use client"
 
 import { MoreHorizontalIcon } from "lucide-react"
-import { useRouter } from "next/navigation"
 import { useCallback, useEffect, useState, useTransition } from "react"
 import { app } from "@/core/config/app"
 import { useTranslations } from "@/core/i18n/translations"
@@ -28,6 +27,7 @@ import { Input } from "@/shared/ui/base/input"
 import { toast } from "@/shared/ui/base/toast"
 import type { UserCommandState } from "./command-state"
 import { userCommand } from "./user-commands"
+import { useAppRouter } from "@/core/navigation/router"
 
 type UserAction = "activate" | "deactivate" | "delete" | "invite" | "role"
 const destructiveMenuItemClassName =
@@ -132,7 +132,7 @@ export function UserActions({
   const t = useTranslations("Members")
   const common = useTranslations("Common")
   const userActionConfig = getUserActionConfig(t)
-  const router = useRouter()
+  const router = useAppRouter()
   const [state, setState] = useState<UserCommandState>({ status: "idle" })
   const [pending, startTransition] = useTransition()
   const [dialogAction, setDialogAction] = useState<UserAction | null>(null)

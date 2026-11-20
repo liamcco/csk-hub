@@ -1,7 +1,5 @@
 "use client"
 
-import Link from "next/link"
-import { useRouter, useSearchParams } from "next/navigation"
 import { useActionState, useEffect } from "react"
 import { useTranslations } from "@/core/i18n/translations"
 import { ROUTES } from "@/core/navigation/site"
@@ -10,17 +8,18 @@ import { passwordPolicy } from "@/shared/policy"
 import { Button } from "@/shared/ui/base/button"
 import { FieldError, FieldGroup } from "@/shared/ui/base/field"
 import { type ActivationState, activateAccount } from "./activate"
+import { Link, useAppRouter, useSearchParams } from "@/core/navigation/router"
 
 export function ActivationForm() {
   const t = useTranslations("Public.activation")
-  const router = useRouter()
+  const router = useAppRouter()
   const searchParams = useSearchParams()
   const [state, action, pending] = useActionState<ActivationState, FormData>(activateAccount, { status: "idle" })
   const invalidLink =
     (state.status === "error" && state.kind === "invalid-link") || searchParams.get("error") === "INVALID_TOKEN"
 
   useEffect(() => {
-    if (state.status === "success") router.replace(state.redirectTo)
+    if (state.status === "success") router.sessionChanged(state.redirectTo)
   }, [router, state])
 
   if (state.status === "success")

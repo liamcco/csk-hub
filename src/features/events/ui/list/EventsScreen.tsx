@@ -1,7 +1,6 @@
+import { useSuspenseQuery } from "@tanstack/react-query"
 import { CalendarPlus, MapPin } from "lucide-react"
-import { io } from "next/cache"
-import Link from "next/link"
-import { getFormatter, getTranslations } from "@/core/i18n/server"
+import { useFormatter, useTranslations } from "@/core/i18n/translations"
 import { PageBreadcrumb } from "@/core/navigation/PageBreadcrumb"
 import { ROUTES } from "@/core/navigation/site"
 import { Badge } from "@/shared/ui/base/badge"
@@ -12,16 +11,15 @@ import { cn } from "@/shared/utils"
 import { addDays, EVENT_STATUSES, EVENT_TYPES, stockholmDate, stockholmInstant } from "../../model"
 import { eventManagementPath } from "../command-state"
 import { StatusBadge } from "../StatusBadge"
-import { readManagedEvents } from "../screen-reads"
+import { managedEventsQuery } from "../queries"
 import { EventFilters } from "./EventFilters"
 import type { EventListFilters, EventListRow } from "./query"
-
-type SearchParams = Record<string, string | string[] | undefined>
+import { Link } from "@/core/navigation/router"
 
 /** The filters an address asks for; anything unknown is ignored. */
-function filtersFrom(searchParams: SearchParams): EventListFilters {
+export function eventListFilters(search: Record<string, unknown>): EventListFilters {
   const one = (name: string) => {
-    const value = searchParams[name]
+    const value = search[name]
     return typeof value === "string" ? value : undefined
   }
   const status = EVENT_STATUSES.find((value) => value === one("status"))
@@ -30,17 +28,15 @@ function filtersFrom(searchParams: SearchParams): EventListFilters {
 }
 
 /** Events the viewer may manage, across lifecycle states. */
-export async function EventsScreen({ searchParams }: { searchParams: SearchParams }) {
-  await io()
-  const filters = filtersFrom(searchParams)
-  const [events, t] = await Promise.all([
-    readManagedEvents(filters.when, filters.status, filters.type).then(({ items }) => items),
-    getTranslations("Events")
-  ])
+export function EventsScreen({ filters }: { filters: EventListFilters }) {
+  const {
+    data: { items: events, canCreate, canAdminister }
+  } = useSuspenseQuery(managedEventsQuery(filters))
+  const t = useTranslations("Events")
 
   return (
     <main className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-8 sm:px-6 lg:px-8">
-      <EventsHeader />
+      <EventsHeader canCreate={canCreate} canAdminister={canAdminister} />
       <EventFilters filters={filters} />
       {events.length === 0 ? (
         <p className="text-sm text-muted-foreground">
@@ -57,9 +53,8 @@ export async function EventsScreen({ searchParams }: { searchParams: SearchParam
   )
 }
 
-async function EventsHeader() {
-  const t = await getTranslations("Events")
-  const { canCreate, canAdminister } = await readManagedEvents("upcoming")
+function EventsHeader({ canCreate, canAdminister }: { canCreate: boolean; canAdminister: boolean }) {
+  const t = useTranslations("Events")
   return (
     <div className="flex flex-col gap-2">
       <PageBreadcrumb route="eventsManage" />
@@ -87,12 +82,10 @@ async function EventsHeader() {
   )
 }
 
-async function EventRow({ row }: { row: EventListRow }) {
-  const [t, types, format] = await Promise.all([
-    getTranslations("Events.list"),
-    getTranslations("Events.types"),
-    getFormatter()
-  ])
+function EventRow({ row }: { row: EventListRow }) {
+  const t = useTranslations("Events.list")
+  const types = useTranslations("Events.types")
+  const format = useFormatter()
   // An all-day Event ends at 00:00 after its last day, which is the day to show.
   const when = row.allDay
     ? format.dateTimeRange(row.startsAt, stockholmInstant(addDays(stockholmDate(row.endsAt), -1)) as Date, {
@@ -133,7 +126,7 @@ async function EventRow({ row }: { row: EventListRow }) {
   )
 }
 
-export async function EventsScreenSkeleton() {
+export function EventsScreenSkeleton() {
   return (
     <main className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-8 sm:px-6 lg:px-8" aria-busy="true">
       <Skeleton className="h-8 w-48" />

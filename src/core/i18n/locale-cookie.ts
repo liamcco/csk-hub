@@ -11,7 +11,7 @@ type LocaleCookieStore = {
   set: (cookie: typeof localeCookie & { value: Locale }) => unknown
 }
 
-/** Writes a locale to a Next request or response cookie store using the shared cookie attributes. */
+/** Writes a locale to a server-side cookie store using the shared cookie attributes. */
 export function writeLocaleCookie(store: LocaleCookieStore, locale: Locale) {
   store.set({ ...localeCookie, value: locale })
 }
@@ -27,4 +27,14 @@ export function getLocaleCookieValue(value: string | null | undefined): Locale |
 /** Persists an explicit browser-specific locale choice for the next request. */
 export function writeBrowserLocaleCookie(locale: Locale) {
   document.cookie = `${localeCookie.name}=${locale}; path=${localeCookie.path}; max-age=${localeCookie.maxAge}; samesite=${localeCookie.sameSite}`
+}
+
+/** The browser's own valid locale choice, if it has one. */
+export function readBrowserLocaleCookie(): Locale | undefined {
+  const prefix = `${localeCookie.name}=`
+  const value = document.cookie
+    .split("; ")
+    .find((cookie) => cookie.startsWith(prefix))
+    ?.slice(prefix.length)
+  return getLocaleCookieValue(value)
 }

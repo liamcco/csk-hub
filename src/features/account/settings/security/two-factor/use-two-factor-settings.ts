@@ -1,16 +1,16 @@
 "use client"
 
-import { useRouter } from "next/navigation"
 import { useRef, useState } from "react"
 import { useTranslations } from "@/core/i18n/translations"
 import { disableTwoFactor, enableTwoFactor, verifyTwoFactorSetup } from "./two-factor-service"
+import { useAppRouter } from "@/core/navigation/router"
 
 type Step = { kind: "idle" } | { kind: "confirm"; enable: boolean } | { kind: "verify"; totpUri: string }
 type Feedback = { type: "error" | "success"; message: string }
 
 export function useTwoFactorSettings() {
   const t = useTranslations("AccountSettings")
-  const router = useRouter()
+  const router = useAppRouter()
   const [step, setStep] = useState<Step>({ kind: "idle" })
   const [backupCodes, setBackupCodes] = useState<string[]>()
   const [feedback, setFeedback] = useState<Feedback | null>(null)

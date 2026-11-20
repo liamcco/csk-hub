@@ -1,5 +1,3 @@
-import "server-only"
-
 import { createRoute, z } from "@hono/zod-openapi"
 import type { Context } from "hono"
 import type { RequestAuthorization } from "@/core/authz/authorization"

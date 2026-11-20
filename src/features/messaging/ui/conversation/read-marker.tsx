@@ -1,9 +1,9 @@
 "use client"
 
 import { markConversationRead } from "@contract/client"
-import { useRouter } from "next/navigation"
 import { useEffect } from "react"
 import { browserApiClient } from "@/core/api-client/browser"
+import { useAppRouter } from "@/core/navigation/router"
 
 export function ReadMarker({
   conversationId,
@@ -14,7 +14,7 @@ export function ReadMarker({
   sequence: number
   token?: string
 }) {
-  const router = useRouter()
+  const router = useAppRouter()
   useEffect(() => {
     const mark = () => {
       if (!token || document.visibilityState !== "visible") return

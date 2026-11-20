@@ -1,5 +1,3 @@
-import "server-only"
-
 import { eq } from "drizzle-orm"
 import type { RequestAuthorization } from "@/core/authz"
 import type { Database } from "@/core/db"

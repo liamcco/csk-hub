@@ -1,5 +1,3 @@
-import "server-only"
-
 import { and, eq, gt, gte, inArray, isNull, or } from "drizzle-orm"
 import { group, groupMember, section } from "@/core/db/schema/org-structure"
 import { contains, familyOf, type VoiceDivision } from "@/features/voice/model"

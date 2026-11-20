@@ -9,12 +9,12 @@ import {
   updateEvent,
   updateLocation
 } from "@contract/client"
-import { useRouter } from "next/navigation"
 import { useCallback } from "react"
 import { browserApiClient } from "@/core/api-client/browser"
 import { errorCode } from "@/core/api-client/result"
 import { type EventCommandError, type EventCommandState, eventManagementPath } from "./command-state"
 import { readEventForm } from "./editor/form-input"
+import { useAppRouter } from "@/core/navigation/router"
 
 /** Which Events or Locations command a form runs through the API. */
 export type EventCommand =
@@ -86,7 +86,7 @@ function failure({ error, response }: Outcome): EventCommandError {
  * themselves once they have shown their success (`EventCommandDialog`).
  */
 export function useEventCommand(command: EventCommand) {
-  const router = useRouter()
+  const router = useAppRouter()
   return useCallback(
     async (_state: EventCommandState, formData: FormData): Promise<EventCommandState> => {
       let outcome: Outcome

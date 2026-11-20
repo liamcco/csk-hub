@@ -1,31 +1,22 @@
+import { useSuspenseQuery } from "@tanstack/react-query"
 import { ChevronLeft, ChevronRight } from "lucide-react"
-import Form from "next/form"
-import Link from "next/link"
-import { getTranslations } from "@/core/i18n/server"
+import { useTranslations } from "@/core/i18n/translations"
 import { memberProfilePath } from "@/core/navigation/navigation-utils"
 import { ROUTES } from "@/core/navigation/site"
 import { buttonVariants } from "@/shared/ui/base/button"
 import { Card, CardContent } from "@/shared/ui/base/card"
 import { Input } from "@/shared/ui/base/input"
 import { Skeleton } from "@/shared/ui/base/skeleton"
-import { DirectorySearchButton } from "./directory-search-button"
+import { DirectorySearchButton, DirectorySearchForm } from "./directory-search-button"
 import { MemberAvatar } from "./member-avatar"
-import { getDirectory } from "./query"
+import { type DirectorySearch, directoryQuery } from "./queries"
+import { Link } from "@/core/navigation/router"
 
-export async function MemberDirectoryScreen({
-  searchParams
-}: {
-  searchParams: Promise<{ query?: string | string[]; page?: string | string[] }>
-}) {
-  const params = await searchParams
-  const requestedPage = typeof params.page === "string" ? Number(params.page) : 1
-  const [{ items: members, query, page, totalPages, total }, t] = await Promise.all([
-    getDirectory({
-      query: typeof params.query === "string" ? params.query.slice(0, 200) : "",
-      page: Number.isSafeInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1
-    }),
-    getTranslations("MemberProfiles")
-  ])
+export function MemberDirectoryScreen({ search }: { search: DirectorySearch }) {
+  const {
+    data: { items: members, query, page, totalPages, total }
+  } = useSuspenseQuery(directoryQuery(search))
+  const t = useTranslations("MemberProfiles")
   const pagePath = (page: number) =>
     `${ROUTES.members}?${new URLSearchParams({ ...(query ? { query } : {}), page: String(page) })}`
   return (
@@ -35,7 +26,7 @@ export async function MemberDirectoryScreen({
         <h1 className="font-heading text-3xl font-semibold">{t("directoryTitle")}</h1>
         <p className="mt-2 text-muted-foreground">{t("directoryDescription")}</p>
       </div>
-      <Form action={ROUTES.members} className="flex flex-col gap-2 sm:flex-row sm:items-end">
+      <DirectorySearchForm className="flex flex-col gap-2 sm:flex-row sm:items-end">
         <div className="flex-1">
           <label htmlFor="member-search" className="mb-2 block text-sm font-medium">
             {t("searchLabel")}
@@ -56,7 +47,7 @@ export async function MemberDirectoryScreen({
             {t("clearSearch")}
           </Link>
         ) : null}
-      </Form>
+      </DirectorySearchForm>
       <p className="text-sm text-muted-foreground" role="status">
         {t("memberCount", { count: total })}
       </p>

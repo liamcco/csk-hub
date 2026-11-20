@@ -1,5 +1,3 @@
-import "server-only"
-
 import { and, count, eq, exists, sql } from "drizzle-orm"
 import type { Database } from "@/core/db"
 import { conversationReadState, directConversation, groupMembership, message } from "@/core/db/schema/messaging"

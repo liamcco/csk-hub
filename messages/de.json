@@ -1094,5 +1094,15 @@
     "newMessage": "Neue Nachricht",
     "notification": "Benachrichtigung",
     "open": "Öffnen"
+  },
+  "Errors": {
+    "notFoundTitle": "Seite nicht gefunden",
+    "notFoundDescription": "Diese Seite existiert nicht, oder du hast keinen Zugriff darauf.",
+    "forbiddenTitle": "Kein Zugriff",
+    "forbiddenDescription": "Du hast keinen Zugriff auf diese Seite.",
+    "failedTitle": "Etwas ist schiefgelaufen",
+    "failedDescription": "Die Seite konnte nicht geladen werden. Prüfe deine Verbindung und versuche es erneut.",
+    "retry": "Erneut versuchen",
+    "home": "Zur Startseite"
   }
 }

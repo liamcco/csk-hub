@@ -1,6 +1,5 @@
-import Link from "next/link"
+import { useSuspenseQuery } from "@tanstack/react-query"
 import { Suspense } from "react"
-import { getTranslations } from "@/core/i18n/server"
 import { useTranslations } from "@/core/i18n/translations"
 import { newsPostEditPath, newsPostPath } from "@/core/navigation/navigation-utils"
 import { ROUTES } from "@/core/navigation/site"
@@ -15,7 +14,8 @@ import { cn } from "@/shared/utils"
 import { UnpublishedNotice } from "./compose/UnpublishedNotice"
 import { PostTime } from "./PostTime"
 import { PostByline } from "./post-byline"
-import { readNewsFeed, readOwnDrafts } from "./query"
+import { newsFeedQuery, ownDraftsQuery } from "./query"
+import { Link } from "@/core/navigation/router"
 
 function NewsHeader({ children }: { children?: React.ReactNode }) {
   const t = useTranslations("Posts")
@@ -31,8 +31,9 @@ function NewsHeader({ children }: { children?: React.ReactNode }) {
 }
 
 /** The reader's own unpublished Posts. Nobody else's drafts are ever shown here. */
-async function OwnDrafts() {
-  const [drafts, t] = await Promise.all([readOwnDrafts(), getTranslations("Posts")])
+function OwnDrafts() {
+  const { data: drafts } = useSuspenseQuery(ownDraftsQuery)
+  const t = useTranslations("Posts")
   if (drafts.length === 0) return null
 
   return (
@@ -59,8 +60,9 @@ async function OwnDrafts() {
   )
 }
 
-export async function NewsScreen() {
-  const [feed, t] = await Promise.all([readNewsFeed(), getTranslations("Posts")])
+export function NewsScreen() {
+  const { data: feed } = useSuspenseQuery(newsFeedQuery)
+  const t = useTranslations("Posts")
   const entries = feed.items
   const canPublish = feed.permissions.create
 

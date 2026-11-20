@@ -1,5 +1,3 @@
-import "server-only"
-
 import { and, eq, ilike, inArray, isNull, or } from "drizzle-orm"
 import { env } from "@/core/config/env"
 import type { Database } from "@/core/db"

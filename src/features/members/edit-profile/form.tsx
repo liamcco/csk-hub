@@ -1,8 +1,6 @@
 "use client"
 
 import { updateProfileVoices } from "@contract/client"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
 import { type FormEvent, useState, useTransition } from "react"
 import { browserApiClient } from "@/core/api-client/browser"
 import { useTranslations } from "@/core/i18n/translations"
@@ -12,6 +10,7 @@ import { Button, buttonVariants } from "@/shared/ui/base/button"
 import { Card, CardContent } from "@/shared/ui/base/card"
 import { Checkbox } from "@/shared/ui/base/checkbox"
 import type { EditProfileState } from "./state"
+import { Link, useAppRouter } from "@/core/navigation/router"
 
 async function saveVoices(voices: VoiceDivision[]): Promise<EditProfileState> {
   try {
@@ -27,7 +26,7 @@ async function saveVoices(voices: VoiceDivision[]): Promise<EditProfileState> {
 
 export function EditProfileForm({ initialVoices }: { initialVoices: VoiceDivision[] }) {
   const t = useTranslations("MemberProfiles")
-  const router = useRouter()
+  const router = useAppRouter()
   const [voices, setVoices] = useState(initialVoices)
   const [state, setState] = useState<EditProfileState>({ status: "idle" })
   const [pending, startTransition] = useTransition()

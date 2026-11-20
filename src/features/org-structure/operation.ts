@@ -1,5 +1,3 @@
-import "server-only"
-
 import { sql } from "drizzle-orm"
 import type { db } from "@/core/db"
 import type { IsoDate, OrgStructureResult, OrgStructureViolation } from "./model"

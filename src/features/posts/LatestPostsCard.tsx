@@ -1,16 +1,18 @@
-import Link from "next/link"
-import { getTranslations } from "@/core/i18n/server"
+import { useSuspenseQuery } from "@tanstack/react-query"
+import { useTranslations } from "@/core/i18n/translations"
 import { newsPostPath } from "@/core/navigation/navigation-utils"
 import { ROUTES } from "@/core/navigation/site"
 import { OverviewCard, OverviewList, overviewRowClassName } from "@/shared/layouts/overview-card"
 import { PostByline } from "./post-byline"
-import { readLatestPosts } from "./query"
+import { latestPostsQuery } from "./query"
+import { Link } from "@/core/navigation/router"
 
 const LATEST = 3
 
 /** The newest few Posts for an overview page, each by title and byline. */
-export async function LatestPostsCard({ className }: { className?: string }) {
-  const [posts, t] = await Promise.all([readLatestPosts(LATEST), getTranslations("HomePage.news")])
+export function LatestPostsCard({ className }: { className?: string }) {
+  const { data: posts } = useSuspenseQuery(latestPostsQuery(LATEST))
+  const t = useTranslations("HomePage.news")
 
   return (
     <OverviewCard title={t("title")} link={{ href: ROUTES.news, label: t("seeAll") }} className={className}>

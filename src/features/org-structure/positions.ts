@@ -1,5 +1,3 @@
-import "server-only"
-
 import { and, eq, gt, gte, inArray, isNull, or } from "drizzle-orm"
 import { groupTypePosition, position, positionGroup, positionHolder } from "@/core/db/schema/org-structure"
 import { findCurrentMembership, requireActiveGroup } from "./lookup"

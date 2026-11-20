@@ -1,10 +1,10 @@
-import { getLocale } from "@/core/i18n/server"
+import { useLocale } from "@/core/i18n/client"
 
 const CHOIR_TIME_ZONE = "Europe/Stockholm"
 
 /** A moment in a Post's life — published, edited, saved — in the choir's own time zone. */
-export async function PostTime({ date, withTime, className }: { date: Date; withTime?: boolean; className?: string }) {
-  const locale = await getLocale()
+export function PostTime({ date, withTime, className }: { date: Date; withTime?: boolean; className?: string }) {
+  const locale = useLocale()
   const format = new Intl.DateTimeFormat(locale, {
     day: "numeric",
     month: "long",

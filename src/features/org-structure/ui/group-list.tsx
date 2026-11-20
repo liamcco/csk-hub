@@ -1,7 +1,6 @@
 "use client"
 
 import { ChevronDownIcon, ChevronUpIcon } from "lucide-react"
-import Link from "next/link"
 import { useId } from "react"
 import { useTranslations } from "@/core/i18n/translations"
 import { Badge } from "@/shared/ui/base/badge"
@@ -10,6 +9,7 @@ import { Label } from "@/shared/ui/base/label"
 import { Switch } from "@/shared/ui/base/switch"
 import { groupDetailPath } from "./command-state"
 import type { GroupSummary } from "./group-summaries"
+import { Link } from "@/core/navigation/router"
 
 /** The switch both overviews use to include archived groups. */
 export function ShowArchivedToggle({ checked, onChange }: { checked: boolean; onChange: (checked: boolean) => void }) {

@@ -1,10 +1,10 @@
-import { getTranslations } from "@/core/i18n/server"
+import { useTranslations } from "@/core/i18n/translations"
 import { PageBreadcrumb } from "@/core/navigation/PageBreadcrumb"
 import { BroadcastToAllCard } from "./broadcast-to-all-card"
 import { SendToSelectedUsersCard } from "./send-to-selected-users-card"
 
-export async function NotificationManagementScreen() {
-  const t = await getTranslations("PushNotifications")
+export function NotificationManagementScreen() {
+  const t = useTranslations("PushNotifications")
   return (
     <main className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-8 sm:px-6 lg:px-8">
       <PageBreadcrumb route="adminNotifications" />

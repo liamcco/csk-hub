@@ -1,7 +1,6 @@
 import { describe, expect, mock, test } from "bun:test"
 import { app } from "@/core/config/app"
 
-mock.module("server-only", () => ({}))
 
 const { createEmailClient } = await import("./client")
 

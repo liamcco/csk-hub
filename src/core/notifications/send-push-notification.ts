@@ -1,5 +1,3 @@
-import "server-only"
-
 import https from "node:https"
 import { and, eq, getTableColumns, inArray, isNull, or, sql } from "drizzle-orm"
 import webpush from "web-push"

@@ -1,17 +1,17 @@
-import { notFound } from "next/navigation"
-import { getTranslations } from "@/core/i18n/server"
+import { useSuspenseQuery } from "@tanstack/react-query"
+import { useTranslations } from "@/core/i18n/translations"
 import { PageBreadcrumb } from "@/core/navigation/PageBreadcrumb"
 import { Skeleton } from "@/shared/ui/base/skeleton"
 import { StatusBadge } from "../StatusBadge"
-import { readEventEditor } from "../screen-reads"
+import { eventEditorQuery } from "../queries"
 import { EventForm } from "./EventForm"
 import { EventLifecycle } from "./EventLifecycle"
 import { FormSkeleton } from "./NewEventScreen"
 
 /** One Event's admin page: its lifecycle, and the whole Event to edit. */
-export async function EventScreen({ eventId }: { eventId: string }) {
-  const [editor, t] = await Promise.all([readEventEditor(eventId), getTranslations("Events")])
-  if (!editor) notFound()
+export function EventScreen({ eventId }: { eventId: string }) {
+  const { data: editor } = useSuspenseQuery(eventEditorQuery(eventId))
+  const t = useTranslations("Events")
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-8 sm:px-6 lg:px-8">
@@ -34,7 +34,7 @@ export async function EventScreen({ eventId }: { eventId: string }) {
   )
 }
 
-export async function EventScreenSkeleton() {
+export function EventScreenSkeleton() {
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-8 sm:px-6 lg:px-8" aria-busy="true">
       <div className="flex flex-col gap-2">

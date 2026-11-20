@@ -1,6 +1,5 @@
 "use client"
 
-import { useRouter } from "next/navigation"
 import { useActionState, useEffect, useState } from "react"
 import { useTranslations } from "@/core/i18n/translations"
 import {
@@ -16,12 +15,13 @@ import {
 import { Button } from "@/shared/ui/base/button"
 import { groupConversationCommand } from "../api-commands"
 import type { MessageCommandState } from "../composer/message-command-state"
+import { useAppRouter } from "@/core/navigation/router"
 
 const initialState: MessageCommandState = { status: "idle" }
 export function LeaveGroupDialog({ conversationId }: { conversationId: string }) {
   const t = useTranslations("Messages")
   const common = useTranslations("Common")
-  const router = useRouter()
+  const router = useAppRouter()
   const [open, setOpen] = useState(false)
   const [state, action, pending] = useActionState(groupConversationCommand, initialState)
   useEffect(() => {

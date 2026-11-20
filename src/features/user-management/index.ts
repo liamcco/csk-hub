@@ -1,2 +1,2 @@
 export { AddUserDialog } from "./add"
-export { UsersScreen, UsersScreenSkeleton } from "./users-screen"
+export { UsersScreen, UsersScreenSkeleton, usersQuery } from "./users-screen"

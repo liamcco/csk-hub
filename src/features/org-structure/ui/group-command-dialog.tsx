@@ -1,9 +1,9 @@
 "use client"
 
-import { useRouter } from "next/navigation"
 import { useTranslations } from "@/core/i18n/translations"
 import { CommandDialog, type CommandDialogProps } from "@/shared/forms/CommandDialog"
 import type { GroupCommandError } from "./command-state"
+import { useAppRouter } from "@/core/navigation/router"
 
 type GroupCommandDialogProps = Omit<
   CommandDialogProps<GroupCommandError>,
@@ -12,7 +12,7 @@ type GroupCommandDialogProps = Omit<
 
 /** A dialog holding one admin groups command, in the groups admin's copy. The page refreshes once it has confirmed. */
 export function GroupCommandDialog(props: GroupCommandDialogProps) {
-  const router = useRouter()
+  const router = useAppRouter()
   const t = useTranslations("Groups")
   const common = useTranslations("Common")
   const errorMessage = useCommandErrorMessage()

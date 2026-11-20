@@ -1,5 +1,3 @@
-import "server-only"
-
 import { type AnyColumn, asc, eq, inArray, isNull, or } from "drizzle-orm"
 import { AuthorizationDeniedError } from "@/core/authz"
 import type { Database } from "@/core/db"
@@ -97,28 +95,6 @@ function keep(column: AnyColumn, ids: string[] | undefined) {
   return ids && ids.length > 0 ? inArray(column, ids) : undefined
 }
 
-/** A new Event's form: a timed Draft of the first type, with nothing filled in. */
-export const EMPTY_EVENT_FORM: Omit<EventFormValues, "type" | "participationMode"> = {
-  title: "",
-  description: null,
-  allDay: false,
-  startsAt: "",
-  endsAt: "",
-  firstDay: "",
-  lastDay: "",
-  callTime: "",
-  respondBy: "",
-  locationId: "",
-  locationText: "",
-  organiserGroupId: "",
-  leaderUserId: "",
-  responsibleUserId: "",
-  contactName: "",
-  contactDetails: "",
-  costInfo: "",
-  targets: [],
-  details: []
-}
 
 export type EventEditor = NonNullable<Awaited<ReturnType<typeof getEventEditor>>>
 

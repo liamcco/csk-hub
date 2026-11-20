@@ -1,9 +1,11 @@
+import { useSuspenseQuery } from "@tanstack/react-query"
 import { listUsers } from "@contract/client"
-import { getServerApiClient, readForScreen } from "@/core/api-client/server"
+import { queryOptions } from "@tanstack/react-query"
+import { browserApiClient as client } from "@/core/api-client/browser"
+import { read } from "@/core/api-client/result"
 import { app } from "@/core/config/app"
-import { getTranslations } from "@/core/i18n/server"
+import { useTranslations } from "@/core/i18n/translations"
 import { PageBreadcrumb } from "@/core/navigation/PageBreadcrumb"
-import { ROUTES } from "@/core/navigation/site"
 import { Skeleton } from "@/shared/ui/base/skeleton"
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/base/table"
 import { AddUserDialog } from "./add/add-user-dialog"
@@ -11,10 +13,15 @@ import { ImportUsersDialog } from "./import/import-users-dialog"
 import type { UserListItem } from "./service"
 import { UserList } from "./user-list"
 
-export async function UsersScreen() {
-  const { items } = await readForScreen(listUsers({ client: await getServerApiClient() }), ROUTES.adminUsers)
-  const users: UserListItem[] = items.map((item) => ({ ...item, createdAt: new Date(item.createdAt) }))
-  const t = await getTranslations("Members")
+export const usersQuery = queryOptions({
+  queryKey: ["users"],
+  queryFn: async (): Promise<UserListItem[]> =>
+    (await read(listUsers({ client }))).items.map((item) => ({ ...item, createdAt: new Date(item.createdAt) }))
+})
+
+export function UsersScreen() {
+  const { data: users } = useSuspenseQuery(usersQuery)
+  const t = useTranslations("Members")
 
   return (
     <main className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-8 sm:px-6 lg:px-8">
@@ -37,9 +44,9 @@ export async function UsersScreen() {
   )
 }
 
-export async function UsersScreenSkeleton() {
-  const t = await getTranslations("Members")
-  const common = await getTranslations("Common")
+export function UsersScreenSkeleton() {
+  const t = useTranslations("Members")
+  const common = useTranslations("Common")
   return (
     <main className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-8 sm:px-6 lg:px-8" aria-busy="true">
       <PageBreadcrumb route="adminUsers" />

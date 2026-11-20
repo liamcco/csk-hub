@@ -1,5 +1,3 @@
-import "server-only"
-
 import { eq } from "drizzle-orm"
 import { db } from "@/core/db"
 import type { activityDelivery } from "@/core/db/schema/activity"

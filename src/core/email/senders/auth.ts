@@ -1,5 +1,3 @@
-import "server-only"
-
 import { logger } from "@/core/logging"
 import { sendEmail } from "../client"
 import { emailVerificationOtpTemplate } from "../templates/email-verification-otp"

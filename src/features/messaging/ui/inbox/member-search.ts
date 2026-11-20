@@ -1,5 +1,3 @@
-import "server-only"
-
 import { and, asc, eq, ilike, isNull, ne, or } from "drizzle-orm"
 import { user } from "@/core/db/schema/auth"
 import type { MessagingContext } from "../../model/context"

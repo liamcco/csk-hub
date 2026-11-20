@@ -1,7 +1,5 @@
-import { io } from "next/cache"
-import Link from "next/link"
-import { cache } from "react"
-import { getFormatter, getTranslations } from "@/core/i18n/server"
+import { useSuspenseQuery } from "@tanstack/react-query"
+import { useFormatter, useTranslations } from "@/core/i18n/translations"
 import { eventPath } from "@/core/navigation/navigation-utils"
 import { ROUTES } from "@/core/navigation/site"
 import { OverviewCard, OverviewList, overviewRowClassName } from "@/shared/layouts/overview-card"
@@ -9,29 +7,26 @@ import { Card, CardContent } from "@/shared/ui/base/card"
 import { cn } from "@/shared/utils"
 import { addDays, stockholmDate } from "../model"
 import { StatusBadge } from "../ui/StatusBadge"
-import { readUpcomingEvents } from "../ui/screen-reads"
+import { upcomingEventsQuery } from "../ui/queries"
 import { happensOn } from "./days"
 import { EventKind } from "./EventKind"
 import type { UpcomingEvent } from "./query"
+import { Link } from "@/core/navigation/router"
 
 /** How many Events "Coming up" lists after the next one. */
 const COMING_UP = 4
 
-/** The User's upcoming Events and today's date, read once per render however many cards ask. */
-const upcomingForHome = cache(async () => {
-  await io()
-  const now = new Date()
-  const { events } = await readUpcomingEvents()
-  return { events, today: stockholmDate(now) }
-})
+/** The User's upcoming Events and today's date, from the cache the cards share. */
+function useUpcomingForHome() {
+  const { events } = useSuspenseQuery(upcomingEventsQuery).data
+  return { events, today: stockholmDate(new Date()) }
+}
 
 /** The User's very next Event, large, so a rehearsal tonight (or its cancellation) can't be missed. */
-export async function NextEventCard({ className }: { className?: string }) {
-  const [{ events, today }, t, format] = await Promise.all([
-    upcomingForHome(),
-    getTranslations("HomePage.events"),
-    getFormatter()
-  ])
+export function NextEventCard({ className }: { className?: string }) {
+  const { events, today } = useUpcomingForHome()
+  const t = useTranslations("HomePage.events")
+  const format = useFormatter()
   const next = events[0]
   if (!next) {
     return (
@@ -82,8 +77,9 @@ export async function NextEventCard({ className }: { className?: string }) {
 }
 
 /** The few Events after the next one, each linking to its page. Renders nothing when there are none. */
-export async function ComingUpCard({ className }: { className?: string }) {
-  const [{ events, today }, t] = await Promise.all([upcomingForHome(), getTranslations("HomePage.events")])
+export function ComingUpCard({ className }: { className?: string }) {
+  const { events, today } = useUpcomingForHome()
+  const t = useTranslations("HomePage.events")
   const later = events.slice(1, 1 + COMING_UP)
   if (later.length === 0) return null
 
@@ -100,8 +96,9 @@ export async function ComingUpCard({ className }: { className?: string }) {
   )
 }
 
-async function ComingUpRow({ event, today }: { event: UpcomingEvent; today: boolean }) {
-  const [t, format] = await Promise.all([getTranslations("HomePage.events"), getFormatter()])
+function ComingUpRow({ event, today }: { event: UpcomingEvent; today: boolean }) {
+  const t = useTranslations("HomePage.events")
+  const format = useFormatter()
   const cancelled = event.status === "Cancelled"
   const time = event.allDay ? t("allDay") : format.dateTime(event.startsAt, { timeStyle: "short" })
   const day = today ? t("today") : format.dateTime(event.startsAt, { weekday: "short", day: "numeric", month: "short" })

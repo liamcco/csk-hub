@@ -1,20 +1,19 @@
-import Link from "next/link"
-import { getTranslations } from "@/core/i18n/server"
+import { useSuspenseQuery } from "@tanstack/react-query"
+import { useTranslations } from "@/core/i18n/translations"
 import { PageBreadcrumb } from "@/core/navigation/PageBreadcrumb"
 import { ROUTES } from "@/core/navigation/site"
 import { Skeleton } from "@/shared/ui/base/skeleton"
 import { PositionCatalogue } from "../catalogue/position-catalogue"
-import { readGroupsOverview, readPositionCatalogue } from "../screen-reads"
+import { groupsOverviewQuery, positionCatalogueQuery } from "../queries"
 import { CreateGroupDialog } from "./create-group-dialog"
 import { GroupsOverview } from "./overview"
+import { Link } from "@/core/navigation/router"
 
 /** The groups beside the Choirs' Sections, and the Positions they can have. */
-export async function GroupsScreen() {
-  const [overview, catalogue, t] = await Promise.all([
-    readGroupsOverview(),
-    readPositionCatalogue(),
-    getTranslations("Groups")
-  ])
+export function GroupsScreen() {
+  const { data: overview } = useSuspenseQuery(groupsOverviewQuery)
+  const { data: catalogue } = useSuspenseQuery(positionCatalogueQuery)
+  const t = useTranslations("Groups")
   const choirs = overview.choirs
     .filter(({ choir }) => choir.active)
     .map(({ choir }) => ({ id: choir.id, name: choir.name }))
@@ -42,8 +41,8 @@ export async function GroupsScreen() {
   )
 }
 
-export async function GroupsScreenSkeleton() {
-  const t = await getTranslations("Groups")
+export function GroupsScreenSkeleton() {
+  const t = useTranslations("Groups")
   return (
     <main className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 py-8 sm:px-6 lg:px-8" aria-busy="true">
       <PageBreadcrumb route="adminOrgStructureGroups" />

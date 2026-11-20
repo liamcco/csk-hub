@@ -1,5 +1,3 @@
-import "server-only"
-
 import { createCipheriv, createDecipheriv, hkdfSync, randomBytes } from "node:crypto"
 import { z } from "zod"
 
