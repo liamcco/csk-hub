@@ -11,15 +11,18 @@ import type { ApiDependencies } from "./request-context"
 export function createApiDependencies({
   auth,
   database,
-  secret
+  secret,
+  scheduleDelivery = () => {}
 }: {
   auth: Auth
   database: AuthorizationDatabase
   secret: string
+  scheduleDelivery?: () => void
 }) {
   return {
     database,
     secret,
+    scheduleDelivery,
     handleAuth: (request) => auth.handler(request),
     async resolveRequest(headers) {
       let impersonatedBy: string | null = null

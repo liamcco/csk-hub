@@ -1,5 +1,4 @@
 import { Suspense } from "react"
-import { getRequestSession } from "@/core/auth/session.server"
 import { getTranslations } from "@/core/i18n/server"
 import { Badge } from "@/shared/ui/base/badge"
 import type { UnreadCount } from "./unread-sources"
@@ -13,10 +12,8 @@ type UnreadBadgeProps = {
 
 async function UnreadCountBadge({ count, variant }: UnreadBadgeProps) {
   if (!count) return null
-  const session = await getRequestSession()
-  if (!session) return null
 
-  const [unread, t] = await Promise.all([count(session.user.id), getTranslations("Navigation")])
+  const [unread, t] = await Promise.all([count(), getTranslations("Navigation")])
   if (unread === 0) return null
 
   return (
@@ -48,13 +45,7 @@ type UnreadIndicatorProps = {
 }
 
 async function AnyUnreadDot({ counts: sources }: UnreadIndicatorProps) {
-  const session = await getRequestSession()
-  if (!session) return null
-
-  const [counts, t] = await Promise.all([
-    Promise.all(sources.map((count) => count(session.user.id))),
-    getTranslations("Navigation")
-  ])
+  const [counts, t] = await Promise.all([Promise.all(sources.map((count) => count())), getTranslations("Navigation")])
   if (!counts.some((unread) => unread > 0)) return null
 
   return (

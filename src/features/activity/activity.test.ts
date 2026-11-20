@@ -496,17 +496,17 @@ if (!process.env.CSK_ACTIVITY_TEST) {
       test("published Post events and personal reads propagate, Draft content stays private", async () => {
         const member = await singer()
         const content = { title: "Private Draft", body: { type: "doc" as const, content: [] } }
-        const post = await createPost({ authorId: member.userId, content, publish: false })
+        const post = await createPost({ authorId: member.userId, content, publish: false }, testDatabase.db)
         expect(await testDatabase.db.select().from(activityDelivery)).toHaveLength(0)
-        await saveDraft({ authorId: member.userId, postId: post.id, content, publish: true })
+        await saveDraft({ authorId: member.userId, postId: post.id, content, publish: true }, testDatabase.db)
         expect((await testDatabase.db.select().from(activityDelivery))[0]?.change).toEqual({ kind: "posts.changed" })
-        expect(await nextUnreadPostChangeAt(member.userId)).toBeGreaterThan(Date.now())
-        await markPostRead(member.userId, post.id)
+        expect(await nextUnreadPostChangeAt(testDatabase.db, member.userId)).toBeGreaterThan(Date.now())
+        await markPostRead(testDatabase.db, member.userId, post.id)
         expect(
           (await testDatabase.db.select().from(activityDelivery)).some((row) => row.change.kind === "unread.changed")
         ).toBe(true)
-        expect(await nextUnreadPostChangeAt(member.userId)).toBeNull()
-        await unpublishPost(post.id)
+        expect(await nextUnreadPostChangeAt(testDatabase.db, member.userId)).toBeNull()
+        await unpublishPost(post.id, testDatabase.db)
         expect(
           (await testDatabase.db.select().from(activityDelivery)).filter((row) => row.change.kind === "posts.changed")
         ).toHaveLength(2)

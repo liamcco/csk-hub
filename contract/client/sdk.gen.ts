@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { GetCurrentActorData, GetCurrentActorErrors, GetCurrentActorResponses, GetCurrentCapabilitiesData, GetCurrentCapabilitiesErrors, GetCurrentCapabilitiesResponses, GetMemberIdSessionData, GetMemberIdSessionErrors, GetMemberIdSessionResponses, GetMemberProfileData, GetMemberProfileErrors, GetMemberProfileResponses, GetOwnProfileData, GetOwnProfileErrors, GetOwnProfileResponses, GetProfileEditorData, GetProfileEditorErrors, GetProfileEditorResponses, IssueMemberIdData, IssueMemberIdErrors, IssueMemberIdResponses, ListMembersData, ListMembersErrors, ListMembersResponses, UpdateProfileVoicesData, UpdateProfileVoicesErrors, UpdateProfileVoicesResponses, VerifyMemberIdData, VerifyMemberIdErrors, VerifyMemberIdResponses } from './types.gen';
+import type { CreatePostData, CreatePostErrors, CreatePostResponses, DiscardDraftData, DiscardDraftErrors, DiscardDraftResponses, EditPublishedPostData, EditPublishedPostErrors, EditPublishedPostResponses, GetCurrentActorData, GetCurrentActorErrors, GetCurrentActorResponses, GetCurrentCapabilitiesData, GetCurrentCapabilitiesErrors, GetCurrentCapabilitiesResponses, GetEditablePostData, GetEditablePostErrors, GetEditablePostResponses, GetMemberIdSessionData, GetMemberIdSessionErrors, GetMemberIdSessionResponses, GetMemberProfileData, GetMemberProfileErrors, GetMemberProfileResponses, GetOwnProfileData, GetOwnProfileErrors, GetOwnProfileResponses, GetPostData, GetPostErrors, GetPostResponses, GetPostUnreadData, GetPostUnreadErrors, GetPostUnreadResponses, GetProfileEditorData, GetProfileEditorErrors, GetProfileEditorResponses, IssueMemberIdData, IssueMemberIdErrors, IssueMemberIdResponses, ListLatestPostsData, ListLatestPostsErrors, ListLatestPostsResponses, ListMembersData, ListMembersErrors, ListMembersResponses, ListNewsFeedData, ListNewsFeedErrors, ListNewsFeedResponses, ListOwnDraftsData, ListOwnDraftsErrors, ListOwnDraftsResponses, MarkPostReadData, MarkPostReadErrors, MarkPostReadResponses, RecallPostData, RecallPostErrors, RecallPostResponses, SaveDraftData, SaveDraftErrors, SaveDraftResponses, UpdateProfileVoicesData, UpdateProfileVoicesErrors, UpdateProfileVoicesResponses, VerifyMemberIdData, VerifyMemberIdErrors, VerifyMemberIdResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -61,6 +61,91 @@ export const updateProfileVoices = <ThrowOnError extends boolean = false>(option
         ...options.headers
     }
 });
+
+/**
+ * The whole News feed, newest first, with the caller's unread marks.
+ */
+export const listNewsFeed = <ThrowOnError extends boolean = false>(options?: Options<ListNewsFeedData, ThrowOnError>): RequestResult<ListNewsFeedResponses, ListNewsFeedErrors, ThrowOnError> => (options?.client ?? client).get<ListNewsFeedResponses, ListNewsFeedErrors, ThrowOnError>({ url: '/api/v1/posts', ...options });
+
+/**
+ * Writes a new Post, published at once or kept as the caller's Draft.
+ */
+export const createPost = <ThrowOnError extends boolean = false>(options: Options<CreatePostData, ThrowOnError>): RequestResult<CreatePostResponses, CreatePostErrors, ThrowOnError> => (options.client ?? client).post<CreatePostResponses, CreatePostErrors, ThrowOnError>({
+    url: '/api/v1/posts',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * The newest published Posts without their bodies, for overviews.
+ */
+export const listLatestPosts = <ThrowOnError extends boolean = false>(options?: Options<ListLatestPostsData, ThrowOnError>): RequestResult<ListLatestPostsResponses, ListLatestPostsErrors, ThrowOnError> => (options?.client ?? client).get<ListLatestPostsResponses, ListLatestPostsErrors, ThrowOnError>({ url: '/api/v1/posts/latest', ...options });
+
+/**
+ * The caller's own Drafts, most recently saved first. Never anyone else's.
+ */
+export const listOwnDrafts = <ThrowOnError extends boolean = false>(options?: Options<ListOwnDraftsData, ThrowOnError>): RequestResult<ListOwnDraftsResponses, ListOwnDraftsErrors, ThrowOnError> => (options?.client ?? client).get<ListOwnDraftsResponses, ListOwnDraftsErrors, ThrowOnError>({ url: '/api/v1/posts/drafts', ...options });
+
+/**
+ * The caller's unread Post count and when it next changes by itself.
+ */
+export const getPostUnread = <ThrowOnError extends boolean = false>(options?: Options<GetPostUnreadData, ThrowOnError>): RequestResult<GetPostUnreadResponses, GetPostUnreadErrors, ThrowOnError> => (options?.client ?? client).get<GetPostUnreadResponses, GetPostUnreadErrors, ThrowOnError>({ url: '/api/v1/posts/unread', ...options });
+
+/**
+ * A published Post with the caller's permissions on it.
+ *
+ * Drafts, Recalled Posts and discarded Posts are 404, even to their author.
+ */
+export const getPost = <ThrowOnError extends boolean = false>(options: Options<GetPostData, ThrowOnError>): RequestResult<GetPostResponses, GetPostErrors, ThrowOnError> => (options.client ?? client).get<GetPostResponses, GetPostErrors, ThrowOnError>({ url: '/api/v1/posts/{postId}', ...options });
+
+/**
+ * A Post as the caller may edit it: their own Draft, or a published Post they may change.
+ *
+ * Another author's Draft is 404, including to Admins.
+ */
+export const getEditablePost = <ThrowOnError extends boolean = false>(options: Options<GetEditablePostData, ThrowOnError>): RequestResult<GetEditablePostResponses, GetEditablePostErrors, ThrowOnError> => (options.client ?? client).get<GetEditablePostResponses, GetEditablePostErrors, ThrowOnError>({ url: '/api/v1/posts/{postId}/edit', ...options });
+
+/**
+ * Saves the caller's own Draft, and publishes it when `publish` is true.
+ */
+export const saveDraft = <ThrowOnError extends boolean = false>(options: Options<SaveDraftData, ThrowOnError>): RequestResult<SaveDraftResponses, SaveDraftErrors, ThrowOnError> => (options.client ?? client).put<SaveDraftResponses, SaveDraftErrors, ThrowOnError>({
+    url: '/api/v1/posts/{postId}/draft',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Changes a published Post in place; marked edited only when something changed.
+ */
+export const editPublishedPost = <ThrowOnError extends boolean = false>(options: Options<EditPublishedPostData, ThrowOnError>): RequestResult<EditPublishedPostResponses, EditPublishedPostErrors, ThrowOnError> => (options.client ?? client).put<EditPublishedPostResponses, EditPublishedPostErrors, ThrowOnError>({
+    url: '/api/v1/posts/{postId}/published',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Recalls a published Post from the feed back to its author's Drafts.
+ */
+export const recallPost = <ThrowOnError extends boolean = false>(options: Options<RecallPostData, ThrowOnError>): RequestResult<RecallPostResponses, RecallPostErrors, ThrowOnError> => (options.client ?? client).post<RecallPostResponses, RecallPostErrors, ThrowOnError>({ url: '/api/v1/posts/{postId}/recall', ...options });
+
+/**
+ * Throws the caller's own Draft away for good. It is hidden, never deleted.
+ */
+export const discardDraft = <ThrowOnError extends boolean = false>(options: Options<DiscardDraftData, ThrowOnError>): RequestResult<DiscardDraftResponses, DiscardDraftErrors, ThrowOnError> => (options.client ?? client).post<DiscardDraftResponses, DiscardDraftErrors, ThrowOnError>({ url: '/api/v1/posts/{postId}/discard', ...options });
+
+/**
+ * Records that the caller opened a published Post. Idempotent.
+ */
+export const markPostRead = <ThrowOnError extends boolean = false>(options: Options<MarkPostReadData, ThrowOnError>): RequestResult<MarkPostReadResponses, MarkPostReadErrors, ThrowOnError> => (options.client ?? client).post<MarkPostReadResponses, MarkPostReadErrors, ThrowOnError>({ url: '/api/v1/posts/{postId}/read', ...options });
 
 /**
  * The signed-in User's own Member ID profile and whether they may verify others.

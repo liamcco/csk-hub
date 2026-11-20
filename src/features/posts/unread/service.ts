@@ -1,9 +1,9 @@
 import "server-only"
 
 import { and, count, eq, gt, isNotNull, lte, notExists, sql } from "drizzle-orm"
-import { cache } from "react"
+
 import { z } from "zod"
-import { db } from "@/core/db"
+import type { Database } from "@/core/db"
 import { post, postRead } from "@/core/db/schema/posts"
 import { queueActivity } from "@/core/realtime/outbox"
 
@@ -20,13 +20,13 @@ const postIdSchema = z.uuid()
  * A Post is unread when it was published within the horizon and the User has not opened it.
  * A publication instant still ahead is not news yet.
  */
-function unreadBy(userId: string) {
+function unreadBy(database: Database, userId: string) {
   return and(
     isNotNull(post.publishedAt),
     gt(post.publishedAt, sql`now() - make_interval(days => ${UNREAD_HORIZON_DAYS})`),
     lte(post.publishedAt, sql`now()`),
     notExists(
-      db
+      database
         .select({ postId: postRead.postId })
         .from(postRead)
         .where(and(eq(postRead.userId, userId), eq(postRead.postId, post.id)))
@@ -39,14 +39,14 @@ function unreadBy(userId: string) {
  * has not opened. Posts without a publication instant never count. Shared within a render,
  * where both the navigation and the landing page ask for it.
  */
-export const countUnreadPosts = cache(async (userId: string): Promise<number> => {
-  const [row] = await db.select({ unread: count() }).from(post).where(unreadBy(userId))
+export async function countUnreadPosts(database: Database, userId: string): Promise<number> {
+  const [row] = await database.select({ unread: count() }).from(post).where(unreadBy(database, userId))
   return row?.unread ?? 0
-})
+}
 
 /** The ids of the Posts {@link countUnreadPosts} counts, for marking them in the feed. */
-export async function listUnreadPostIds(userId: string): Promise<Set<string>> {
-  const rows = await db.select({ id: post.id }).from(post).where(unreadBy(userId))
+export async function listUnreadPostIds(database: Database, userId: string): Promise<Set<string>> {
+  const rows = await database.select({ id: post.id }).from(post).where(unreadBy(database, userId))
   return new Set(rows.map((row) => row.id))
 }
 
@@ -55,12 +55,12 @@ export async function listUnreadPostIds(userId: string): Promise<Set<string>> {
  * Returns whether this was the first time, so a caller can skip refreshing a badge that
  * has not changed.
  */
-export async function markPostRead(userId: string, postId: string): Promise<boolean> {
+export async function markPostRead(database: Database, userId: string, postId: string): Promise<boolean> {
   if (!postIdSchema.safeParse(postId).success) return false
 
   // One statement: the Post is looked up as it is inserted, so a missing or unpublished
   // Post simply inserts nothing.
-  return db.transaction(async (tx) => {
+  return database.transaction(async (tx) => {
     const inserted = await tx
       .insert(postRead)
       .select(
@@ -82,8 +82,8 @@ export async function markPostRead(userId: string, postId: string): Promise<bool
 }
 
 /** Next time the unread predicate changes without a write (publication or 30-day expiry). */
-export async function nextUnreadPostChangeAt(userId: string): Promise<number | null> {
-  const [row] = await db
+export async function nextUnreadPostChangeAt(database: Database, userId: string): Promise<number | null> {
+  const [row] = await database
     .select({
       at: sql<string | null>`min(case when ${post.publishedAt} > now()
     then ${post.publishedAt} else ${post.publishedAt} + interval '30 days' end)`
@@ -94,7 +94,7 @@ export async function nextUnreadPostChangeAt(userId: string): Promise<number | n
         isNotNull(post.publishedAt),
         gt(post.publishedAt, sql`now() - interval '30 days'`),
         notExists(
-          db
+          database
             .select({ id: postRead.postId })
             .from(postRead)
             .where(and(eq(postRead.postId, post.id), eq(postRead.userId, userId)))

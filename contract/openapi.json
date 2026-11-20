@@ -663,6 +663,286 @@
           "voices"
         ]
       },
+      "NewsFeed": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/PublishedPost"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "unread": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "unread"
+                  ]
+                }
+              ]
+            },
+            "description": "Newest first."
+          },
+          "permissions": {
+            "type": "object",
+            "properties": {
+              "create": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "create"
+            ]
+          }
+        },
+        "required": [
+          "items",
+          "permissions"
+        ]
+      },
+      "RichTextDocument": {
+        "type": "object",
+        "additionalProperties": {
+          "nullable": true
+        },
+        "description": "The editor's document (ProseMirror JSON), restricted to what a Post body may contain."
+      },
+      "PublishedPost": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "authorName": {
+            "type": "string",
+            "nullable": true,
+            "description": "Null once the author has been erased."
+          },
+          "publishedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "editedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time",
+            "description": "When the title or body last changed after publishing."
+          },
+          "body": {
+            "$ref": "#/components/schemas/RichTextDocument"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "authorName",
+          "publishedAt",
+          "editedAt",
+          "body"
+        ]
+      },
+      "LatestPosts": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "title": {
+                  "type": "string"
+                },
+                "authorName": {
+                  "type": "string",
+                  "nullable": true,
+                  "description": "Null once the author has been erased."
+                },
+                "publishedAt": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "editedAt": {
+                  "type": "string",
+                  "nullable": true,
+                  "format": "date-time",
+                  "description": "When the title or body last changed after publishing."
+                }
+              },
+              "required": [
+                "id",
+                "title",
+                "authorName",
+                "publishedAt",
+                "editedAt"
+              ]
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "OwnDrafts": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "title": {
+                  "type": "string"
+                },
+                "savedAt": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              },
+              "required": [
+                "id",
+                "title",
+                "savedAt"
+              ]
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "PostUnread": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "integer",
+            "description": "Published Posts from the last 30 days the User has not opened."
+          },
+          "nextChangeAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time",
+            "description": "When the count next changes without a write: a publication or a 30-day expiry."
+          }
+        },
+        "required": [
+          "count",
+          "nextChangeAt"
+        ]
+      },
+      "PostView": {
+        "type": "object",
+        "properties": {
+          "post": {
+            "$ref": "#/components/schemas/PublishedPost"
+          },
+          "permissions": {
+            "type": "object",
+            "properties": {
+              "update": {
+                "type": "boolean"
+              },
+              "unpublish": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "update",
+              "unpublish"
+            ]
+          }
+        },
+        "required": [
+          "post",
+          "permissions"
+        ]
+      },
+      "EditablePost": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "body": {
+            "$ref": "#/components/schemas/RichTextDocument"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "published"
+            ]
+          },
+          "savedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "body",
+          "state",
+          "savedAt"
+        ]
+      },
+      "SavedPost": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "RecalledPost": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "unpublishedTo": {
+            "type": "string",
+            "enum": [
+              "own",
+              "author"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "unpublishedTo"
+        ]
+      },
+      "PostReadResult": {
+        "type": "object",
+        "properties": {
+          "changed": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "changed"
+        ]
+      },
       "MemberIdSession": {
         "type": "object",
         "properties": {
@@ -1131,6 +1411,764 @@
           },
           "403": {
             "description": "The current User may not perform this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/posts": {
+      "get": {
+        "operationId": "listNewsFeed",
+        "summary": "The whole News feed, newest first, with the caller's unread marks.",
+        "tags": [
+          "posts"
+        ],
+        "responses": {
+          "200": {
+            "description": "The feed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NewsFeed"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No active signed-in User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createPost",
+        "summary": "Writes a new Post, published at once or kept as the caller's Draft.",
+        "tags": [
+          "posts"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  },
+                  "body": {
+                    "$ref": "#/components/schemas/RichTextDocument"
+                  },
+                  "publish": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "title",
+                  "body",
+                  "publish"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The new Post.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SavedPost"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request failed validation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No active signed-in User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The current User may not perform this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The resource does not exist or is not visible to the current User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "`INTERNAL`: the write failed and nothing was saved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/posts/latest": {
+      "get": {
+        "operationId": "listLatestPosts",
+        "summary": "The newest published Posts without their bodies, for overviews.",
+        "tags": [
+          "posts"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 20,
+              "default": 3
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The newest Posts.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LatestPosts"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request failed validation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No active signed-in User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/posts/drafts": {
+      "get": {
+        "operationId": "listOwnDrafts",
+        "summary": "The caller's own Drafts, most recently saved first. Never anyone else's.",
+        "tags": [
+          "posts"
+        ],
+        "responses": {
+          "200": {
+            "description": "The caller's Drafts.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OwnDrafts"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No active signed-in User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/posts/unread": {
+      "get": {
+        "operationId": "getPostUnread",
+        "summary": "The caller's unread Post count and when it next changes by itself.",
+        "tags": [
+          "posts"
+        ],
+        "responses": {
+          "200": {
+            "description": "Unread state.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PostUnread"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No active signed-in User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/posts/{postId}": {
+      "get": {
+        "operationId": "getPost",
+        "summary": "A published Post with the caller's permissions on it.",
+        "description": "Drafts, Recalled Posts and discarded Posts are 404, even to their author.",
+        "tags": [
+          "posts"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "postId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The Post.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PostView"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No active signed-in User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The resource does not exist or is not visible to the current User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/posts/{postId}/edit": {
+      "get": {
+        "operationId": "getEditablePost",
+        "summary": "A Post as the caller may edit it: their own Draft, or a published Post they may change.",
+        "description": "Another author's Draft is 404, including to Admins.",
+        "tags": [
+          "posts"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "postId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The Post.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EditablePost"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No active signed-in User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The resource does not exist or is not visible to the current User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/posts/{postId}/draft": {
+      "put": {
+        "operationId": "saveDraft",
+        "summary": "Saves the caller's own Draft, and publishes it when `publish` is true.",
+        "tags": [
+          "posts"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "postId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  },
+                  "body": {
+                    "$ref": "#/components/schemas/RichTextDocument"
+                  },
+                  "publish": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "title",
+                  "body",
+                  "publish"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The saved Post.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SavedPost"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request failed validation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No active signed-in User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The current User may not perform this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The resource does not exist or is not visible to the current User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "`INTERNAL`: the write failed and nothing was saved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/posts/{postId}/published": {
+      "put": {
+        "operationId": "editPublishedPost",
+        "summary": "Changes a published Post in place; marked edited only when something changed.",
+        "tags": [
+          "posts"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "postId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  },
+                  "body": {
+                    "$ref": "#/components/schemas/RichTextDocument"
+                  }
+                },
+                "required": [
+                  "title",
+                  "body"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The saved Post.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SavedPost"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request failed validation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No active signed-in User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The current User may not perform this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The resource does not exist or is not visible to the current User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "`INTERNAL`: the write failed and nothing was saved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/posts/{postId}/recall": {
+      "post": {
+        "operationId": "recallPost",
+        "summary": "Recalls a published Post from the feed back to its author's Drafts.",
+        "tags": [
+          "posts"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "postId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Whose Drafts received the Post.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecalledPost"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request failed validation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No active signed-in User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The current User may not perform this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The resource does not exist or is not visible to the current User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "`INTERNAL`: the write failed and nothing was saved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/posts/{postId}/discard": {
+      "post": {
+        "operationId": "discardDraft",
+        "summary": "Throws the caller's own Draft away for good. It is hidden, never deleted.",
+        "tags": [
+          "posts"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "postId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Discarded."
+          },
+          "400": {
+            "description": "The request failed validation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No active signed-in User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The current User may not perform this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The resource does not exist or is not visible to the current User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "`INTERNAL`: the write failed and nothing was saved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/posts/{postId}/read": {
+      "post": {
+        "operationId": "markPostRead",
+        "summary": "Records that the caller opened a published Post. Idempotent.",
+        "tags": [
+          "posts"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "postId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Whether this was the first time, so a client can skip refreshing unchanged badges.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PostReadResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No active signed-in User.",
             "content": {
               "application/json": {
                 "schema": {

@@ -31,8 +31,8 @@ behind `scheduleActivityDispatch()` (see "Delivery boundary").
 | 0 | Web API client, Origin guard, Playwright harness | `core/api-client`, `src/api/app.ts` | `members.test.ts` (Origin) | — | `e2e/run.ts` | done |
 | 1 | Member directory, profile, profile edit | `listMembers`, `getMemberProfile`, `getOwnProfile`, `getProfileEditor`, `updateProfileVoices` | `members.test.ts` | `/members`, `/members/[id]`, `/me`, `/me/edit` | `members.e2e.ts` | done |
 | 2 | App shell: navigation capabilities, admin page gates | `getCurrentCapabilities` | `capabilities.test.ts` | primary navigation, quick-access bar, every `/admin` page gate | `shell.e2e.ts` | done |
-| 3 | News feed, Posts, Drafts, recall, unread | | | | | todo |
-| 4 | Home (upcoming Events, latest News) | | | | | todo |
+| 3 | News feed, Posts, Drafts, recall, unread | `listNewsFeed`, `listLatestPosts`, `listOwnDrafts`, `getPostUnread`, `getPost`, `getEditablePost`, `createPost`, `saveDraft`, `editPublishedPost`, `recallPost`, `discardDraft`, `markPostRead` | `posts.test.ts` | `/news`, `/news/new`, `/news/[id]`, `/news/[id]/edit`, News badge and expiry | `posts.e2e.ts` | done |
+| 4 | Home (greeting, latest News; upcoming Events with slice 6) | `getCurrentCapabilities`, `listLatestPosts` | via slices 2–3 | `/` greeting and News card | — | partial |
 | 5 | Direct and Group Conversations, Messages, unread | | | | | todo |
 | 6 | Events and Locations | | | | | todo |
 | 7 | Account settings: locale, push subscriptions | | | | | todo |

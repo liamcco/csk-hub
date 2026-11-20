@@ -19,7 +19,18 @@ export type TestMember = { id: string; email: string; name: string }
  */
 export function createApiHarness(database: TestDatabase) {
   const auth = createAuth({ database: database.db, baseURL: testOrigin, production: false, secret })
-  const api = createApi(createApiDependencies({ auth, database: database.db, secret }))
+  /** How many times routes scheduled post-commit delivery. */
+  const delivery = { scheduled: 0 }
+  const api = createApi(
+    createApiDependencies({
+      auth,
+      database: database.db,
+      secret,
+      scheduleDelivery: () => {
+        delivery.scheduled++
+      }
+    })
+  )
 
   async function createMember({
     role = "user",
@@ -86,7 +97,7 @@ export function createApiHarness(database: TestDatabase) {
     })
   }
 
-  return { api, auth, db: database.db, createMember, signIn, client, signedIn, setAccount, request }
+  return { api, auth, delivery, db: database.db, createMember, signIn, client, signedIn, setAccount, request }
 }
 
 export type ApiHarness = ReturnType<typeof createApiHarness>

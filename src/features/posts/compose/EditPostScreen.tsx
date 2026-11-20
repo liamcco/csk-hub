@@ -1,19 +1,16 @@
-import { notFound } from "next/navigation"
 import { getTranslations } from "@/core/i18n/server"
 import { newsPostPath } from "@/core/navigation/navigation-utils"
 import { ROUTES } from "@/core/navigation/site"
 import { ContentPage } from "@/shared/layouts/content-page"
 import { Skeleton } from "@/shared/ui/base/skeleton"
 import { PostTime } from "../PostTime"
-import { getEditablePost } from "../service"
-import { discardDraft, editPublishedPost, saveDraft } from "./actions"
+import { readEditablePost } from "../query"
 import { ConfirmPostCommand } from "./ConfirmPostCommand"
 import { PostForm } from "./PostForm"
 
 export async function EditPostScreen({ postId }: { postId: string }) {
-  const post = await getEditablePost(postId)
   // Someone else's draft, and a Post the reader may not change, look like no Post at all.
-  if (!post) notFound()
+  const post = await readEditablePost(postId)
 
   const t = await getTranslations("Posts")
   const draft = post.state === "draft"
@@ -34,12 +31,12 @@ export async function EditPostScreen({ postId }: { postId: string }) {
             )}
           </p>
         </div>
-        {draft ? <ConfirmPostCommand command="discard" action={discardDraft.bind(null, post.id)} /> : null}
+        {draft ? <ConfirmPostCommand command="discard" postId={post.id} /> : null}
       </div>
       {/* Keyed on the save, so a reloaded draft starts the editor from what was stored. */}
       <PostForm
         key={post.savedAt.toISOString()}
-        action={draft ? saveDraft.bind(null, post.id) : editPublishedPost.bind(null, post.id)}
+        target={{ kind: post.state, postId: post.id }}
         stage={post.state}
         initial={post}
         unsaved={{ slot: post.id, version: post.savedAt.toISOString() }}

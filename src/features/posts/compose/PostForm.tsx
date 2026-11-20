@@ -1,8 +1,8 @@
 "use client"
 
 import Link from "next/link"
-import { useActionState, useEffect } from "react"
-import { useFormStatus } from "react-dom"
+import { useRouter } from "next/navigation"
+import { type FormEvent, useState, useTransition } from "react"
 import { useTranslations } from "@/core/i18n/translations"
 import { type RichTextDocument, RichTextEditor } from "@/features/rich-text"
 import { InputField } from "@/shared/forms/fields"
@@ -10,14 +10,15 @@ import { Alert, AlertAction, AlertDescription } from "@/shared/ui/base/alert"
 import { Button, buttonVariants } from "@/shared/ui/base/button"
 import { Field, FieldError, FieldGroup, FieldTitle } from "@/shared/ui/base/field"
 import { postDocument } from "../post-document"
-import type { PostFormState } from "./actions"
 import { POST_TITLE_MAX_LENGTH } from "./schemas"
+import { type PostFormState, type PostFormTarget, submitPost } from "./submit"
 import { useUnsavedPost } from "./use-unsaved-post"
 
 const POST_BODY_LABEL_ID = "post-body-label"
 
 type PostFormProps = {
-  action: (state: PostFormState, formData: FormData) => Promise<PostFormState>
+  /** The Post the form writes through the API. */
+  target: PostFormTarget
   /** A draft can be saved or published; a published Post can only be saved as it is. */
   stage: "draft" | "published"
   /** What the Post says now, when it already exists. */
@@ -32,17 +33,36 @@ type PostFormProps = {
 
 const NOTHING_WRITTEN = { title: "", body: undefined }
 
-export function PostForm({ action: submit, stage, initial, unsaved: storage, cancelHref }: PostFormProps) {
+export function PostForm({ target, stage, initial, unsaved: storage, cancelHref }: PostFormProps) {
   const t = useTranslations("Posts")
   const common = useTranslations("Common")
-  const [state, action] = useActionState<PostFormState, FormData>(submit, { status: "idle" })
+  const router = useRouter()
+  const [state, setState] = useState<PostFormState>({ status: "idle" })
+  const [pendingIntent, setPendingIntent] = useState<"draft" | "publish" | null>(null)
+  const [, startTransition] = useTransition()
   const unsaved = useUnsavedPost({ ...storage, initial: initial ?? NOTHING_WRITTEN })
-  const { saveFailed } = unsaved
 
-  // Runs once per settled submission: a failure keeps the copy for the next attempt.
-  useEffect(() => {
-    if (state.status === "error") saveFailed()
-  }, [state, saveFailed])
+  function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    const submitter = (event.nativeEvent as SubmitEvent).submitter
+    const publish = stage === "draft" && submitter?.getAttribute("value") === "publish"
+    const formData = new FormData(event.currentTarget)
+    const values = { title: String(formData.get("title") ?? ""), body: String(formData.get("body") ?? "") }
+    unsaved.saving()
+    setPendingIntent(publish ? "publish" : "draft")
+    startTransition(async () => {
+      const outcome = await submitPost(target, values, publish)
+      if ("error" in outcome) {
+        // A failure keeps the copy for the next attempt and hands the author their post back.
+        unsaved.saveFailed()
+        setState({ status: "error", error: outcome.error, values })
+        setPendingIntent(null)
+        return
+      }
+      router.push(outcome.destination)
+      router.refresh()
+    })
+  }
 
   // React resets the form once the action settles, so a rejected post survives only
   // if the action hands back what was typed. Short of that, the form starts from a
@@ -56,7 +76,7 @@ export function PostForm({ action: submit, stage, initial, unsaved: storage, can
   const fieldsKey = unsaved.restored ? "restored" : "saved"
 
   return (
-    <form action={action} onSubmit={unsaved.saving} className="flex flex-col gap-6 md:min-h-0 md:flex-1">
+    <form onSubmit={submit} className="flex flex-col gap-6 md:min-h-0 md:flex-1">
       {unsaved.restored && state.status === "idle" ? (
         <Alert>
           <AlertDescription>{t("unsavedRestored")}</AlertDescription>
@@ -93,7 +113,7 @@ export function PostForm({ action: submit, stage, initial, unsaved: storage, can
         <FieldError>{state.status === "error" ? t(state.error) : undefined}</FieldError>
       </FieldGroup>
       <div className="flex flex-wrap items-center gap-3">
-        <SubmitButtons stage={stage} />
+        <SubmitButtons stage={stage} pendingIntent={pendingIntent} />
         <Link href={cancelHref} className={buttonVariants({ variant: "ghost" })}>
           {common("cancel")}
         </Link>
@@ -106,10 +126,15 @@ export function PostForm({ action: submit, stage, initial, unsaved: storage, can
  * Pressing Enter in the title submits through the first button, so for a draft that is
  * Save draft: publishing only ever happens from the Publish button itself.
  */
-function SubmitButtons({ stage }: { stage: PostFormProps["stage"] }) {
+function SubmitButtons({
+  stage,
+  pendingIntent
+}: {
+  stage: PostFormProps["stage"]
+  pendingIntent: "draft" | "publish" | null
+}) {
   const t = useTranslations("Posts")
-  const { pending, data } = useFormStatus()
-  const pendingIntent = pending ? data?.get("intent") : undefined
+  const pending = pendingIntent !== null
 
   if (stage === "published") {
     return (

@@ -4,13 +4,13 @@ import { newsPostPath } from "@/core/navigation/navigation-utils"
 import { ROUTES } from "@/core/navigation/site"
 import { OverviewCard, OverviewList, overviewRowClassName } from "@/shared/layouts/overview-card"
 import { PostByline } from "./post-byline"
-import { listLatestPosts } from "./service"
+import { readLatestPosts } from "./query"
 
 const LATEST = 3
 
 /** The newest few Posts for an overview page, each by title and byline. */
 export async function LatestPostsCard({ className }: { className?: string }) {
-  const [posts, t] = await Promise.all([listLatestPosts(LATEST), getTranslations("HomePage.news")])
+  const [posts, t] = await Promise.all([readLatestPosts(LATEST), getTranslations("HomePage.news")])
 
   return (
     <OverviewCard title={t("title")} link={{ href: ROUTES.news, label: t("seeAll") }} className={className}>

@@ -2,14 +2,17 @@ import "server-only"
 
 import { and, desc, eq, isNotNull, isNull } from "drizzle-orm"
 import { z } from "zod"
-import { type AuthorizationDatabase, AuthorizationDeniedError, requirePermission } from "@/core/authz"
-import { db } from "@/core/db"
+import { type AuthorizationDatabase, AuthorizationDeniedError } from "@/core/authz/authorization"
+import type { AuthorizationActor, PermissionRequest } from "@/core/authz/model"
 import { user } from "@/core/db/schema/auth"
 import { post } from "@/core/db/schema/posts"
-import type { RichTextDocument } from "@/features/rich-text"
+import type { RichTextDocument } from "@/features/rich-text/document"
 
 /** The application database client. Tests hand the reads and writes a throwaway one. */
 export type PostsDatabase = AuthorizationDatabase
+
+/** Resolves the acting User for a request on the given connection, or throws a denial. */
+export type Authorize = (request: PermissionRequest, connection: PostsDatabase) => Promise<AuthorizationActor>
 
 export type NewsFeedEntry = {
   id: string
@@ -55,10 +58,7 @@ const publishedPostColumns = {
 }
 
 /** The whole feed, newest first. Every signed-in User sees the same one, and no drafts. */
-export async function listNewsFeed(
-  database: PostsDatabase = db,
-  authorize = requirePermission
-): Promise<NewsFeedEntry[]> {
+export async function listNewsFeed(database: PostsDatabase, authorize: Authorize): Promise<NewsFeedEntry[]> {
   await authorize({ action: "app.access" }, database)
   const rows = await database
     .select(publishedPostColumns)
@@ -78,8 +78,8 @@ export type LatestPost = Omit<NewsFeedEntry, "body">
 /** The `count` newest published Posts, newest first, without their bodies. */
 export async function listLatestPosts(
   count: number,
-  database: PostsDatabase = db,
-  authorize = requirePermission
+  database: PostsDatabase,
+  authorize: Authorize
 ): Promise<LatestPost[]> {
   await authorize({ action: "app.access" }, database)
   const { body: _body, ...columns } = publishedPostColumns
@@ -97,8 +97,8 @@ export async function listLatestPosts(
 /** One Post by its opaque id, or null when it does not exist or is not published. */
 export async function getPublishedPost(
   postId: string,
-  database: PostsDatabase = db,
-  authorize = requirePermission
+  database: PostsDatabase,
+  authorize: Authorize
 ): Promise<PublishedPost | null> {
   if (!isPostId(postId)) return null
   try {
@@ -123,10 +123,7 @@ export async function getPublishedPost(
 }
 
 /** The author's own drafts, most recently saved first. Nobody else's, and none they discarded. */
-export async function listOwnDrafts(
-  database: PostsDatabase = db,
-  authorize = requirePermission
-): Promise<DraftSummary[]> {
+export async function listOwnDrafts(database: PostsDatabase, authorize: Authorize): Promise<DraftSummary[]> {
   const { userId: authorId } = await authorize({ action: "app.access" }, database)
   return database
     .select({ id: post.id, title: post.title, savedAt: post.updatedAt })
@@ -142,8 +139,8 @@ export async function listOwnDrafts(
  */
 export async function getEditablePost(
   postId: string,
-  database: PostsDatabase = db,
-  authorize = requirePermission
+  database: PostsDatabase,
+  authorize: Authorize
 ): Promise<EditablePost | null> {
   if (!isPostId(postId)) return null
 

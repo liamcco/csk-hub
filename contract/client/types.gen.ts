@@ -172,6 +172,104 @@ export type ProfileVoices = {
     voices: Array<'S1' | 'S2' | 'A1' | 'A2' | 'T1' | 'T2' | 'B1' | 'B2'>;
 };
 
+export type NewsFeed = {
+    /**
+     * Newest first.
+     */
+    items: Array<PublishedPost & {
+        unread: boolean;
+    }>;
+    permissions: {
+        create: boolean;
+    };
+};
+
+/**
+ * The editor's document (ProseMirror JSON), restricted to what a Post body may contain.
+ */
+export type RichTextDocument = {
+    [key: string]: unknown;
+};
+
+export type PublishedPost = {
+    id: string;
+    title: string;
+    /**
+     * Null once the author has been erased.
+     */
+    authorName: string | null;
+    publishedAt: string;
+    /**
+     * When the title or body last changed after publishing.
+     */
+    editedAt: string | null;
+    body: RichTextDocument;
+};
+
+export type LatestPosts = {
+    items: Array<{
+        id: string;
+        title: string;
+        /**
+         * Null once the author has been erased.
+         */
+        authorName: string | null;
+        publishedAt: string;
+        /**
+         * When the title or body last changed after publishing.
+         */
+        editedAt: string | null;
+    }>;
+};
+
+export type OwnDrafts = {
+    items: Array<{
+        id: string;
+        title: string;
+        savedAt: string;
+    }>;
+};
+
+export type PostUnread = {
+    /**
+     * Published Posts from the last 30 days the User has not opened.
+     */
+    count: number;
+    /**
+     * When the count next changes without a write: a publication or a 30-day expiry.
+     */
+    nextChangeAt: string | null;
+};
+
+export type PostView = {
+    post: PublishedPost;
+    permissions: {
+        update: boolean;
+        unpublish: boolean;
+    };
+};
+
+export type EditablePost = {
+    id: string;
+    title: string;
+    body: RichTextDocument;
+    state: 'draft' | 'published';
+    savedAt: string;
+};
+
+export type SavedPost = {
+    id: string;
+};
+
+export type RecalledPost = {
+    id: string;
+    unpublishedTo: 'own' | 'author';
+};
+
+export type PostReadResult = {
+    changed: boolean;
+};
+
 export type MemberIdSession = {
     member: MemberIdMember;
     /**
@@ -440,6 +538,425 @@ export type UpdateProfileVoicesResponses = {
 };
 
 export type UpdateProfileVoicesResponse = UpdateProfileVoicesResponses[keyof UpdateProfileVoicesResponses];
+
+export type ListNewsFeedData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/posts';
+};
+
+export type ListNewsFeedErrors = {
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+};
+
+export type ListNewsFeedError = ListNewsFeedErrors[keyof ListNewsFeedErrors];
+
+export type ListNewsFeedResponses = {
+    /**
+     * The feed.
+     */
+    200: NewsFeed;
+};
+
+export type ListNewsFeedResponse = ListNewsFeedResponses[keyof ListNewsFeedResponses];
+
+export type CreatePostData = {
+    body: {
+        title: string;
+        body: RichTextDocument;
+        publish: boolean;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/v1/posts';
+};
+
+export type CreatePostErrors = {
+    /**
+     * The request failed validation.
+     */
+    400: ValidationError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The current User may not perform this operation.
+     */
+    403: ApiError;
+    /**
+     * The resource does not exist or is not visible to the current User.
+     */
+    404: ApiError;
+    /**
+     * `INTERNAL`: the write failed and nothing was saved.
+     */
+    500: ApiError;
+};
+
+export type CreatePostError = CreatePostErrors[keyof CreatePostErrors];
+
+export type CreatePostResponses = {
+    /**
+     * The new Post.
+     */
+    201: SavedPost;
+};
+
+export type CreatePostResponse = CreatePostResponses[keyof CreatePostResponses];
+
+export type ListLatestPostsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        limit?: number;
+    };
+    url: '/api/v1/posts/latest';
+};
+
+export type ListLatestPostsErrors = {
+    /**
+     * The request failed validation.
+     */
+    400: ValidationError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+};
+
+export type ListLatestPostsError = ListLatestPostsErrors[keyof ListLatestPostsErrors];
+
+export type ListLatestPostsResponses = {
+    /**
+     * The newest Posts.
+     */
+    200: LatestPosts;
+};
+
+export type ListLatestPostsResponse = ListLatestPostsResponses[keyof ListLatestPostsResponses];
+
+export type ListOwnDraftsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/posts/drafts';
+};
+
+export type ListOwnDraftsErrors = {
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+};
+
+export type ListOwnDraftsError = ListOwnDraftsErrors[keyof ListOwnDraftsErrors];
+
+export type ListOwnDraftsResponses = {
+    /**
+     * The caller's Drafts.
+     */
+    200: OwnDrafts;
+};
+
+export type ListOwnDraftsResponse = ListOwnDraftsResponses[keyof ListOwnDraftsResponses];
+
+export type GetPostUnreadData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/posts/unread';
+};
+
+export type GetPostUnreadErrors = {
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+};
+
+export type GetPostUnreadError = GetPostUnreadErrors[keyof GetPostUnreadErrors];
+
+export type GetPostUnreadResponses = {
+    /**
+     * Unread state.
+     */
+    200: PostUnread;
+};
+
+export type GetPostUnreadResponse = GetPostUnreadResponses[keyof GetPostUnreadResponses];
+
+export type GetPostData = {
+    body?: never;
+    path: {
+        postId: string;
+    };
+    query?: never;
+    url: '/api/v1/posts/{postId}';
+};
+
+export type GetPostErrors = {
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The resource does not exist or is not visible to the current User.
+     */
+    404: ApiError;
+};
+
+export type GetPostError = GetPostErrors[keyof GetPostErrors];
+
+export type GetPostResponses = {
+    /**
+     * The Post.
+     */
+    200: PostView;
+};
+
+export type GetPostResponse = GetPostResponses[keyof GetPostResponses];
+
+export type GetEditablePostData = {
+    body?: never;
+    path: {
+        postId: string;
+    };
+    query?: never;
+    url: '/api/v1/posts/{postId}/edit';
+};
+
+export type GetEditablePostErrors = {
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The resource does not exist or is not visible to the current User.
+     */
+    404: ApiError;
+};
+
+export type GetEditablePostError = GetEditablePostErrors[keyof GetEditablePostErrors];
+
+export type GetEditablePostResponses = {
+    /**
+     * The Post.
+     */
+    200: EditablePost;
+};
+
+export type GetEditablePostResponse = GetEditablePostResponses[keyof GetEditablePostResponses];
+
+export type SaveDraftData = {
+    body: {
+        title: string;
+        body: RichTextDocument;
+        publish: boolean;
+    };
+    path: {
+        postId: string;
+    };
+    query?: never;
+    url: '/api/v1/posts/{postId}/draft';
+};
+
+export type SaveDraftErrors = {
+    /**
+     * The request failed validation.
+     */
+    400: ValidationError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The current User may not perform this operation.
+     */
+    403: ApiError;
+    /**
+     * The resource does not exist or is not visible to the current User.
+     */
+    404: ApiError;
+    /**
+     * `INTERNAL`: the write failed and nothing was saved.
+     */
+    500: ApiError;
+};
+
+export type SaveDraftError = SaveDraftErrors[keyof SaveDraftErrors];
+
+export type SaveDraftResponses = {
+    /**
+     * The saved Post.
+     */
+    200: SavedPost;
+};
+
+export type SaveDraftResponse = SaveDraftResponses[keyof SaveDraftResponses];
+
+export type EditPublishedPostData = {
+    body: {
+        title: string;
+        body: RichTextDocument;
+    };
+    path: {
+        postId: string;
+    };
+    query?: never;
+    url: '/api/v1/posts/{postId}/published';
+};
+
+export type EditPublishedPostErrors = {
+    /**
+     * The request failed validation.
+     */
+    400: ValidationError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The current User may not perform this operation.
+     */
+    403: ApiError;
+    /**
+     * The resource does not exist or is not visible to the current User.
+     */
+    404: ApiError;
+    /**
+     * `INTERNAL`: the write failed and nothing was saved.
+     */
+    500: ApiError;
+};
+
+export type EditPublishedPostError = EditPublishedPostErrors[keyof EditPublishedPostErrors];
+
+export type EditPublishedPostResponses = {
+    /**
+     * The saved Post.
+     */
+    200: SavedPost;
+};
+
+export type EditPublishedPostResponse = EditPublishedPostResponses[keyof EditPublishedPostResponses];
+
+export type RecallPostData = {
+    body?: never;
+    path: {
+        postId: string;
+    };
+    query?: never;
+    url: '/api/v1/posts/{postId}/recall';
+};
+
+export type RecallPostErrors = {
+    /**
+     * The request failed validation.
+     */
+    400: ValidationError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The current User may not perform this operation.
+     */
+    403: ApiError;
+    /**
+     * The resource does not exist or is not visible to the current User.
+     */
+    404: ApiError;
+    /**
+     * `INTERNAL`: the write failed and nothing was saved.
+     */
+    500: ApiError;
+};
+
+export type RecallPostError = RecallPostErrors[keyof RecallPostErrors];
+
+export type RecallPostResponses = {
+    /**
+     * Whose Drafts received the Post.
+     */
+    200: RecalledPost;
+};
+
+export type RecallPostResponse = RecallPostResponses[keyof RecallPostResponses];
+
+export type DiscardDraftData = {
+    body?: never;
+    path: {
+        postId: string;
+    };
+    query?: never;
+    url: '/api/v1/posts/{postId}/discard';
+};
+
+export type DiscardDraftErrors = {
+    /**
+     * The request failed validation.
+     */
+    400: ValidationError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The current User may not perform this operation.
+     */
+    403: ApiError;
+    /**
+     * The resource does not exist or is not visible to the current User.
+     */
+    404: ApiError;
+    /**
+     * `INTERNAL`: the write failed and nothing was saved.
+     */
+    500: ApiError;
+};
+
+export type DiscardDraftError = DiscardDraftErrors[keyof DiscardDraftErrors];
+
+export type DiscardDraftResponses = {
+    /**
+     * Discarded.
+     */
+    204: void;
+};
+
+export type DiscardDraftResponse = DiscardDraftResponses[keyof DiscardDraftResponses];
+
+export type MarkPostReadData = {
+    body?: never;
+    path: {
+        postId: string;
+    };
+    query?: never;
+    url: '/api/v1/posts/{postId}/read';
+};
+
+export type MarkPostReadErrors = {
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+};
+
+export type MarkPostReadError = MarkPostReadErrors[keyof MarkPostReadErrors];
+
+export type MarkPostReadResponses = {
+    /**
+     * Whether this was the first time, so a client can skip refreshing unchanged badges.
+     */
+    200: PostReadResult;
+};
+
+export type MarkPostReadResponse = MarkPostReadResponses[keyof MarkPostReadResponses];
 
 export type GetMemberIdSessionData = {
     body?: never;

@@ -1,6 +1,7 @@
 import { type ApiDependencies, apiError, createRouter, handleApiError } from "@/core/http"
 import { memberIdRouter } from "@/features/member-id"
 import { membersRouter } from "@/features/members/http"
+import { postsRouter } from "@/features/posts/http"
 import { currentActorRouter } from "./current-actor"
 
 const openApiInfo = {
@@ -36,6 +37,7 @@ export function createApi(dependencies: ApiDependencies) {
     c.set("resolveRequest", () => dependencies.resolveRequest(c.req.raw.headers))
     c.set("database", dependencies.database)
     c.set("secret", dependencies.secret)
+    c.set("scheduleDelivery", dependencies.scheduleDelivery)
     await next()
   })
 
@@ -54,7 +56,7 @@ export function createApi(dependencies: ApiDependencies) {
     await next()
   })
 
-  const v1 = createRouter().route("/", currentActorRouter).route("/", membersRouter)
+  const v1 = createRouter().route("/", currentActorRouter).route("/", membersRouter).route("/", postsRouter)
   api.route("/api/v1", v1)
   // Released before /api/v1; its paths and representations stay frozen for installed clients.
   api.route("/api/member-id", memberIdRouter)

@@ -24,6 +24,11 @@ export type ApiDependencies = Readonly<{
   database: Database
   /** The server secret features derive purpose-bound keys from. Never sent or logged. */
   secret: string
+  /**
+   * The post-commit delivery boundary: wakes outbox dispatch after a write that queued activity
+   * has committed. Never call it inside a transaction.
+   */
+  scheduleDelivery: () => void
 }>
 
 export type ApiEnv = {
@@ -37,5 +42,7 @@ export type ApiEnv = {
     database: Database
     /** The server secret; derive a purpose-bound key from it rather than using it directly. */
     secret: string
+    /** Wakes outbox delivery. Call only after the transaction that queued activity commits. */
+    scheduleDelivery: () => void
   }
 }

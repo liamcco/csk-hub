@@ -1,10 +1,10 @@
 import "server-only"
 
 import { and, eq, isNotNull, isNull, sql } from "drizzle-orm"
-import { db } from "@/core/db"
+
 import { post } from "@/core/db/schema/posts"
 import { queuePublicActivity } from "@/core/realtime/outbox"
-import type { RichTextDocument } from "@/features/rich-text"
+import type { RichTextDocument } from "@/features/rich-text/document"
 import { isPostId, type PostsDatabase } from "./service"
 
 /**
@@ -32,7 +32,7 @@ function draftOf(postId: string, authorId: string) {
 /** Writes a new Post for its author, either published at once or kept as their draft. */
 export async function createPost(
   input: { authorId: string; content: PostContent; publish: boolean },
-  database: PostsDatabase = db
+  database: PostsDatabase
 ): Promise<SavedPost> {
   return database.transaction(async (tx) => {
     const [created] = await tx
@@ -56,7 +56,7 @@ export async function createPost(
  */
 export async function saveDraft(
   input: { postId: string; authorId: string; content: PostContent; publish: boolean },
-  database: PostsDatabase = db
+  database: PostsDatabase
 ): Promise<SavedPost | null> {
   if (!isPostId(input.postId)) return null
 
@@ -79,7 +79,7 @@ export async function saveDraft(
  */
 export async function editPublishedPost(
   input: { postId: string; content: PostContent },
-  database: PostsDatabase = db
+  database: PostsDatabase
 ): Promise<SavedPost | null> {
   if (!isPostId(input.postId)) return null
 
@@ -110,7 +110,7 @@ export async function editPublishedPost(
  */
 export async function unpublishPost(
   postId: string,
-  database: PostsDatabase = db
+  database: PostsDatabase
 ): Promise<{ authorId: string | null } | null> {
   if (!isPostId(postId)) return null
 
@@ -133,7 +133,7 @@ export async function unpublishPost(
  */
 export async function discardDraft(
   input: { postId: string; authorId: string },
-  database: PostsDatabase = db
+  database: PostsDatabase
 ): Promise<boolean> {
   if (!isPostId(input.postId)) return false
 
