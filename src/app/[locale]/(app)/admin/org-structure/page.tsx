@@ -1,6 +1,6 @@
 import { Suspense } from "react"
 import { requirePermission } from "@/core/authz"
-import { ChoirsScreen, ChoirsScreenSkeleton } from "@/features/org-structure"
+import { ChoirsScreen, ChoirsScreenSkeleton } from "@/features/org-structure/ui"
 
 async function AdminChoirs() {
   await requirePermission({ action: "admin.access" })

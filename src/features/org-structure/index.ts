@@ -31,6 +31,3 @@ export {
   setPositionGroupTypes,
   updatePosition
 } from "./structure"
-export { ChoirsScreen, ChoirsScreenSkeleton } from "./ui/choirs/screen"
-export { GroupDetailScreen, GroupDetailScreenSkeleton } from "./ui/detail/screen"
-export { GroupsScreen, GroupsScreenSkeleton } from "./ui/groups/screen"
