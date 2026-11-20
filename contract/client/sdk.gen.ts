@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { GetCurrentActorData, GetCurrentActorErrors, GetCurrentActorResponses, GetMemberIdSessionData, GetMemberIdSessionErrors, GetMemberIdSessionResponses, IssueMemberIdData, IssueMemberIdErrors, IssueMemberIdResponses, VerifyMemberIdData, VerifyMemberIdErrors, VerifyMemberIdResponses } from './types.gen';
+import type { ActivateAccountData, ActivateAccountErrors, ActivateAccountResponses, ActivateUserData, ActivateUserErrors, ActivateUserResponses, AddGroupMemberData, AddGroupMemberErrors, AddGroupMemberResponses, AddGroupMembersData, AddGroupMembersErrors, AddGroupMembersResponses, ArchiveGroupData, ArchiveGroupErrors, ArchiveGroupResponses, ArchiveLocationData, ArchiveLocationErrors, ArchiveLocationResponses, AssignPositionHolderData, AssignPositionHolderErrors, AssignPositionHolderResponses, ChangeEventStatusData, ChangeEventStatusErrors, ChangeEventStatusResponses, ChangeSingerVoiceData, ChangeSingerVoiceErrors, ChangeSingerVoiceResponses, ChangeUserRolesData, ChangeUserRolesErrors, ChangeUserRolesResponses, CreateEventData, CreateEventErrors, CreateEventResponses, CreateGroupData, CreateGroupErrors, CreateGroupResponses, CreateLocationData, CreateLocationErrors, CreateLocationResponses, CreatePositionData, CreatePositionErrors, CreatePositionResponses, CreatePostData, CreatePostErrors, CreatePostResponses, DeactivateUserData, DeactivateUserErrors, DeactivateUserResponses, DeleteEventData, DeleteEventErrors, DeleteEventResponses, DiscardDraftData, DiscardDraftErrors, DiscardDraftResponses, EditPublishedPostData, EditPublishedPostErrors, EditPublishedPostResponses, EndGroupMembershipData, EndGroupMembershipErrors, EndGroupMembershipResponses, EndPositionHoldingData, EndPositionHoldingErrors, EndPositionHoldingResponses, EraseUserData, EraseUserErrors, EraseUserResponses, FindExistingUserEmailsData, FindExistingUserEmailsErrors, FindExistingUserEmailsResponses, GetChoirPlacementData, GetChoirPlacementErrors, GetChoirPlacementResponses, GetConversationData, GetConversationErrors, GetConversationResponses, GetConversationUnreadData, GetConversationUnreadErrors, GetConversationUnreadResponses, GetCurrentActorData, GetCurrentActorErrors, GetCurrentActorResponses, GetCurrentCapabilitiesData, GetCurrentCapabilitiesErrors, GetCurrentCapabilitiesResponses, GetEditablePostData, GetEditablePostErrors, GetEditablePostResponses, GetEventEditorData, GetEventEditorErrors, GetEventEditorResponses, GetEventFormOptionsData, GetEventFormOptionsErrors, GetEventFormOptionsResponses, GetEventPageData, GetEventPageErrors, GetEventPageResponses, GetGroupDetailData, GetGroupDetailErrors, GetGroupDetailResponses, GetGroupsOverviewData, GetGroupsOverviewErrors, GetGroupsOverviewResponses, GetMemberIdSessionData, GetMemberIdSessionErrors, GetMemberIdSessionResponses, GetMemberProfileData, GetMemberProfileErrors, GetMemberProfileResponses, GetOwnProfileData, GetOwnProfileErrors, GetOwnProfileResponses, GetPostData, GetPostErrors, GetPostResponses, GetPostUnreadData, GetPostUnreadErrors, GetPostUnreadResponses, GetProfileEditorData, GetProfileEditorErrors, GetProfileEditorResponses, GetPushSubscriptionStatusData, GetPushSubscriptionStatusErrors, GetPushSubscriptionStatusResponses, ImportUsersData, ImportUsersErrors, ImportUsersResponses, InviteUserData, InviteUserErrors, InviteUserResponses, IssueMemberIdData, IssueMemberIdErrors, IssueMemberIdResponses, LeaveGroupConversationData, LeaveGroupConversationErrors, LeaveGroupConversationResponses, ListConversationsData, ListConversationsErrors, ListConversationsResponses, ListLatestPostsData, ListLatestPostsErrors, ListLatestPostsResponses, ListLocationsData, ListLocationsErrors, ListLocationsResponses, ListManagedEventsData, ListManagedEventsErrors, ListManagedEventsResponses, ListMembersData, ListMembersErrors, ListMembersResponses, ListNewsFeedData, ListNewsFeedErrors, ListNewsFeedResponses, ListOwnDraftsData, ListOwnDraftsErrors, ListOwnDraftsResponses, ListPositionCatalogueData, ListPositionCatalogueErrors, ListPositionCatalogueResponses, ListUpcomingEventsData, ListUpcomingEventsErrors, ListUpcomingEventsResponses, ListUsersData, ListUsersErrors, ListUsersResponses, MarkConversationReadData, MarkConversationReadErrors, MarkConversationReadResponses, MarkPostReadData, MarkPostReadErrors, MarkPostReadResponses, RecallPostData, RecallPostErrors, RecallPostResponses, RegisterPushSubscriptionData, RegisterPushSubscriptionErrors, RegisterPushSubscriptionResponses, RemovePushSubscriptionData, RemovePushSubscriptionErrors, RemovePushSubscriptionResponses, RenameGroupConversationData, RenameGroupConversationErrors, RenameGroupConversationResponses, RenameGroupData, RenameGroupErrors, RenameGroupResponses, ResendInvitationData, ResendInvitationErrors, ResendInvitationResponses, SaveDraftData, SaveDraftErrors, SaveDraftResponses, SearchBroadcastRecipientsData, SearchBroadcastRecipientsErrors, SearchBroadcastRecipientsResponses, SearchMessageRecipientsData, SearchMessageRecipientsErrors, SearchMessageRecipientsResponses, SendBroadcastData, SendBroadcastErrors, SendBroadcastResponses, SendMessageData, SendMessageErrors, SendMessageResponses, SendTestPushNotificationData, SendTestPushNotificationErrors, SendTestPushNotificationResponses, StartConversationData, StartConversationErrors, StartConversationResponses, UpdateEventData, UpdateEventErrors, UpdateEventResponses, UpdateLocalePreferenceData, UpdateLocalePreferenceErrors, UpdateLocalePreferenceResponses, UpdateLocationData, UpdateLocationErrors, UpdateLocationResponses, UpdatePositionData, UpdatePositionErrors, UpdatePositionResponses, UpdateProfileVoicesData, UpdateProfileVoicesErrors, UpdateProfileVoicesResponses, VerifyMemberIdData, VerifyMemberIdErrors, VerifyMemberIdResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -22,6 +22,633 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
  * The signed-in, active User behind this request, freshly resolved.
  */
 export const getCurrentActor = <ThrowOnError extends boolean = false>(options?: Options<GetCurrentActorData, ThrowOnError>): RequestResult<GetCurrentActorResponses, GetCurrentActorErrors, ThrowOnError> => (options?.client ?? client).get<GetCurrentActorResponses, GetCurrentActorErrors, ThrowOnError>({ url: '/api/v1/me', ...options });
+
+/**
+ * The signed-in User's name, photo and application-wide capabilities, for the app shell.
+ */
+export const getCurrentCapabilities = <ThrowOnError extends boolean = false>(options?: Options<GetCurrentCapabilitiesData, ThrowOnError>): RequestResult<GetCurrentCapabilitiesResponses, GetCurrentCapabilitiesErrors, ThrowOnError> => (options?.client ?? client).get<GetCurrentCapabilitiesResponses, GetCurrentCapabilitiesErrors, ThrowOnError>({ url: '/api/v1/me/capabilities', ...options });
+
+/**
+ * Other active members, searched by name or username.
+ *
+ * Numbered pages of 24, ordered by name, because the directory shows page numbers and a member count.
+ */
+export const listMembers = <ThrowOnError extends boolean = false>(options?: Options<ListMembersData, ThrowOnError>): RequestResult<ListMembersResponses, ListMembersErrors, ThrowOnError> => (options?.client ?? client).get<ListMembersResponses, ListMembersErrors, ThrowOnError>({ url: '/api/v1/members', ...options });
+
+/**
+ * An active member's profile with the caller's permissions on it.
+ */
+export const getMemberProfile = <ThrowOnError extends boolean = false>(options: Options<GetMemberProfileData, ThrowOnError>): RequestResult<GetMemberProfileResponses, GetMemberProfileErrors, ThrowOnError> => (options.client ?? client).get<GetMemberProfileResponses, GetMemberProfileErrors, ThrowOnError>({ url: '/api/v1/members/{memberId}', ...options });
+
+/**
+ * The caller's own profile.
+ */
+export const getOwnProfile = <ThrowOnError extends boolean = false>(options?: Options<GetOwnProfileData, ThrowOnError>): RequestResult<GetOwnProfileResponses, GetOwnProfileErrors, ThrowOnError> => (options?.client ?? client).get<GetOwnProfileResponses, GetOwnProfileErrors, ThrowOnError>({ url: '/api/v1/profile', ...options });
+
+/**
+ * The caller's editable voices.
+ */
+export const getProfileEditor = <ThrowOnError extends boolean = false>(options?: Options<GetProfileEditorData, ThrowOnError>): RequestResult<GetProfileEditorResponses, GetProfileEditorErrors, ThrowOnError> => (options?.client ?? client).get<GetProfileEditorResponses, GetProfileEditorErrors, ThrowOnError>({ url: '/api/v1/profile/voices', ...options });
+
+/**
+ * Replaces the voices the caller can sing.
+ */
+export const updateProfileVoices = <ThrowOnError extends boolean = false>(options: Options<UpdateProfileVoicesData, ThrowOnError>): RequestResult<UpdateProfileVoicesResponses, UpdateProfileVoicesErrors, ThrowOnError> => (options.client ?? client).put<UpdateProfileVoicesResponses, UpdateProfileVoicesErrors, ThrowOnError>({
+    url: '/api/v1/profile/voices',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * The whole News feed, newest first, with the caller's unread marks.
+ */
+export const listNewsFeed = <ThrowOnError extends boolean = false>(options?: Options<ListNewsFeedData, ThrowOnError>): RequestResult<ListNewsFeedResponses, ListNewsFeedErrors, ThrowOnError> => (options?.client ?? client).get<ListNewsFeedResponses, ListNewsFeedErrors, ThrowOnError>({ url: '/api/v1/posts', ...options });
+
+/**
+ * Writes a new Post, published at once or kept as the caller's Draft.
+ */
+export const createPost = <ThrowOnError extends boolean = false>(options: Options<CreatePostData, ThrowOnError>): RequestResult<CreatePostResponses, CreatePostErrors, ThrowOnError> => (options.client ?? client).post<CreatePostResponses, CreatePostErrors, ThrowOnError>({
+    url: '/api/v1/posts',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * The newest published Posts without their bodies, for overviews.
+ */
+export const listLatestPosts = <ThrowOnError extends boolean = false>(options?: Options<ListLatestPostsData, ThrowOnError>): RequestResult<ListLatestPostsResponses, ListLatestPostsErrors, ThrowOnError> => (options?.client ?? client).get<ListLatestPostsResponses, ListLatestPostsErrors, ThrowOnError>({ url: '/api/v1/posts/latest', ...options });
+
+/**
+ * The caller's own Drafts, most recently saved first. Never anyone else's.
+ */
+export const listOwnDrafts = <ThrowOnError extends boolean = false>(options?: Options<ListOwnDraftsData, ThrowOnError>): RequestResult<ListOwnDraftsResponses, ListOwnDraftsErrors, ThrowOnError> => (options?.client ?? client).get<ListOwnDraftsResponses, ListOwnDraftsErrors, ThrowOnError>({ url: '/api/v1/posts/drafts', ...options });
+
+/**
+ * The caller's unread Post count and when it next changes by itself.
+ */
+export const getPostUnread = <ThrowOnError extends boolean = false>(options?: Options<GetPostUnreadData, ThrowOnError>): RequestResult<GetPostUnreadResponses, GetPostUnreadErrors, ThrowOnError> => (options?.client ?? client).get<GetPostUnreadResponses, GetPostUnreadErrors, ThrowOnError>({ url: '/api/v1/posts/unread', ...options });
+
+/**
+ * A published Post with the caller's permissions on it.
+ *
+ * Drafts, Recalled Posts and discarded Posts are 404, even to their author.
+ */
+export const getPost = <ThrowOnError extends boolean = false>(options: Options<GetPostData, ThrowOnError>): RequestResult<GetPostResponses, GetPostErrors, ThrowOnError> => (options.client ?? client).get<GetPostResponses, GetPostErrors, ThrowOnError>({ url: '/api/v1/posts/{postId}', ...options });
+
+/**
+ * A Post as the caller may edit it: their own Draft, or a published Post they may change.
+ *
+ * Another author's Draft is 404, including to Admins.
+ */
+export const getEditablePost = <ThrowOnError extends boolean = false>(options: Options<GetEditablePostData, ThrowOnError>): RequestResult<GetEditablePostResponses, GetEditablePostErrors, ThrowOnError> => (options.client ?? client).get<GetEditablePostResponses, GetEditablePostErrors, ThrowOnError>({ url: '/api/v1/posts/{postId}/edit', ...options });
+
+/**
+ * Saves the caller's own Draft, and publishes it when `publish` is true.
+ */
+export const saveDraft = <ThrowOnError extends boolean = false>(options: Options<SaveDraftData, ThrowOnError>): RequestResult<SaveDraftResponses, SaveDraftErrors, ThrowOnError> => (options.client ?? client).put<SaveDraftResponses, SaveDraftErrors, ThrowOnError>({
+    url: '/api/v1/posts/{postId}/draft',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Changes a published Post in place; marked edited only when something changed.
+ */
+export const editPublishedPost = <ThrowOnError extends boolean = false>(options: Options<EditPublishedPostData, ThrowOnError>): RequestResult<EditPublishedPostResponses, EditPublishedPostErrors, ThrowOnError> => (options.client ?? client).put<EditPublishedPostResponses, EditPublishedPostErrors, ThrowOnError>({
+    url: '/api/v1/posts/{postId}/published',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Recalls a published Post from the feed back to its author's Drafts.
+ */
+export const recallPost = <ThrowOnError extends boolean = false>(options: Options<RecallPostData, ThrowOnError>): RequestResult<RecallPostResponses, RecallPostErrors, ThrowOnError> => (options.client ?? client).post<RecallPostResponses, RecallPostErrors, ThrowOnError>({ url: '/api/v1/posts/{postId}/recall', ...options });
+
+/**
+ * Throws the caller's own Draft away for good. It is hidden, never deleted.
+ */
+export const discardDraft = <ThrowOnError extends boolean = false>(options: Options<DiscardDraftData, ThrowOnError>): RequestResult<DiscardDraftResponses, DiscardDraftErrors, ThrowOnError> => (options.client ?? client).post<DiscardDraftResponses, DiscardDraftErrors, ThrowOnError>({ url: '/api/v1/posts/{postId}/discard', ...options });
+
+/**
+ * Records that the caller opened a published Post. Idempotent.
+ */
+export const markPostRead = <ThrowOnError extends boolean = false>(options: Options<MarkPostReadData, ThrowOnError>): RequestResult<MarkPostReadResponses, MarkPostReadErrors, ThrowOnError> => (options.client ?? client).post<MarkPostReadResponses, MarkPostReadErrors, ThrowOnError>({ url: '/api/v1/posts/{postId}/read', ...options });
+
+/**
+ * The caller's Direct and Group Conversations, most recent first.
+ *
+ * A departed member keeps the history retained for them, read-only.
+ */
+export const listConversations = <ThrowOnError extends boolean = false>(options?: Options<ListConversationsData, ThrowOnError>): RequestResult<ListConversationsResponses, ListConversationsErrors, ThrowOnError> => (options?.client ?? client).get<ListConversationsResponses, ListConversationsErrors, ThrowOnError>({ url: '/api/v1/conversations', ...options });
+
+/**
+ * Starts a Direct Conversation with a first Message (one member) or a named Group Conversation.
+ *
+ * Retrying with the same `idempotencyKey` returns the original Conversation instead of creating another.
+ */
+export const startConversation = <ThrowOnError extends boolean = false>(options: Options<StartConversationData, ThrowOnError>): RequestResult<StartConversationResponses, StartConversationErrors, ThrowOnError> => (options.client ?? client).post<StartConversationResponses, StartConversationErrors, ThrowOnError>({
+    url: '/api/v1/conversations',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * How many of the caller's Conversations hold an unread Message.
+ */
+export const getConversationUnread = <ThrowOnError extends boolean = false>(options?: Options<GetConversationUnreadData, ThrowOnError>): RequestResult<GetConversationUnreadResponses, GetConversationUnreadErrors, ThrowOnError> => (options?.client ?? client).get<GetConversationUnreadResponses, GetConversationUnreadErrors, ThrowOnError>({ url: '/api/v1/conversations/unread', ...options });
+
+/**
+ * Other active members to start a Conversation with, by name or username.
+ */
+export const searchMessageRecipients = <ThrowOnError extends boolean = false>(options?: Options<SearchMessageRecipientsData, ThrowOnError>): RequestResult<SearchMessageRecipientsResponses, SearchMessageRecipientsErrors, ThrowOnError> => (options?.client ?? client).get<SearchMessageRecipientsResponses, SearchMessageRecipientsErrors, ThrowOnError>({ url: '/api/v1/conversations/recipients', ...options });
+
+/**
+ * A window of up to 50 Messages, oldest first, ending before `before` when given.
+ */
+export const getConversation = <ThrowOnError extends boolean = false>(options: Options<GetConversationData, ThrowOnError>): RequestResult<GetConversationResponses, GetConversationErrors, ThrowOnError> => (options.client ?? client).get<GetConversationResponses, GetConversationErrors, ThrowOnError>({ url: '/api/v1/conversations/{conversationId}', ...options });
+
+/**
+ * Appends a Message. Retrying with the same `idempotencyKey` returns the original Message.
+ *
+ * Reusing a key for different text is `IDEMPOTENCY_KEY_REUSED`.
+ */
+export const sendMessage = <ThrowOnError extends boolean = false>(options: Options<SendMessageData, ThrowOnError>): RequestResult<SendMessageResponses, SendMessageErrors, ThrowOnError> => (options.client ?? client).post<SendMessageResponses, SendMessageErrors, ThrowOnError>({
+    url: '/api/v1/conversations/{conversationId}/messages',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Advances the caller's read cursor to a Message they were shown.
+ */
+export const markConversationRead = <ThrowOnError extends boolean = false>(options: Options<MarkConversationReadData, ThrowOnError>): RequestResult<MarkConversationReadResponses, MarkConversationReadErrors, ThrowOnError> => (options.client ?? client).post<MarkConversationReadResponses, MarkConversationReadErrors, ThrowOnError>({
+    url: '/api/v1/conversations/{conversationId}/read',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Adds members to a Group Conversation the caller belongs to.
+ */
+export const addGroupMembers = <ThrowOnError extends boolean = false>(options: Options<AddGroupMembersData, ThrowOnError>): RequestResult<AddGroupMembersResponses, AddGroupMembersErrors, ThrowOnError> => (options.client ?? client).post<AddGroupMembersResponses, AddGroupMembersErrors, ThrowOnError>({
+    url: '/api/v1/conversations/{conversationId}/members',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Renames a Group Conversation the caller belongs to.
+ */
+export const renameGroupConversation = <ThrowOnError extends boolean = false>(options: Options<RenameGroupConversationData, ThrowOnError>): RequestResult<RenameGroupConversationResponses, RenameGroupConversationErrors, ThrowOnError> => (options.client ?? client).put<RenameGroupConversationResponses, RenameGroupConversationErrors, ThrowOnError>({
+    url: '/api/v1/conversations/{conversationId}/name',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Leaves a Group Conversation. History up to departure stays visible, read-only.
+ */
+export const leaveGroupConversation = <ThrowOnError extends boolean = false>(options: Options<LeaveGroupConversationData, ThrowOnError>): RequestResult<LeaveGroupConversationResponses, LeaveGroupConversationErrors, ThrowOnError> => (options.client ?? client).post<LeaveGroupConversationResponses, LeaveGroupConversationErrors, ThrowOnError>({ url: '/api/v1/conversations/{conversationId}/leave', ...options });
+
+/**
+ * Published and Cancelled Events in the caller's Audience that have not ended, soonest first.
+ */
+export const listUpcomingEvents = <ThrowOnError extends boolean = false>(options?: Options<ListUpcomingEventsData, ThrowOnError>): RequestResult<ListUpcomingEventsResponses, ListUpcomingEventsErrors, ThrowOnError> => (options?.client ?? client).get<ListUpcomingEventsResponses, ListUpcomingEventsErrors, ThrowOnError>({ url: '/api/v1/events/upcoming', ...options });
+
+/**
+ * Events the caller may manage, in any status, with their capabilities.
+ */
+export const listManagedEvents = <ThrowOnError extends boolean = false>(options?: Options<ListManagedEventsData, ThrowOnError>): RequestResult<ListManagedEventsResponses, ListManagedEventsErrors, ThrowOnError> => (options?.client ?? client).get<ListManagedEventsResponses, ListManagedEventsErrors, ThrowOnError>({ url: '/api/v1/events/manage', ...options });
+
+/**
+ * Creates a Draft Event organised by a Group the caller may organise for.
+ */
+export const createEvent = <ThrowOnError extends boolean = false>(options: Options<CreateEventData, ThrowOnError>): RequestResult<CreateEventResponses, CreateEventErrors, ThrowOnError> => (options.client ?? client).post<CreateEventResponses, CreateEventErrors, ThrowOnError>({
+    url: '/api/v1/events/manage',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * What a new Event's form offers the caller.
+ */
+export const getEventFormOptions = <ThrowOnError extends boolean = false>(options?: Options<GetEventFormOptionsData, ThrowOnError>): RequestResult<GetEventFormOptionsResponses, GetEventFormOptionsErrors, ThrowOnError> => (options?.client ?? client).get<GetEventFormOptionsResponses, GetEventFormOptionsErrors, ThrowOnError>({ url: '/api/v1/events/manage/options', ...options });
+
+/**
+ * Deletes an Event with everything recorded for it.
+ */
+export const deleteEvent = <ThrowOnError extends boolean = false>(options: Options<DeleteEventData, ThrowOnError>): RequestResult<DeleteEventResponses, DeleteEventErrors, ThrowOnError> => (options.client ?? client).delete<DeleteEventResponses, DeleteEventErrors, ThrowOnError>({ url: '/api/v1/events/manage/{eventId}', ...options });
+
+/**
+ * One Event as its management page edits it.
+ */
+export const getEventEditor = <ThrowOnError extends boolean = false>(options: Options<GetEventEditorData, ThrowOnError>): RequestResult<GetEventEditorResponses, GetEventEditorErrors, ThrowOnError> => (options.client ?? client).get<GetEventEditorResponses, GetEventEditorErrors, ThrowOnError>({ url: '/api/v1/events/manage/{eventId}', ...options });
+
+/**
+ * Saves the whole Event form onto the Event.
+ */
+export const updateEvent = <ThrowOnError extends boolean = false>(options: Options<UpdateEventData, ThrowOnError>): RequestResult<UpdateEventResponses, UpdateEventErrors, ThrowOnError> => (options.client ?? client).put<UpdateEventResponses, UpdateEventErrors, ThrowOnError>({
+    url: '/api/v1/events/manage/{eventId}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * One Event as its Audience reads it.
+ *
+ * Drafts, Events outside the caller's Audience and missing Events are all 404.
+ */
+export const getEventPage = <ThrowOnError extends boolean = false>(options: Options<GetEventPageData, ThrowOnError>): RequestResult<GetEventPageResponses, GetEventPageErrors, ThrowOnError> => (options.client ?? client).get<GetEventPageResponses, GetEventPageErrors, ThrowOnError>({ url: '/api/v1/events/{eventId}', ...options });
+
+/**
+ * Publishes, cancels or reinstates an Event.
+ */
+export const changeEventStatus = <ThrowOnError extends boolean = false>(options: Options<ChangeEventStatusData, ThrowOnError>): RequestResult<ChangeEventStatusResponses, ChangeEventStatusErrors, ThrowOnError> => (options.client ?? client).post<ChangeEventStatusResponses, ChangeEventStatusErrors, ThrowOnError>({
+    url: '/api/v1/events/manage/{eventId}/status',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Every Location, active ones first, with how many Events use each. Admins only.
+ */
+export const listLocations = <ThrowOnError extends boolean = false>(options?: Options<ListLocationsData, ThrowOnError>): RequestResult<ListLocationsResponses, ListLocationsErrors, ThrowOnError> => (options?.client ?? client).get<ListLocationsResponses, ListLocationsErrors, ThrowOnError>({ url: '/api/v1/locations', ...options });
+
+/**
+ * Adds a Location. Admins only.
+ */
+export const createLocation = <ThrowOnError extends boolean = false>(options: Options<CreateLocationData, ThrowOnError>): RequestResult<CreateLocationResponses, CreateLocationErrors, ThrowOnError> => (options.client ?? client).post<CreateLocationResponses, CreateLocationErrors, ThrowOnError>({
+    url: '/api/v1/locations',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Changes a Location. Admins only.
+ */
+export const updateLocation = <ThrowOnError extends boolean = false>(options: Options<UpdateLocationData, ThrowOnError>): RequestResult<UpdateLocationResponses, UpdateLocationErrors, ThrowOnError> => (options.client ?? client).put<UpdateLocationResponses, UpdateLocationErrors, ThrowOnError>({
+    url: '/api/v1/locations/{locationId}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Archives a Location; Events that use it keep it. Admins only.
+ */
+export const archiveLocation = <ThrowOnError extends boolean = false>(options: Options<ArchiveLocationData, ThrowOnError>): RequestResult<ArchiveLocationResponses, ArchiveLocationErrors, ThrowOnError> => (options.client ?? client).post<ArchiveLocationResponses, ArchiveLocationErrors, ThrowOnError>({ url: '/api/v1/locations/{locationId}/archive', ...options });
+
+/**
+ * Saves the caller's locale preference, keeping their other preferences.
+ */
+export const updateLocalePreference = <ThrowOnError extends boolean = false>(options: Options<UpdateLocalePreferenceData, ThrowOnError>): RequestResult<UpdateLocalePreferenceResponses, UpdateLocalePreferenceErrors, ThrowOnError> => (options.client ?? client).put<UpdateLocalePreferenceResponses, UpdateLocalePreferenceErrors, ThrowOnError>({
+    url: '/api/v1/account/locale',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Whether this browser's push endpoint is bound to the caller.
+ *
+ * A read sent as POST so the endpoint, a bearer-like secret, stays out of URLs and logs. Another User's binding reads as `unbound`; an unsupported endpoint reads as `unsupported` so the browser can drop it.
+ */
+export const getPushSubscriptionStatus = <ThrowOnError extends boolean = false>(options: Options<GetPushSubscriptionStatusData, ThrowOnError>): RequestResult<GetPushSubscriptionStatusResponses, GetPushSubscriptionStatusErrors, ThrowOnError> => (options.client ?? client).post<GetPushSubscriptionStatusResponses, GetPushSubscriptionStatusErrors, ThrowOnError>({
+    url: '/api/v1/account/push-subscriptions/status',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Binds a browser push subscription to the caller, taking it over from any earlier owner.
+ */
+export const registerPushSubscription = <ThrowOnError extends boolean = false>(options: Options<RegisterPushSubscriptionData, ThrowOnError>): RequestResult<RegisterPushSubscriptionResponses, RegisterPushSubscriptionErrors, ThrowOnError> => (options.client ?? client).post<RegisterPushSubscriptionResponses, RegisterPushSubscriptionErrors, ThrowOnError>({
+    url: '/api/v1/account/push-subscriptions',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Removes the caller's own binding for an endpoint, as on disabling notifications or signing out.
+ */
+export const removePushSubscription = <ThrowOnError extends boolean = false>(options: Options<RemovePushSubscriptionData, ThrowOnError>): RequestResult<RemovePushSubscriptionResponses, RemovePushSubscriptionErrors, ThrowOnError> => (options.client ?? client).post<RemovePushSubscriptionResponses, RemovePushSubscriptionErrors, ThrowOnError>({
+    url: '/api/v1/account/push-subscriptions/remove',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Sends a test notification to the caller's own active subscriptions.
+ */
+export const sendTestPushNotification = <ThrowOnError extends boolean = false>(options: Options<SendTestPushNotificationData, ThrowOnError>): RequestResult<SendTestPushNotificationResponses, SendTestPushNotificationErrors, ThrowOnError> => (options.client ?? client).post<SendTestPushNotificationResponses, SendTestPushNotificationErrors, ThrowOnError>({
+    url: '/api/v1/account/push-subscriptions/test',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Sets an invited User's first password from the session their magic link opened.
+ */
+export const activateAccount = <ThrowOnError extends boolean = false>(options: Options<ActivateAccountData, ThrowOnError>): RequestResult<ActivateAccountResponses, ActivateAccountErrors, ThrowOnError> => (options.client ?? client).post<ActivateAccountResponses, ActivateAccountErrors, ThrowOnError>({
+    url: '/api/v1/account/activation',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Every User with their activation and status, by name. Admins only.
+ */
+export const listUsers = <ThrowOnError extends boolean = false>(options?: Options<ListUsersData, ThrowOnError>): RequestResult<ListUsersResponses, ListUsersErrors, ThrowOnError> => (options?.client ?? client).get<ListUsersResponses, ListUsersErrors, ThrowOnError>({ url: '/api/v1/users', ...options });
+
+/**
+ * Creates a User without a password and emails the magic link that activates them. Admins only.
+ */
+export const inviteUser = <ThrowOnError extends boolean = false>(options: Options<InviteUserData, ThrowOnError>): RequestResult<InviteUserResponses, InviteUserErrors, ThrowOnError> => (options.client ?? client).post<InviteUserResponses, InviteUserErrors, ThrowOnError>({
+    url: '/api/v1/users',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Which of these emails already belong to a User, for reviewing an import. Admins only.
+ *
+ * A read sent as POST so the emails stay out of URLs and logs.
+ */
+export const findExistingUserEmails = <ThrowOnError extends boolean = false>(options: Options<FindExistingUserEmailsData, ThrowOnError>): RequestResult<FindExistingUserEmailsResponses, FindExistingUserEmailsErrors, ThrowOnError> => (options.client ?? client).post<FindExistingUserEmailsResponses, FindExistingUserEmailsErrors, ThrowOnError>({
+    url: '/api/v1/users/emails/existing',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Invites the reviewed rows of an import, reporting each row's outcome. Admins only.
+ */
+export const importUsers = <ThrowOnError extends boolean = false>(options: Options<ImportUsersData, ThrowOnError>): RequestResult<ImportUsersResponses, ImportUsersErrors, ThrowOnError> => (options.client ?? client).post<ImportUsersResponses, ImportUsersErrors, ThrowOnError>({
+    url: '/api/v1/users/import',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Reactivates an inactive User. Admins only.
+ */
+export const activateUser = <ThrowOnError extends boolean = false>(options: Options<ActivateUserData, ThrowOnError>): RequestResult<ActivateUserResponses, ActivateUserErrors, ThrowOnError> => (options.client ?? client).post<ActivateUserResponses, ActivateUserErrors, ThrowOnError>({ url: '/api/v1/users/{userId}/activate', ...options });
+
+/**
+ * Deactivates a User and ends their sessions. Never the caller or the last active Admin.
+ */
+export const deactivateUser = <ThrowOnError extends boolean = false>(options: Options<DeactivateUserData, ThrowOnError>): RequestResult<DeactivateUserResponses, DeactivateUserErrors, ThrowOnError> => (options.client ?? client).post<DeactivateUserResponses, DeactivateUserErrors, ThrowOnError>({ url: '/api/v1/users/{userId}/deactivate', ...options });
+
+/**
+ * Erases an inactive User. The confirmation must read `delete <name>`.
+ */
+export const eraseUser = <ThrowOnError extends boolean = false>(options: Options<EraseUserData, ThrowOnError>): RequestResult<EraseUserResponses, EraseUserErrors, ThrowOnError> => (options.client ?? client).post<EraseUserResponses, EraseUserErrors, ThrowOnError>({
+    url: '/api/v1/users/{userId}/erase',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Sends a new activation link to a User who has not activated.
+ */
+export const resendInvitation = <ThrowOnError extends boolean = false>(options: Options<ResendInvitationData, ThrowOnError>): RequestResult<ResendInvitationResponses, ResendInvitationErrors, ThrowOnError> => (options.client ?? client).post<ResendInvitationResponses, ResendInvitationErrors, ThrowOnError>({ url: '/api/v1/users/{userId}/invitation', ...options });
+
+/**
+ * Sets a User's roles; every User keeps `user`. Never the caller, and never demotes the last active Admin.
+ */
+export const changeUserRoles = <ThrowOnError extends boolean = false>(options: Options<ChangeUserRolesData, ThrowOnError>): RequestResult<ChangeUserRolesResponses, ChangeUserRolesErrors, ThrowOnError> => (options.client ?? client).post<ChangeUserRolesResponses, ChangeUserRolesErrors, ThrowOnError>({
+    url: '/api/v1/users/{userId}/roles',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Every Choir with its Sections in score order, archived ones included. Admins only.
+ */
+export const getChoirPlacement = <ThrowOnError extends boolean = false>(options?: Options<GetChoirPlacementData, ThrowOnError>): RequestResult<GetChoirPlacementResponses, GetChoirPlacementErrors, ThrowOnError> => (options?.client ?? client).get<GetChoirPlacementResponses, GetChoirPlacementErrors, ThrowOnError>({ url: '/api/v1/choirs', ...options });
+
+/**
+ * Every group but the Choirs and their Sections, archived ones included. Admins only.
+ */
+export const getGroupsOverview = <ThrowOnError extends boolean = false>(options?: Options<GetGroupsOverviewData, ThrowOnError>): RequestResult<GetGroupsOverviewResponses, GetGroupsOverviewErrors, ThrowOnError> => (options?.client ?? client).get<GetGroupsOverviewResponses, GetGroupsOverviewErrors, ThrowOnError>({ url: '/api/v1/groups', ...options });
+
+/**
+ * Creates a CSK-wide group or one of a Choir's groups. Choirs and Sections are not created here.
+ */
+export const createGroup = <ThrowOnError extends boolean = false>(options: Options<CreateGroupData, ThrowOnError>): RequestResult<CreateGroupResponses, CreateGroupErrors, ThrowOnError> => (options.client ?? client).post<CreateGroupResponses, CreateGroupErrors, ThrowOnError>({
+    url: '/api/v1/groups',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Every Position with its GroupTypes and limit to groups, and the groups a limit can name. Admins only.
+ */
+export const listPositionCatalogue = <ThrowOnError extends boolean = false>(options?: Options<ListPositionCatalogueData, ThrowOnError>): RequestResult<ListPositionCatalogueResponses, ListPositionCatalogueErrors, ThrowOnError> => (options?.client ?? client).get<ListPositionCatalogueResponses, ListPositionCatalogueErrors, ThrowOnError>({ url: '/api/v1/positions', ...options });
+
+/**
+ * Adds a Position to the catalogue.
+ */
+export const createPosition = <ThrowOnError extends boolean = false>(options: Options<CreatePositionData, ThrowOnError>): RequestResult<CreatePositionResponses, CreatePositionErrors, ThrowOnError> => (options.client ?? client).post<CreatePositionResponses, CreatePositionErrors, ThrowOnError>({
+    url: '/api/v1/positions',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * One group with its members, Positions and history, and who can join it. Admins only.
+ */
+export const getGroupDetail = <ThrowOnError extends boolean = false>(options: Options<GetGroupDetailData, ThrowOnError>): RequestResult<GetGroupDetailResponses, GetGroupDetailErrors, ThrowOnError> => (options.client ?? client).get<GetGroupDetailResponses, GetGroupDetailErrors, ThrowOnError>({ url: '/api/v1/groups/{groupId}', ...options });
+
+/**
+ * Renames a group.
+ */
+export const renameGroup = <ThrowOnError extends boolean = false>(options: Options<RenameGroupData, ThrowOnError>): RequestResult<RenameGroupResponses, RenameGroupErrors, ThrowOnError> => (options.client ?? client).post<RenameGroupResponses, RenameGroupErrors, ThrowOnError>({
+    url: '/api/v1/groups/{groupId}/name',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Archives a group, ending its Memberships and Position holdings.
+ */
+export const archiveGroup = <ThrowOnError extends boolean = false>(options: Options<ArchiveGroupData, ThrowOnError>): RequestResult<ArchiveGroupResponses, ArchiveGroupErrors, ThrowOnError> => (options.client ?? client).post<ArchiveGroupResponses, ArchiveGroupErrors, ThrowOnError>({ url: '/api/v1/groups/{groupId}/archive', ...options });
+
+/**
+ * Adds a member; in a Section, `voice` places them as a singer, which makes them a member of the Choir.
+ */
+export const addGroupMember = <ThrowOnError extends boolean = false>(options: Options<AddGroupMemberData, ThrowOnError>): RequestResult<AddGroupMemberResponses, AddGroupMemberErrors, ThrowOnError> => (options.client ?? client).post<AddGroupMemberResponses, AddGroupMemberErrors, ThrowOnError>({
+    url: '/api/v1/groups/{groupId}/members',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Ends a Membership and the member's Position holdings in the group.
+ */
+export const endGroupMembership = <ThrowOnError extends boolean = false>(options: Options<EndGroupMembershipData, ThrowOnError>): RequestResult<EndGroupMembershipResponses, EndGroupMembershipErrors, ThrowOnError> => (options.client ?? client).post<EndGroupMembershipResponses, EndGroupMembershipErrors, ThrowOnError>({
+    url: '/api/v1/groups/{groupId}/members/{userId}/end',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Changes a singer's Voice in the group's Choir, which may move them to another Section.
+ */
+export const changeSingerVoice = <ThrowOnError extends boolean = false>(options: Options<ChangeSingerVoiceData, ThrowOnError>): RequestResult<ChangeSingerVoiceResponses, ChangeSingerVoiceErrors, ThrowOnError> => (options.client ?? client).post<ChangeSingerVoiceResponses, ChangeSingerVoiceErrors, ThrowOnError>({
+    url: '/api/v1/groups/{groupId}/members/{userId}/voice',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Gives a Position to a current member, ending any current holder's holding the same day.
+ */
+export const assignPositionHolder = <ThrowOnError extends boolean = false>(options: Options<AssignPositionHolderData, ThrowOnError>): RequestResult<AssignPositionHolderResponses, AssignPositionHolderErrors, ThrowOnError> => (options.client ?? client).post<AssignPositionHolderResponses, AssignPositionHolderErrors, ThrowOnError>({
+    url: '/api/v1/groups/{groupId}/positions/{positionId}/holder',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Ends a member's holding of a Position.
+ */
+export const endPositionHolding = <ThrowOnError extends boolean = false>(options: Options<EndPositionHoldingData, ThrowOnError>): RequestResult<EndPositionHoldingResponses, EndPositionHoldingErrors, ThrowOnError> => (options.client ?? client).post<EndPositionHoldingResponses, EndPositionHoldingErrors, ThrowOnError>({
+    url: '/api/v1/groups/{groupId}/positions/{positionId}/end',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Renames a Position and replaces its GroupTypes and limit to groups, as one change.
+ */
+export const updatePosition = <ThrowOnError extends boolean = false>(options: Options<UpdatePositionData, ThrowOnError>): RequestResult<UpdatePositionResponses, UpdatePositionErrors, ThrowOnError> => (options.client ?? client).put<UpdatePositionResponses, UpdatePositionErrors, ThrowOnError>({
+    url: '/api/v1/positions/{positionId}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Sends an Admin broadcast to every active User, or to the selected ones. Admins only.
+ *
+ * Push goes out immediately in bulk. With real-time delivery configured, in-app feedback is also queued as `push: false` activity and dispatched after the write commits.
+ */
+export const sendBroadcast = <ThrowOnError extends boolean = false>(options: Options<SendBroadcastData, ThrowOnError>): RequestResult<SendBroadcastResponses, SendBroadcastErrors, ThrowOnError> => (options.client ?? client).post<SendBroadcastResponses, SendBroadcastErrors, ThrowOnError>({
+    url: '/api/v1/broadcasts',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Up to 25 active Users a broadcast can reach, by name or email. Admins only.
+ *
+ * `requiresPush` is true when only Users with an active push subscription can be reached.
+ */
+export const searchBroadcastRecipients = <ThrowOnError extends boolean = false>(options?: Options<SearchBroadcastRecipientsData, ThrowOnError>): RequestResult<SearchBroadcastRecipientsResponses, SearchBroadcastRecipientsErrors, ThrowOnError> => (options?.client ?? client).get<SearchBroadcastRecipientsResponses, SearchBroadcastRecipientsErrors, ThrowOnError>({ url: '/api/v1/broadcasts/recipients', ...options });
 
 /**
  * The signed-in User's own Member ID profile and whether they may verify others.

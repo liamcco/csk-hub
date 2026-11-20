@@ -2,8 +2,7 @@ import "server-only"
 
 import { and, asc, desc, eq, exists, isNotNull, isNull, notExists, or } from "drizzle-orm"
 import { alias } from "drizzle-orm/pg-core"
-import { requirePermission } from "@/core/authz"
-import { db } from "@/core/db"
+import type { Database } from "@/core/db"
 import { user } from "@/core/db/schema/auth"
 import {
   group,
@@ -22,9 +21,11 @@ const voicesWithin = (voice: Voice): VoiceDivision[] => (isVoiceDivision(voice) 
 
 export type GroupDetail = NonNullable<Awaited<ReturnType<typeof getGroupDetail>>>
 
-/** Everything the group detail page shows and offers, or null when there is no such group. */
-export async function getGroupDetail(groupId: string) {
-  await requirePermission({ action: "org.manage" })
+/**
+ * Everything the group detail page shows and offers, or null when there is no such group. The
+ * caller authorizes `org.manage`.
+ */
+export async function getGroupDetail(db: Database, groupId: string) {
   const choirGroup = alias(group, "choir_group")
   const [row] = await db
     .select({
@@ -90,7 +91,7 @@ export async function getGroupDetail(groupId: string) {
       )
       .orderBy(asc(position.name)),
     db.select({ voice: section.voice }).from(section).where(eq(section.groupId, groupId)),
-    row.choirId ? choirVoicesOf(row.choirId) : Promise.resolve([]),
+    row.choirId ? choirVoicesOf(db, row.choirId) : Promise.resolve([]),
     // Active Users who are not current members, for the add-member picker. A Choir's group other
     // than a Section takes only current members of the Choir; placing a singer in a Section is
     // how they join it.
@@ -190,7 +191,7 @@ export async function getGroupDetail(groupId: string) {
 }
 
 /** Every Voice a singer can have in the Choir's active Sections, for changing a singer's Voice or Section. */
-async function choirVoicesOf(choirId: string): Promise<VoiceDivision[]> {
+async function choirVoicesOf(db: Database, choirId: string): Promise<VoiceDivision[]> {
   const rows = await db
     .select({ voice: section.voice })
     .from(section)
@@ -200,8 +201,7 @@ async function choirVoicesOf(choirId: string): Promise<VoiceDivision[]> {
 }
 
 /** The Choir a group belongs to, for commands that are addressed by Choir. */
-export async function getChoirIdOf(groupId: string) {
-  await requirePermission({ action: "org.manage" })
+export async function getChoirIdOf(db: Database, groupId: string) {
   const [row] = await db
     .select({ choirId: group.choirId })
     .from(group)

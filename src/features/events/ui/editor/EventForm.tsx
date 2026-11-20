@@ -24,16 +24,17 @@ import {
   PARTICIPATION_MODES,
   type ParticipationMode
 } from "../../model"
-import type { EventCommandState } from "../command-state"
 import { ERROR_FIELD, type EventFormField, useEventErrorMessage } from "../errors"
 import { DETAIL_LABEL_MAX_LENGTH, LONG_TEXT_MAX_LENGTH, SHORT_TEXT_MAX_LENGTH, TITLE_MAX_LENGTH } from "../limits"
+import { type EventCommand, useEventCommand } from "../use-event-command"
 import type { EventFormOptions, EventFormValues } from "./query"
 import { eventFormVersion, parseStoredEvent, snapshotEventForm } from "./unsaved-event"
 
 const VOICE_FAMILIES = ["S", "A", "T", "B"]
 
 type EventFormProps = {
-  action: (state: EventCommandState, formData: FormData) => Promise<EventCommandState>
+  /** What saving the form does through the API: create a Draft, or update this Event. */
+  command: Extract<EventCommand, { kind: "createEvent" | "updateEvent" }>
   initial: EventFormValues
   options: EventFormOptions
   submitLabel: string
@@ -48,11 +49,11 @@ type EventFormProps = {
  * field it concerns. What has been typed but not saved is kept in the tab's session, as on the
  * Post form, so a reload does not lose it.
  */
-export function EventForm({ action, initial, options, submitLabel, cancelHref, unsavedSlot }: EventFormProps) {
+export function EventForm({ command, initial, options, submitLabel, cancelHref, unsavedSlot }: EventFormProps) {
   const t = useTranslations("Events.form")
   const common = useTranslations("Common")
   const errorMessage = useEventErrorMessage()
-  const [state, formAction, pending] = useActionState(action, IDLE)
+  const [state, formAction, pending] = useActionState(useEventCommand(command), IDLE)
   const unsaved = useUnsavedForm({
     storageKey: `event.${unsavedSlot}`,
     version: eventFormVersion(initial),

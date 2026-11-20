@@ -3,7 +3,7 @@
 import { useState } from "react"
 import type { Locale } from "@/core/i18n/locales"
 import { useTranslations } from "@/core/i18n/translations"
-import { updateLocalePreference } from "./actions"
+import { updateLocalePreference } from "./locale-preference"
 
 /** Saves the member's locale preference before the shared locale switcher applies it. */
 export function useLanguageSettings() {

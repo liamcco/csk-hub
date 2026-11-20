@@ -99,21 +99,18 @@ const everyone = await sendToAll({
 });
 ```
 
-Call these only from server-side feature code, after the feature has authorized the actor and validated its input. For example, a broadcast action must require `notification.broadcast` before delivery.
+Call these only from server-side feature code, after the feature has authorized the actor and validated its input. For example, the broadcast route (`src/features/notification-broadcast/http`) requires `notification.broadcast` for the request's fresh actor before delivery, and passes the operation's database:
 
 ```ts
-"use server";
-
-import { requirePermission } from "@/core/authz"
-import { sendToUsers } from "@/core/notifications"
-
-export async function notifySelectedUsers(userIds: string[], message: string) {
-  await requirePermission({ action: "notification.broadcast" })
+broadcastsRouter.openapi(routes.sendBroadcast, async (c) => {
+  const { authorization } = await c.var.resolveRequest()
+  authorization.requirePermission({ action: "notification.broadcast" })
+  const { message, userIds } = c.req.valid("json")
   const text = message.trim()
-  if (!text) return { success: false as const, error: "messageRequired" as const }
+  if (!text) return c.json({ code: "MESSAGE_REQUIRED" as const }, 400)
 
-  return sendToUsers(userIds, { body: text });
-}
+  return c.json(await sendToUsers(userIds ?? [], { body: text }, c.var.database), 200)
+})
 ```
 
 ## Delivery result

@@ -1,10 +1,11 @@
 import type { NavigationRouteId } from "./site"
 
 /**
- * How many things are unread for a User at a navigation destination. Wrap it in React
- * `cache()`: a destination's badge and the mobile menu's dot ask for it in the same render.
+ * How many things are unread for the signed-in User at a navigation destination, zero when
+ * signed out. Wrap it in React `cache()`: a destination's badge and the mobile menu's dot ask
+ * for it in the same render.
  */
-export type UnreadCount = (userId: string) => Promise<number>
+export type UnreadCount = () => Promise<number>
 
 /**
  * The unread count each destination shows beside its link. The navigation must not depend on

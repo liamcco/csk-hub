@@ -65,7 +65,8 @@ async function ProfileHeader({ data }: { data: ProfileData }) {
 }
 
 async function ProfileActions({ data }: { data: ProfileData }) {
-  const { profile, canMessage, canEditProfile, messageConversationId } = data
+  const { profile, permissions, messageConversationId } = data
+  const { message: canMessage, editProfile: canEditProfile } = permissions
   const t = await getTranslations("MemberProfiles")
   return (
     <div className="flex flex-wrap gap-2">

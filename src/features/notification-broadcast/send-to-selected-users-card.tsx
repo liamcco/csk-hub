@@ -16,7 +16,7 @@ import {
   ComboboxValue
 } from "@/shared/ui/base/combobox"
 import { Textarea } from "@/shared/ui/base/textarea"
-import { searchNotificationUsers, sendTestNotificationToUsers } from "./actions"
+import { searchNotificationUsers, sendTestNotificationToUsers } from "./broadcasts"
 import { type NotificationFeedback, NotificationFeedbackMessage } from "./notification-feedback"
 
 type NotificationRecipient = Awaited<ReturnType<typeof searchNotificationUsers>>["users"][number]

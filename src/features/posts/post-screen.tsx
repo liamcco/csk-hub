@@ -1,5 +1,4 @@
 import Link from "next/link"
-import { notFound } from "next/navigation"
 import { getTranslations } from "@/core/i18n/server"
 import { newsPostEditPath } from "@/core/navigation/navigation-utils"
 import { PageBreadcrumb } from "@/core/navigation/PageBreadcrumb"
@@ -8,15 +7,14 @@ import { ContentPage } from "@/shared/layouts/content-page"
 import { buttonVariants } from "@/shared/ui/base/button"
 import { Skeleton } from "@/shared/ui/base/skeleton"
 import { cn } from "@/shared/utils"
-import { unpublishPost } from "./compose/actions"
 import { ConfirmPostCommand } from "./compose/ConfirmPostCommand"
 import { PostByline } from "./post-byline"
-import { getEditablePost, getPublishedPost } from "./service"
+import { readPost } from "./query"
 import { PostReadMarker } from "./unread"
 
 /** Changing a published Post, offered only to whoever may make the change. */
-async function PostControls({ postId }: { postId: string }) {
-  const [canChange, t] = await Promise.all([getEditablePost(postId), getTranslations("Posts")])
+async function PostControls({ postId, canChange }: { postId: string; canChange: boolean }) {
+  const t = await getTranslations("Posts")
   if (!canChange) return null
 
   return (
@@ -27,15 +25,13 @@ async function PostControls({ postId }: { postId: string }) {
       >
         {t("editPost")}
       </Link>
-      <ConfirmPostCommand command="unpublish" action={unpublishPost.bind(null, postId)} />
+      <ConfirmPostCommand command="unpublish" postId={postId} />
     </div>
   )
 }
 
 export async function PostScreen({ postId }: { postId: string }) {
-  const post = await getPublishedPost(postId)
-
-  if (!post) notFound()
+  const { post, permissions } = await readPost(postId)
 
   return (
     <ContentPage>
@@ -45,7 +41,7 @@ export async function PostScreen({ postId }: { postId: string }) {
         <div className="min-w-0">
           <PageBreadcrumb route="news" current={post.title} />
         </div>
-        <PostControls postId={post.id} />
+        <PostControls postId={post.id} canChange={permissions.update} />
       </div>
       <article className="flex flex-col gap-4">
         <header>

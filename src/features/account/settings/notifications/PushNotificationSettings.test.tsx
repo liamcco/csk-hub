@@ -26,7 +26,7 @@ const originalVapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
 
 const translate = (key: string) => key
 mock.module("@/core/i18n/translations", () => ({ useTranslations: () => translate }))
-mock.module("./push-notification-actions", () => ({
+mock.module("./push-subscriptions", () => ({
   getPushSubscriptionBinding: getBinding,
   subscribeUserToPush: subscribe,
   unsubscribeUserFromPush: mock(),

@@ -1,1 +1,1 @@
-export { countUnreadConversations } from "./service"
+export { countUnreadConversationsForBadge } from "../ui/screen-reads"

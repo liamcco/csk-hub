@@ -9,9 +9,10 @@ import { Card, CardContent } from "@/shared/ui/base/card"
 import { cn } from "@/shared/utils"
 import { addDays, stockholmDate } from "../model"
 import { StatusBadge } from "../ui/StatusBadge"
+import { readUpcomingEvents } from "../ui/screen-reads"
 import { happensOn } from "./days"
 import { EventKind } from "./EventKind"
-import { listCurrentUpcomingEvents, type UpcomingEvent } from "./query"
+import type { UpcomingEvent } from "./query"
 
 /** How many Events "Coming up" lists after the next one. */
 const COMING_UP = 4
@@ -20,7 +21,7 @@ const COMING_UP = 4
 const upcomingForHome = cache(async () => {
   await io()
   const now = new Date()
-  const { events } = await listCurrentUpcomingEvents(now)
+  const { events } = await readUpcomingEvents()
   return { events, today: stockholmDate(now) }
 })
 

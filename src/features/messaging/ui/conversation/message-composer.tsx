@@ -9,10 +9,10 @@ import { Button } from "@/shared/ui/base/button"
 import { useMessageScroller } from "@/shared/ui/base/message-scroller"
 import { Textarea } from "@/shared/ui/base/textarea"
 import { MAX_MESSAGE_BODY_LENGTH } from "../../model/message-body"
+import { sendMessageCommand } from "../api-commands"
 import { createMessageIdempotencyKey, nextMessageIdempotencyKey } from "../composer/idempotency-key"
 import type { MessageCommandState } from "../composer/message-command-state"
 import { submitOnEnter } from "../composer/submit-on-enter"
-import { sendMessageAction } from "./actions"
 
 const initialState: MessageCommandState = { status: "idle" }
 
@@ -22,12 +22,13 @@ export function MessageComposer({ conversationId, readOnly }: { conversationId: 
   const { scrollToEnd } = useMessageScroller()
 
   const [idempotencyKey, setIdempotencyKey] = useState(createMessageIdempotencyKey)
-  const [state, action, pending] = useActionState(sendMessageAction, initialState)
+  const [state, action, pending] = useActionState(sendMessageCommand, initialState)
 
   useEffect(() => {
     if (state.status !== "success") return
     setIdempotencyKey((currentKey) => nextMessageIdempotencyKey(currentKey))
     router.replace(conversationPath(state.conversationId), { scroll: false })
+    router.refresh()
     scrollToEnd({ behavior: "smooth" })
   }, [router, scrollToEnd, state])
 

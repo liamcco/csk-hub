@@ -1,7 +1,7 @@
 import "server-only"
 
 import { and, eq } from "drizzle-orm"
-import type { db } from "@/core/db"
+import type { Database } from "@/core/db"
 import { directConversation } from "@/core/db/schema/messaging"
 
 /**
@@ -9,7 +9,7 @@ import { directConversation } from "@/core/db/schema/messaging"
  * Callers must authenticate the viewer and verify both Users are active before exposing the result.
  * This lookup does not grant access to the Conversation.
  */
-export async function findDirectConversation(database: typeof db, userId: string, recipientId: string) {
+export async function findDirectConversation(database: Database, userId: string, recipientId: string) {
   if (userId === recipientId) return null
   const [first, second] = [userId, recipientId].sort()
   const [pair] = await database

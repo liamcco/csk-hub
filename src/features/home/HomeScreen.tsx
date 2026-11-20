@@ -1,6 +1,6 @@
 import Link from "next/link"
 import { Suspense } from "react"
-import { getRequestSession } from "@/core/auth/session.server"
+import { getCapabilities } from "@/core/api-client/capabilities"
 import { getFormatter, getTranslations } from "@/core/i18n/server"
 import { ROUTES } from "@/core/navigation/site"
 import { ComingUpCard, NextEventCard } from "@/features/events"
@@ -48,8 +48,8 @@ export async function HomeScreen() {
 }
 
 async function Greeting() {
-  const [session, t, format] = await Promise.all([getRequestSession(), getTranslations("HomePage"), getFormatter()])
-  const firstName = session?.user.name.trim().split(/\s+/)[0]
+  const [capabilities, t, format] = await Promise.all([getCapabilities(), getTranslations("HomePage"), getFormatter()])
+  const firstName = capabilities?.user.name.trim().split(/\s+/)[0]
 
   return (
     <div>

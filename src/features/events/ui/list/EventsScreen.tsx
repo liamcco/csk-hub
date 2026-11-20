@@ -9,12 +9,12 @@ import { buttonVariants } from "@/shared/ui/base/button"
 import { Card } from "@/shared/ui/base/card"
 import { Skeleton } from "@/shared/ui/base/skeleton"
 import { cn } from "@/shared/utils"
-import { getEventManagementCapabilities } from "../../access"
 import { addDays, EVENT_STATUSES, EVENT_TYPES, stockholmDate, stockholmInstant } from "../../model"
 import { eventManagementPath } from "../command-state"
 import { StatusBadge } from "../StatusBadge"
+import { readManagedEvents } from "../screen-reads"
 import { EventFilters } from "./EventFilters"
-import { type EventListFilters, type EventListRow, listManagedEvents } from "./query"
+import type { EventListFilters, EventListRow } from "./query"
 
 type SearchParams = Record<string, string | string[] | undefined>
 
@@ -33,7 +33,10 @@ function filtersFrom(searchParams: SearchParams): EventListFilters {
 export async function EventsScreen({ searchParams }: { searchParams: SearchParams }) {
   await io()
   const filters = filtersFrom(searchParams)
-  const [events, t] = await Promise.all([listManagedEvents(filters, new Date()), getTranslations("Events")])
+  const [events, t] = await Promise.all([
+    readManagedEvents(filters.when, filters.status, filters.type).then(({ items }) => items),
+    getTranslations("Events")
+  ])
 
   return (
     <main className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-8 sm:px-6 lg:px-8">
@@ -56,7 +59,7 @@ export async function EventsScreen({ searchParams }: { searchParams: SearchParam
 
 async function EventsHeader() {
   const t = await getTranslations("Events")
-  const { canCreate, canAdminister } = await getEventManagementCapabilities()
+  const { canCreate, canAdminister } = await readManagedEvents("upcoming")
   return (
     <div className="flex flex-col gap-2">
       <PageBreadcrumb route="eventsManage" />

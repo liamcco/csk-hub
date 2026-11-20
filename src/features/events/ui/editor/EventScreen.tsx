@@ -3,15 +3,14 @@ import { getTranslations } from "@/core/i18n/server"
 import { PageBreadcrumb } from "@/core/navigation/PageBreadcrumb"
 import { Skeleton } from "@/shared/ui/base/skeleton"
 import { StatusBadge } from "../StatusBadge"
-import { updateEventAction } from "./actions"
+import { readEventEditor } from "../screen-reads"
 import { EventForm } from "./EventForm"
 import { EventLifecycle } from "./EventLifecycle"
 import { FormSkeleton } from "./NewEventScreen"
-import { getEventEditor } from "./query"
 
 /** One Event's admin page: its lifecycle, and the whole Event to edit. */
 export async function EventScreen({ eventId }: { eventId: string }) {
-  const [editor, t] = await Promise.all([getEventEditor(eventId), getTranslations("Events")])
+  const [editor, t] = await Promise.all([readEventEditor(eventId), getTranslations("Events")])
   if (!editor) notFound()
 
   return (
@@ -25,7 +24,7 @@ export async function EventScreen({ eventId }: { eventId: string }) {
       </div>
       <EventLifecycle eventId={editor.id} title={editor.title} status={editor.status} impact={editor.impact} />
       <EventForm
-        action={updateEventAction.bind(null, editor.id)}
+        command={{ kind: "updateEvent", eventId: editor.id }}
         initial={editor.values}
         options={editor.options}
         unsavedSlot={editor.id}

@@ -5,7 +5,7 @@ import { InputField } from "@/shared/forms/fields"
 import { Button } from "@/shared/ui/base/button"
 import { EventCommandDialog } from "../EventCommandDialog"
 import { SHORT_TEXT_MAX_LENGTH, URL_MAX_LENGTH } from "../limits"
-import { archiveLocationAction, createLocationAction, updateLocationAction } from "./actions"
+import { useEventCommand } from "../use-event-command"
 import type { LocationRow } from "./query"
 
 function LocationFields({ location }: { location?: LocationRow }) {
@@ -43,7 +43,7 @@ export function CreateLocationDialog() {
     <EventCommandDialog
       trigger={<Button type="button">{t("create")}</Button>}
       title={t("create")}
-      action={createLocationAction}
+      action={useEventCommand({ kind: "createLocation" })}
       submitLabel={t("create")}
       successMessage={t("saved")}
     >
@@ -63,7 +63,7 @@ export function EditLocationDialog({ location }: { location: LocationRow }) {
       }
       title={t("editTitle", { name: location.name })}
       description={location.eventCount > 0 ? t("editAffectsEvents", { count: location.eventCount }) : undefined}
-      action={updateLocationAction}
+      action={useEventCommand({ kind: "updateLocation" })}
       submitLabel={t("save")}
       successMessage={t("saved")}
     >
@@ -84,7 +84,7 @@ export function ArchiveLocationDialog({ location }: { location: LocationRow }) {
       }
       title={t("archiveTitle", { name: location.name })}
       description={t("archiveExplanation")}
-      action={archiveLocationAction}
+      action={useEventCommand({ kind: "archiveLocation" })}
       submitLabel={t("archive")}
       successMessage={t("archived")}
       destructive

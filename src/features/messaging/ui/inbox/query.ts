@@ -2,8 +2,6 @@ import "server-only"
 
 import { and, count, desc, eq, or, sql } from "drizzle-orm"
 import { alias } from "drizzle-orm/pg-core"
-import { requirePermission } from "@/core/authz"
-import { db } from "@/core/db"
 import { user } from "@/core/db/schema/auth"
 import {
   conversationReadState,
@@ -13,13 +11,15 @@ import {
   message
 } from "@/core/db/schema/messaging"
 import { groupHistoryVisibility } from "../../group-conversations/access"
+import { type MessagingContext, messagingContext } from "../../model/context"
 import { toInboxConversations } from "./view-model"
 
-export async function listDirectConversations() {
-  const { userId } = await requirePermission({ action: "app.access" })
+export async function listDirectConversations(context?: MessagingContext) {
+  const { database, authorize } = await messagingContext(context)
+  const { userId } = await authorize({ action: "app.access" })
   const otherMember = alias(user, "other_member")
 
-  const latestMessage = db
+  const latestMessage = database
     .select({ text: message.text, sentAt: message.sentAt })
     .from(message)
     .where(eq(message.conversationId, conversationReadState.conversationId))
@@ -27,7 +27,7 @@ export async function listDirectConversations() {
     .limit(1)
     .as("latest_message")
 
-  const unreadMessages = db
+  const unreadMessages = database
     .select({ count: count().as("count") })
     .from(message)
     .where(
@@ -38,7 +38,7 @@ export async function listDirectConversations() {
     )
     .as("unread_messages")
 
-  const rows = await db
+  const rows = await database
     .select({
       conversationId: conversationReadState.conversationId,
       otherMemberId: otherMember.id,
@@ -65,30 +65,32 @@ export async function listDirectConversations() {
   return toInboxConversations(rows)
 }
 
-export async function listConversations() {
-  const [direct, groups] = await Promise.all([listDirectConversations(), listGroupConversations()])
+export async function listConversations(context?: MessagingContext) {
+  const resolved = await messagingContext(context)
+  const [direct, groups] = await Promise.all([listDirectConversations(resolved), listGroupConversations(resolved)])
   return [...direct, ...groups].sort((a, b) => b.sentAt.getTime() - a.sentAt.getTime())
 }
 
-async function listGroupConversations() {
-  const { userId } = await requirePermission({ action: "app.access" })
+async function listGroupConversations(context: MessagingContext) {
+  const { database, authorize } = context
+  const { userId } = await authorize({ action: "app.access" })
   const visibleMessage = and(
     eq(message.conversationId, groupMembership.conversationId),
     groupHistoryVisibility(message.sequence, groupMembership.historyVisibleThroughSequence)
   )
-  const latest = db
+  const latest = database
     .select({ text: message.text, sentAt: message.sentAt })
     .from(message)
     .where(visibleMessage)
     .orderBy(desc(message.sequence))
     .limit(1)
     .as("latest_group_message")
-  const unread = db
+  const unread = database
     .select({ count: count().as("count") })
     .from(message)
     .where(and(visibleMessage, sql`${message.sequence} > COALESCE(${conversationReadState.lastReadSequence}, 0)`))
     .as("group_unread")
-  const rows = await db
+  const rows = await database
     .select({
       id: groupMembership.conversationId,
       otherMemberName: groupConversation.name,

@@ -12,7 +12,7 @@ import {
   sendPushNotificationTest,
   subscribeUserToPush,
   unsubscribeUserFromPush
-} from "./push-notification-actions"
+} from "./push-subscriptions"
 
 function vapidKeyToUint8Array(base64String: string) {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4)

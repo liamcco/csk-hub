@@ -3,12 +3,12 @@ import { getTranslations } from "@/core/i18n/server"
 import { PageBreadcrumb } from "@/core/navigation/PageBreadcrumb"
 import { ROUTES } from "@/core/navigation/site"
 import { Skeleton } from "@/shared/ui/base/skeleton"
+import { readChoirPlacement } from "../screen-reads"
 import { ChoirsOverview } from "./overview"
-import { getChoirPlacement } from "./query"
 
 /** The Choirs and their Sections: where singers are placed in a Choir and given a Voice. */
 export async function ChoirsScreen() {
-  const [placement, t] = await Promise.all([getChoirPlacement(), getTranslations("Groups")])
+  const [placement, t] = await Promise.all([readChoirPlacement(), getTranslations("Groups")])
 
   return (
     <main className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 py-8 sm:px-6 lg:px-8">

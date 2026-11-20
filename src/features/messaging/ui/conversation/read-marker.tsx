@@ -1,7 +1,9 @@
 "use client"
 
+import { markConversationRead } from "@contract/client"
+import { useRouter } from "next/navigation"
 import { useEffect } from "react"
-import { markConversationReadAction } from "./actions"
+import { browserApiClient } from "@/core/api-client/browser"
 
 export function ReadMarker({
   conversationId,
@@ -12,14 +14,20 @@ export function ReadMarker({
   sequence: number
   token?: string
 }) {
+  const router = useRouter()
   useEffect(() => {
     const mark = () => {
-      if (token && document.visibilityState === "visible")
-        void markConversationReadAction(conversationId, sequence, token).catch(() => {})
+      if (!token || document.visibilityState !== "visible") return
+      markConversationRead({ client: browserApiClient, path: { conversationId }, body: { sequence, token } })
+        .then(({ data }) => {
+          // The navigation's unread badge lives in the layout, which only a refresh re-renders.
+          if (data?.changed) router.refresh()
+        })
+        .catch(() => {})
     }
     mark()
     document.addEventListener("visibilitychange", mark)
     return () => document.removeEventListener("visibilitychange", mark)
-  }, [conversationId, sequence, token])
+  }, [conversationId, sequence, token, router])
   return null
 }

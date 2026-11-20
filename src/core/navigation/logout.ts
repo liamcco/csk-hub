@@ -1,5 +1,13 @@
+import { removePushSubscription } from "@contract/client"
+import { browserApiClient } from "@/core/api-client/browser"
 import { authClient } from "@/core/auth/auth-client"
-import { revokePushBindingBeforeLogout } from "./logout-actions"
+
+/** Removes only the signed-in User's binding for this endpoint; false when there was none. */
+async function revokePushBindingBeforeLogout(endpoint: string) {
+  const { data } = await removePushSubscription({ client: browserApiClient, body: { endpoint } })
+  if (!data) throw new Error("The push binding could not be revoked")
+  return data.removed
+}
 
 const PUSH_CLEANUP_DEADLINE_MS = 2_000
 

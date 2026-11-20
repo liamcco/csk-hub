@@ -1,6 +1,7 @@
 "use client"
 
-import { useActionState, useId, useState } from "react"
+import { useRouter } from "next/navigation"
+import { useState, useTransition } from "react"
 import { useTranslations } from "@/core/i18n/translations"
 import {
   AlertDialog,
@@ -14,7 +15,7 @@ import {
   AlertDialogTrigger
 } from "@/shared/ui/base/alert-dialog"
 import { Button } from "@/shared/ui/base/button"
-import type { PostCommand, PostCommandState } from "./actions"
+import { type PostCommand, type PostCommandError, runPostCommand } from "./submit"
 
 const COPY = {
   unpublish: {
@@ -30,25 +31,29 @@ const COPY = {
  * A button that asks before changing a Post's state for good — recalling a published Post,
  * throwing a draft away. The action sends the Admin to the feed once it is done.
  */
-export function ConfirmPostCommand({
-  command,
-  action
-}: {
-  command: PostCommand
-  action: (state: PostCommandState) => Promise<PostCommandState>
-}) {
+export function ConfirmPostCommand({ command, postId }: { command: PostCommand; postId: string }) {
   const t = useTranslations("Posts")
   const common = useTranslations("Common")
+  const router = useRouter()
   const copy = COPY[command]
-  const formId = useId()
   const [open, setOpen] = useState(false)
-  const [state, submit, pending] = useActionState<PostCommandState>(action, { status: "idle" })
+  const [error, setError] = useState<PostCommandError | null>(null)
+  const [pending, startTransition] = useTransition()
 
-  // The form sits outside the dialog so it adds no gap to the dialog's layout; the
-  // confirm button reaches it through its `form` attribute.
+  function confirm() {
+    startTransition(async () => {
+      const outcome = await runPostCommand(command, postId)
+      if ("error" in outcome) {
+        setError(outcome.error)
+        return
+      }
+      // The Post page stops existing, so leave it before anything re-renders it.
+      router.push(outcome.destination)
+    })
+  }
+
   return (
     <>
-      <form id={formId} action={submit} />
       <AlertDialog open={open} onOpenChange={(next) => !pending && setOpen(next)}>
         <AlertDialogTrigger render={<Button type="button" variant="outline" size="sm" />}>
           {t(copy.label)}
@@ -58,14 +63,14 @@ export function ConfirmPostCommand({
             <AlertDialogTitle>{t(copy.title)}</AlertDialogTitle>
             <AlertDialogDescription>{t(copy.description)}</AlertDialogDescription>
           </AlertDialogHeader>
-          {state.status === "error" ? (
+          {error ? (
             <p role="alert" className="text-sm text-destructive">
-              {t(state.error)}
+              {t(error)}
             </p>
           ) : null}
           <AlertDialogFooter>
             <AlertDialogCancel disabled={pending}>{common("cancel")}</AlertDialogCancel>
-            <AlertDialogAction type="submit" form={formId} variant="destructive" disabled={pending}>
+            <AlertDialogAction type="button" onClick={confirm} variant="destructive" disabled={pending}>
               {pending ? t(copy.pending) : t(copy.label)}
             </AlertDialogAction>
           </AlertDialogFooter>

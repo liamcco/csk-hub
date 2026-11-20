@@ -1,7 +1,5 @@
 import Link from "next/link"
 import { Suspense } from "react"
-import { getRequestSession } from "@/core/auth/session.server"
-import { can } from "@/core/authz"
 import { getTranslations } from "@/core/i18n/server"
 import { useTranslations } from "@/core/i18n/translations"
 import { newsPostEditPath, newsPostPath } from "@/core/navigation/navigation-utils"
@@ -17,8 +15,7 @@ import { cn } from "@/shared/utils"
 import { UnpublishedNotice } from "./compose/UnpublishedNotice"
 import { PostTime } from "./PostTime"
 import { PostByline } from "./post-byline"
-import { listNewsFeed, listOwnDrafts } from "./service"
-import { listUnreadPostIds } from "./unread"
+import { readNewsFeed, readOwnDrafts } from "./query"
 
 function NewsHeader({ children }: { children?: React.ReactNode }) {
   const t = useTranslations("Posts")
@@ -35,7 +32,7 @@ function NewsHeader({ children }: { children?: React.ReactNode }) {
 
 /** The reader's own unpublished Posts. Nobody else's drafts are ever shown here. */
 async function OwnDrafts() {
-  const [drafts, t] = await Promise.all([listOwnDrafts(), getTranslations("Posts")])
+  const [drafts, t] = await Promise.all([readOwnDrafts(), getTranslations("Posts")])
   if (drafts.length === 0) return null
 
   return (
@@ -62,18 +59,10 @@ async function OwnDrafts() {
   )
 }
 
-async function listUnreadForCurrentUser() {
-  const session = await getRequestSession()
-  return session ? listUnreadPostIds(session.user.id) : new Set<string>()
-}
-
 export async function NewsScreen() {
-  const [entries, unread, canPublish, t] = await Promise.all([
-    listNewsFeed(),
-    listUnreadForCurrentUser(),
-    can({ action: "post.create" }),
-    getTranslations("Posts")
-  ])
+  const [feed, t] = await Promise.all([readNewsFeed(), getTranslations("Posts")])
+  const entries = feed.items
+  const canPublish = feed.permissions.create
 
   return (
     <ContentPage>
@@ -102,7 +91,7 @@ export async function NewsScreen() {
       ) : (
         <ul className="flex flex-col gap-3">
           {entries.map((entry) => {
-            const isUnread = unread.has(entry.id)
+            const isUnread = entry.unread
             return (
               <li key={entry.id}>
                 <Link href={newsPostPath(entry.id)} className="group block focus-visible:outline-none">

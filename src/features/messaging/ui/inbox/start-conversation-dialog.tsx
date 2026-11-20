@@ -19,10 +19,10 @@ import { Input } from "@/shared/ui/base/input"
 import { Textarea } from "@/shared/ui/base/textarea"
 import { MAX_GROUP_NAME_LENGTH } from "../../model/group-conversation"
 import { MAX_MESSAGE_BODY_LENGTH } from "../../model/message-body"
+import { startConversationCommand } from "../api-commands"
 import { createMessageIdempotencyKey } from "../composer/idempotency-key"
 import type { MessageCommandState } from "../composer/message-command-state"
 import { MemberSelection, type SelectedMember } from "../member-selection"
-import { startConversationAction } from "./actions"
 
 const initialState: MessageCommandState = { status: "idle" }
 /** Opens the shared composer, optionally with a member selected from their profile. */
@@ -87,7 +87,7 @@ function StartConversationForm({
   const [name, setName] = useState("")
   const [text, setText] = useState("")
   const [state, action, pending] = useActionState(async (previous: MessageCommandState, formData: FormData) => {
-    const result = await startConversationAction(previous, formData)
+    const result = await startConversationCommand(previous, formData)
     if (result.status === "success") {
       // Activity restores effects on browser Back; navigate only when this submission completes.
       onStarted()

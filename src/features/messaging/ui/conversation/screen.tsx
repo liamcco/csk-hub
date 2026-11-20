@@ -1,5 +1,4 @@
 import Link from "next/link"
-import { notFound } from "next/navigation"
 import { Fragment } from "react"
 import { getFormatter, getTimeZone, getTranslations } from "@/core/i18n/server"
 import { conversationPath, memberProfilePath } from "@/core/navigation/navigation-utils"
@@ -15,11 +14,10 @@ import {
 } from "@/shared/ui/base/message-scroller"
 import { Skeleton } from "@/shared/ui/base/skeleton"
 import { cn } from "@/shared/utils"
-import { MessagingAccessError } from "../../model/messaging-error"
 import { formatMessageSentAt } from "../message-timestamp"
+import { readConversation } from "../screen-reads"
 import { GroupControls } from "./group-controls"
 import { MessageComposer } from "./message-composer"
-import { getConversationPage } from "./query"
 import { ReadMarker } from "./read-marker"
 import { getMessageLayout } from "./timeline-layout"
 import { createMessageCalendarDayKey, formatMessageDay, formatMessageTime } from "./timestamp"
@@ -44,7 +42,7 @@ export async function ConversationScreen({
   beforeSequence?: number
 }) {
   const [conversation, t, format, timeZone] = await Promise.all([
-    getConversationOrNotFound(conversationId, beforeSequence),
+    readConversation(conversationId, beforeSequence),
     getTranslations("Messages"),
     getFormatter(),
     getTimeZone()
@@ -67,7 +65,7 @@ export async function ConversationScreen({
           {conversation.kind === "group" && conversation.canSend ? (
             <GroupControls
               conversationId={conversationId}
-              name={conversation.otherMemberName}
+              name={conversation.otherMemberName ?? ""}
               members={conversation.members}
             />
           ) : null}
@@ -153,19 +151,6 @@ export async function ConversationScreen({
       </MessageScrollerProvider>
     </main>
   )
-}
-
-async function getConversationOrNotFound(conversationId: string, beforeSequence?: number) {
-  try {
-    return await getConversationPage(conversationId, beforeSequence)
-  } catch (error) {
-    if (
-      error instanceof MessagingAccessError &&
-      (error.kind === "conversation-not-found" || error.kind === "conversation-view-forbidden")
-    )
-      notFound()
-    throw error
-  }
 }
 
 export function ConversationScreenSkeleton() {

@@ -1,11 +1,10 @@
 import { Suspense } from "react"
-import { requirePermission } from "@/core/authz"
+import { getCapabilities } from "@/core/api-client/capabilities"
 import { getTranslations } from "@/core/i18n/server"
 import { PageBreadcrumb } from "@/core/navigation/PageBreadcrumb"
 import { ROUTES } from "@/core/navigation/site"
 import { ContentPage } from "@/shared/layouts/content-page"
 import { Skeleton } from "@/shared/ui/base/skeleton"
-import { createPost } from "./actions"
 import { PostForm } from "./PostForm"
 
 async function ComposeHeader() {
@@ -20,9 +19,15 @@ async function ComposeHeader() {
 }
 
 async function ComposeForm() {
-  await requirePermission({ action: "post.create" })
+  // Every active member may write a Post; the API checks again on submit.
+  if (!(await getCapabilities())) return null
   return (
-    <PostForm action={createPost} stage="draft" unsaved={{ slot: "new", version: "new" }} cancelHref={ROUTES.news} />
+    <PostForm
+      target={{ kind: "new" }}
+      stage="draft"
+      unsaved={{ slot: "new", version: "new" }}
+      cancelHref={ROUTES.news}
+    />
   )
 }
 

@@ -7,7 +7,7 @@ mock.module("next/navigation", () => ({
   useRouter: () => ({ refresh: mock() })
 }))
 
-mock.module("./actions", () => ({
+mock.module("./locale-preference", () => ({
   updateLocalePreference: mock(async () => ({ success: true as const }))
 }))
 

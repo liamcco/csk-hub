@@ -1,3 +1,4 @@
+import type { Auth } from "@/core/auth/create-auth"
 import type { RequestAuthorization } from "@/core/authz/authorization"
 import type { Database } from "@/core/db"
 
@@ -24,7 +25,23 @@ export type ApiDependencies = Readonly<{
   database: Database
   /** The server secret features derive purpose-bound keys from. Never sent or logged. */
   secret: string
+  /**
+   * The post-commit delivery boundary: wakes outbox dispatch after a write that queued activity
+   * has committed. Never call it inside a transaction.
+   */
+  scheduleDelivery: () => void
+  /**
+   * Better Auth's server operations that features run on the caller's behalf, passing the
+   * request's own headers: Better Auth checks the session again and rejects with its own error.
+   */
+  authApi: AuthApi
 }>
+
+/** The Better Auth operations the API's features may call. */
+export type AuthApi = Pick<
+  Auth["api"],
+  "setPassword" | "createUser" | "signInMagicLink" | "banUser" | "unbanUser" | "removeUser" | "setRole"
+>
 
 export type ApiEnv = {
   Variables: {
@@ -37,5 +54,9 @@ export type ApiEnv = {
     database: Database
     /** The server secret; derive a purpose-bound key from it rather than using it directly. */
     secret: string
+    /** Wakes outbox delivery. Call only after the transaction that queued activity commits. */
+    scheduleDelivery: () => void
+    /** Better Auth's server operations; pass `c.req.raw.headers` so they act as the caller. */
+    authApi: AuthApi
   }
 }

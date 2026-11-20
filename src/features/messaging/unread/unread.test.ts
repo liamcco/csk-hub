@@ -75,7 +75,7 @@ describe.skipIf(!database)("unread Conversations", () => {
     await send(one, first, 2)
     await send(other, second, 1)
 
-    expect(await countUnreadConversations(reader)).toBe(2)
+    expect(await countUnreadConversations(db, reader)).toBe(2)
   })
 
   test("the User's own Messages are not unread to them", async () => {
@@ -83,8 +83,8 @@ describe.skipIf(!database)("unread Conversations", () => {
     const id = await startDirect(author, recipient)
     await send(id, author, 1)
 
-    expect(await countUnreadConversations(author)).toBe(0)
-    expect(await countUnreadConversations(recipient)).toBe(1)
+    expect(await countUnreadConversations(db, author)).toBe(0)
+    expect(await countUnreadConversations(db, recipient)).toBe(1)
   })
 
   test("a Conversation read through its newest Message is no longer unread", async () => {
@@ -94,10 +94,10 @@ describe.skipIf(!database)("unread Conversations", () => {
     await send(id, sender, 2)
 
     await readThrough(id, reader, 1)
-    expect(await countUnreadConversations(reader)).toBe(1)
+    expect(await countUnreadConversations(db, reader)).toBe(1)
 
     await readThrough(id, reader, 2)
-    expect(await countUnreadConversations(reader)).toBe(0)
+    expect(await countUnreadConversations(db, reader)).toBe(0)
   })
 
   test("a former group member counts only the history retained for them", async () => {
@@ -109,11 +109,11 @@ describe.skipIf(!database)("unread Conversations", () => {
       .set({ leftAt: new Date(), historyVisibleThroughSequence: 1 })
       .where(and(eq(groupMembership.conversationId, id), eq(groupMembership.userId, former)))
 
-    expect(await countUnreadConversations(former)).toBe(1)
+    expect(await countUnreadConversations(db, former)).toBe(1)
 
     await readThrough(id, former, 1)
     await send(id, sender, 2)
-    expect(await countUnreadConversations(former)).toBe(0)
+    expect(await countUnreadConversations(db, former)).toBe(0)
   })
 
   test("an active group member counts new Messages", async () => {
@@ -121,6 +121,6 @@ describe.skipIf(!database)("unread Conversations", () => {
     const id = await startGroup([member, sender])
     await send(id, sender, 1)
 
-    expect(await countUnreadConversations(member)).toBe(1)
+    expect(await countUnreadConversations(db, member)).toBe(1)
   })
 })

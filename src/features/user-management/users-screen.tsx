@@ -1,15 +1,19 @@
+import { listUsers } from "@contract/client"
+import { getServerApiClient, readForScreen } from "@/core/api-client/server"
 import { app } from "@/core/config/app"
 import { getTranslations } from "@/core/i18n/server"
 import { PageBreadcrumb } from "@/core/navigation/PageBreadcrumb"
+import { ROUTES } from "@/core/navigation/site"
 import { Skeleton } from "@/shared/ui/base/skeleton"
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/base/table"
 import { AddUserDialog } from "./add/add-user-dialog"
 import { ImportUsersDialog } from "./import/import-users-dialog"
-import { listUsers } from "./service"
+import type { UserListItem } from "./service"
 import { UserList } from "./user-list"
 
 export async function UsersScreen() {
-  const users = await listUsers()
+  const { items } = await readForScreen(listUsers({ client: await getServerApiClient() }), ROUTES.adminUsers)
+  const users: UserListItem[] = items.map((item) => ({ ...item, createdAt: new Date(item.createdAt) }))
   const t = await getTranslations("Members")
 
   return (

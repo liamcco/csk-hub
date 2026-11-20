@@ -3,8 +3,8 @@
 import { useTranslations } from "@/core/i18n/translations"
 import { InputField } from "@/shared/forms/fields"
 import { Button } from "@/shared/ui/base/button"
+import { archiveGroupAction, renameGroupAction } from "../commands"
 import { GroupCommandDialog } from "../group-command-dialog"
-import { archiveGroupAction, renameGroupAction } from "../groups/actions"
 import { NAME_MAX_LENGTH } from "../limits"
 import type { GroupDetail } from "./query"
 

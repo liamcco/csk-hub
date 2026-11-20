@@ -1,11 +1,11 @@
 import "server-only"
 
 import { and, asc, desc, eq, gt, inArray, lte, sql } from "drizzle-orm"
-import { db } from "@/core/db"
+import { db as applicationDb, type Database } from "@/core/db"
 import { event, eventTarget } from "@/core/db/schema/events"
 import { listGroupNames } from "@/features/org-structure"
 import type { VoiceFamily } from "@/features/voice/model"
-import { getEventManagementScope, managedEventGroupIds } from "../../access"
+import { type EventAccessResolver, getEventManagementScope, managedEventGroupIds } from "../../access"
 import { byPresentValue, type EventStatus, type EventType } from "../../model"
 
 export type EventListFilters = {
@@ -21,9 +21,14 @@ export type EventListRow = Awaited<ReturnType<typeof listManagedEvents>>[number]
  * Every manageable Event in any status, filtered before loading for the management list: upcoming ones soonest first, past ones
  * most recent first. Each carries its Organiser group and its Targets with their group names.
  */
-export async function listManagedEvents(filters: EventListFilters, now: Date) {
-  return db.transaction(async (db) => {
-    const { access, facts } = await getEventManagementScope(db)
+export async function listManagedEvents(
+  filters: EventListFilters,
+  now: Date,
+  database: Database = applicationDb,
+  resolve?: EventAccessResolver
+) {
+  return database.transaction(async (db) => {
+    const { access, facts } = await getEventManagementScope(db, resolve)
     const manageableIds = managedEventGroupIds(access, facts)
     const scope = access.actor?.isAdmin
       ? undefined

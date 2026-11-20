@@ -1,9 +1,9 @@
 import { Suspense } from "react"
-import { requirePermission } from "@/core/authz"
+import { requireCapability } from "@/core/api-client/capabilities"
 import { NewEventScreen, NewEventScreenSkeleton } from "@/features/events"
 
 async function AdminNewEvent() {
-  await requirePermission({ action: "event.administer" })
+  await requireCapability("administerEvents")
 
   return <NewEventScreen />
 }

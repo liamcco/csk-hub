@@ -1,4 +1,4 @@
-import { createDocumentSchema, richText } from "@/features/rich-text"
+import { createDocumentSchema, richText } from "@/features/rich-text/document"
 
 /**
  * What an Event description may contain: emphasis, lists and links. This list is the whole of

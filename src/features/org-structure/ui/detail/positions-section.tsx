@@ -8,8 +8,8 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/shared/ui
 import { FieldDescription } from "@/shared/ui/base/field"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/base/table"
 import { holdsElectedPosts } from "../../model"
+import { assignHolderAction, endHoldingAction } from "../commands"
 import { GroupCommandDialog } from "../group-command-dialog"
-import { assignHolderAction, endHoldingAction } from "./actions"
 import type { GroupDetail } from "./query"
 
 type GroupPosition = GroupDetail["positions"][number]

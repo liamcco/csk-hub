@@ -1,4 +1,4 @@
-import { createDocumentSchema, richText } from "@/features/rich-text"
+import { createDocumentSchema, richText } from "@/features/rich-text/document"
 
 /** The heading levels a Post body may contain; h1 belongs to the Post title. */
 export const POST_HEADING_LEVELS = [2, 3] as const

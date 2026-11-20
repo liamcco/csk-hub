@@ -41,6 +41,8 @@ export type CommandDialogProps<Error extends string> = {
   destructive?: boolean
   /** Hidden identifiers and the form's fields. */
   children: ReactNode
+  /** Runs after the success toast, e.g. to refresh a screen that would unmount this dialog. */
+  afterSuccess?: () => void
 }
 
 /**
@@ -51,6 +53,7 @@ export function CommandDialog<Error extends string>({
   trigger,
   title,
   description,
+  afterSuccess,
   ...form
 }: CommandDialogProps<Error>) {
   const [open, setOpen] = useState(false)
@@ -64,7 +67,13 @@ export function CommandDialog<Error extends string>({
           {description ? <DialogDescription>{description}</DialogDescription> : null}
         </DialogHeader>
         {/* Mounted only while open, so every opening starts from a clean command state. */}
-        <CommandForm {...form} onSuccess={() => setOpen(false)} />
+        <CommandForm
+          {...form}
+          onSuccess={() => {
+            setOpen(false)
+            afterSuccess?.()
+          }}
+        />
       </DialogContent>
     </Dialog>
   )
@@ -80,7 +89,9 @@ function CommandForm<Error extends string>({
   destructive,
   children,
   onSuccess
-}: Omit<CommandDialogProps<Error>, "trigger" | "title" | "description"> & { onSuccess: () => void }) {
+}: Omit<CommandDialogProps<Error>, "trigger" | "title" | "description" | "afterSuccess"> & {
+  onSuccess: () => void
+}) {
   const [state, formAction, pending] = useActionState(action, IDLE)
   const handled = useRef<number | null>(null)
 

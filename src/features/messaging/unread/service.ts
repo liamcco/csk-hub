@@ -1,8 +1,7 @@
 import "server-only"
 
 import { and, count, eq, exists, sql } from "drizzle-orm"
-import { cache } from "react"
-import { db } from "@/core/db"
+import type { Database } from "@/core/db"
 import { conversationReadState, directConversation, groupMembership, message } from "@/core/db/schema/messaging"
 import { groupHistoryVisibility } from "../group-conversations/access"
 
@@ -11,13 +10,13 @@ import { groupHistoryVisibility } from "../group-conversations/access"
  * many Messages each holds. A former group member counts only the history retained for them.
  * Shared within a render, where the navigation's badge and menu dot both ask for it.
  */
-export const countUnreadConversations = cache(async (userId: string): Promise<number> => {
-  const [direct, group] = await Promise.all([countUnreadDirect(userId), countUnreadGroup(userId)])
+export async function countUnreadConversations(database: Database, userId: string): Promise<number> {
+  const [direct, group] = await Promise.all([countUnreadDirect(database, userId), countUnreadGroup(database, userId)])
   return direct + group
-})
+}
 
-async function countUnreadDirect(userId: string) {
-  const [row] = await db
+async function countUnreadDirect(database: Database, userId: string) {
+  const [row] = await database
     .select({ unread: count() })
     .from(conversationReadState)
     .innerJoin(directConversation, eq(directConversation.conversationId, conversationReadState.conversationId))
@@ -25,7 +24,7 @@ async function countUnreadDirect(userId: string) {
       and(
         eq(conversationReadState.userId, userId),
         exists(
-          db
+          database
             .select({ id: message.id })
             .from(message)
             .where(
@@ -40,8 +39,8 @@ async function countUnreadDirect(userId: string) {
   return row?.unread ?? 0
 }
 
-async function countUnreadGroup(userId: string) {
-  const [row] = await db
+async function countUnreadGroup(database: Database, userId: string) {
+  const [row] = await database
     .select({ unread: count() })
     .from(groupMembership)
     .leftJoin(
@@ -55,7 +54,7 @@ async function countUnreadGroup(userId: string) {
       and(
         eq(groupMembership.userId, userId),
         exists(
-          db
+          database
             .select({ id: message.id })
             .from(message)
             .where(

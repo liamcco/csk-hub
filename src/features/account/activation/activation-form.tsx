@@ -9,7 +9,7 @@ import { InputField } from "@/shared/forms/fields"
 import { passwordPolicy } from "@/shared/policy"
 import { Button } from "@/shared/ui/base/button"
 import { FieldError, FieldGroup } from "@/shared/ui/base/field"
-import { type ActivationState, activateAccount } from "./actions"
+import { type ActivationState, activateAccount } from "./activate"
 
 export function ActivationForm() {
   const t = useTranslations("Public.activation")

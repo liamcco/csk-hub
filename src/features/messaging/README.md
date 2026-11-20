@@ -14,14 +14,16 @@ messaging/
   sending/       server-only module that owns all Message-send behavior
   reading/       shared read-only Direct Conversation lookup
   unread/        the count of Conversations with unread Messages, shown on the navigation
-  ui/            screens, screen-shaped reads, Server Actions, and client interaction
+  ui/            screens, screen-shaped reads, API commands, and client interaction
+  http/          the Hono routes under `/api/v1`
 ```
 
 Dependencies point from `ui` into `sending` and `model`. `sending` may use `model` and core
 infrastructure. `model` stays independent of React, Next.js, and the database.
 
-Routes import screens only through `@/features/messaging`. UI Server Actions call the public
-`sending` interface rather than its implementation files. Code outside `sending` must not call
+Routes import screens only through `@/features/messaging`. Screens read and write through the HTTP
+API (`ui/screen-reads.ts`, `ui/api-commands.ts`); the HTTP routes call the public `sending`
+interface rather than its implementation files. Code outside `sending` must not call
 `append-message.ts` or `direct-recipient.ts` directly.
 
 ## Where changes belong
@@ -29,8 +31,8 @@ Routes import screens only through `@/features/messaging`. UI Server Actions cal
 - Change sender authentication, Conversation authorization, idempotency, transaction ordering, or
   Message persistence in `sending/`. Protected reads and commands use
   `requirePermission({ action: "app.access" }, tx?)` from `core/authz` to reject inactive or revoked
-  sessions. Server Actions in `ui/` translate these denials for the user; direct command callers
-  receive the same restriction. Read
+  sessions. The HTTP routes answer these denials with stable codes that `ui/` translates for
+  the user; direct command callers receive the same restriction. Read
   [`sending/README.md`](sending/README.md) before changing that module.
 - Change shared Message body rules or pure Direct Conversation rules in `model/`.
 - Change rendering, form behavior, navigation, or cache revalidation in `ui/`.

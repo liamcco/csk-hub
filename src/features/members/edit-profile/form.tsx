@@ -1,26 +1,50 @@
 "use client"
 
+import { updateProfileVoices } from "@contract/client"
 import Link from "next/link"
-import { useActionState, useState } from "react"
+import { useRouter } from "next/navigation"
+import { type FormEvent, useState, useTransition } from "react"
+import { browserApiClient } from "@/core/api-client/browser"
 import { useTranslations } from "@/core/i18n/translations"
 import { ROUTES } from "@/core/navigation/site"
 import { VOICE_DIVISIONS, type VoiceDivision } from "@/features/voice/model"
 import { Button, buttonVariants } from "@/shared/ui/base/button"
 import { Card, CardContent } from "@/shared/ui/base/card"
 import { Checkbox } from "@/shared/ui/base/checkbox"
-import { saveProfileAction } from "./actions"
 import type { EditProfileState } from "./state"
 
-const initialState: EditProfileState = { status: "idle" }
+async function saveVoices(voices: VoiceDivision[]): Promise<EditProfileState> {
+  try {
+    const { data, response } = await updateProfileVoices({ client: browserApiClient, body: { voices } })
+    if (data) return { status: "success", voices: data.voices }
+    if (response?.status === 401) return { status: "error", error: "sign-in-required" }
+    if (response?.status === 400) return { status: "error", error: "invalid-voices" }
+    return { status: "error", error: "unexpected" }
+  } catch {
+    return { status: "error", error: "unexpected" }
+  }
+}
 
 export function EditProfileForm({ initialVoices }: { initialVoices: VoiceDivision[] }) {
   const t = useTranslations("MemberProfiles")
+  const router = useRouter()
   const [voices, setVoices] = useState(initialVoices)
-  const [state, action, pending] = useActionState(saveProfileAction, initialState)
+  const [state, setState] = useState<EditProfileState>({ status: "idle" })
+  const [pending, startTransition] = useTransition()
   const savedVoices = state.status === "success" ? state.voices : initialVoices
   const changed = voices.length !== savedVoices.length || voices.some((voice) => !savedVoices.includes(voice))
+
+  function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    startTransition(async () => {
+      const result = await saveVoices(voices)
+      setState(result)
+      if (result.status === "success") router.refresh()
+    })
+  }
+
   return (
-    <form action={action} className="flex flex-col gap-5">
+    <form onSubmit={submit} className="flex flex-col gap-5">
       <Card>
         <CardContent>
           <fieldset disabled={pending} aria-describedby="voice-capabilities-description">

@@ -1,11 +1,13 @@
-import { describe, expect, test } from "bun:test"
+import { describe, expect, mock, test } from "bun:test"
 import messages from "@messages/en.json"
 import swedishMessages from "@messages/sv.json"
 import { renderToStaticMarkup } from "react-dom/server"
 import { app } from "@/core/config/app"
 import { NextIntlClientProvider } from "@/core/i18n/client"
 import type { UserListItem } from "./service"
-import { UserList } from "./user-list"
+
+mock.module("next/navigation", () => ({ useRouter: () => ({ refresh: () => {} }) }))
+const { UserList } = await import("./user-list")
 
 describe("UserList", () => {
   test("formats the table caption with the application name", () => {

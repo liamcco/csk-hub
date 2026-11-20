@@ -1,7 +1,6 @@
 import { afterAll, afterEach, beforeEach, expect, jest, mock, test } from "bun:test"
 
-// Bun's module mocks persist across files. Keep the client action stub out of
-// server-action authorization tests that import the real logout action.
+// Bun's module mocks persist across files. Keep the generated client stub out of other tests.
 if (process.env.CSK_LOGOUT_TEST_FILE !== import.meta.path) {
   test("logout workflows in an isolated process", async () => {
     const child = Bun.spawn([process.execPath, "test", import.meta.path], {
@@ -18,14 +17,18 @@ if (process.env.CSK_LOGOUT_TEST_FILE !== import.meta.path) {
   })
 } else {
   const signOut = mock(async () => ({ error: null }))
-  const revoke = mock(async () => true)
+  const revoke = mock(async (_endpoint: string) => true)
   const unsubscribe = mock(async () => true)
   const getSubscription = mock(async () => ({ endpoint: "https://fcm.googleapis.com/send/test", unsubscribe }))
   const getRegistration = mock(async () => ({ pushManager: { getSubscription } }))
   const originalNavigator = Object.getOwnPropertyDescriptor(globalThis, "navigator")
 
   mock.module("@/core/auth/auth-client", () => ({ authClient: { signOut } }))
-  mock.module("./logout-actions", () => ({ revokePushBindingBeforeLogout: revoke }))
+  mock.module("@contract/client", () => ({
+    removePushSubscription: async ({ body }: { body: { endpoint: string } }) => ({
+      data: { removed: await revoke(body.endpoint) }
+    })
+  }))
   const { logout } = await import("./logout")
 
   afterEach(() => jest.useRealTimers())

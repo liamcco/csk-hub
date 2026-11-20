@@ -1,5 +1,6 @@
 "use client"
 
+import { useRouter } from "next/navigation"
 import { useTranslations } from "@/core/i18n/translations"
 import { CommandDialog, type CommandDialogProps } from "@/shared/forms/CommandDialog"
 import type { EventCommandError } from "./command-state"
@@ -10,13 +11,23 @@ type EventCommandDialogProps = Omit<
   "pendingLabel" | "cancelLabel" | "errorMessage"
 >
 
-/** A dialog holding one admin Events command, in the Events admin's copy. */
+/**
+ * A dialog holding one admin Events command, in the Events admin's copy. The screen refreshes
+ * after the success toast, since the refreshed screen may no longer hold this dialog.
+ */
 export function EventCommandDialog(props: EventCommandDialogProps) {
+  const router = useRouter()
   const t = useTranslations("Events")
   const common = useTranslations("Common")
   const errorMessage = useEventErrorMessage()
 
   return (
-    <CommandDialog {...props} pendingLabel={t("working")} cancelLabel={common("cancel")} errorMessage={errorMessage} />
+    <CommandDialog
+      afterSuccess={() => router.refresh()}
+      {...props}
+      pendingLabel={t("working")}
+      cancelLabel={common("cancel")}
+      errorMessage={errorMessage}
+    />
   )
 }

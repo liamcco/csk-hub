@@ -18,10 +18,11 @@ export async function MemberDirectoryScreen({
   searchParams: Promise<{ query?: string | string[]; page?: string | string[] }>
 }) {
   const params = await searchParams
-  const [{ members, query, page, totalPages, total }, t] = await Promise.all([
+  const requestedPage = typeof params.page === "string" ? Number(params.page) : 1
+  const [{ items: members, query, page, totalPages, total }, t] = await Promise.all([
     getDirectory({
-      query: typeof params.query === "string" ? params.query : "",
-      page: typeof params.page === "string" ? Number(params.page) : 1
+      query: typeof params.query === "string" ? params.query.slice(0, 200) : "",
+      page: Number.isSafeInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1
     }),
     getTranslations("MemberProfiles")
   ])

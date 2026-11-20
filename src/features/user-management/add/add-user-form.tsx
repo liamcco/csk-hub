@@ -1,5 +1,6 @@
 "use client"
 
+import { useRouter } from "next/navigation"
 import { useActionState, useEffect, useRef } from "react"
 import { useTranslations } from "@/core/i18n/translations"
 import { InputField } from "@/shared/forms/fields"
@@ -7,17 +8,19 @@ import { Button } from "@/shared/ui/base/button"
 import { DialogClose } from "@/shared/ui/base/dialog"
 import { FieldError, FieldGroup } from "@/shared/ui/base/field"
 import { toast } from "@/shared/ui/base/toast"
-import { type AddUserState, addUser } from "./actions"
+import { type AddUserState, addUser } from "../user-commands"
 
 export function AddUserForm() {
   const t = useTranslations("Members")
   const common = useTranslations("Common")
   const [state, action, pending] = useActionState<AddUserState, FormData>(addUser, { status: "idle" })
   const formRef = useRef<HTMLFormElement>(null)
+  const router = useRouter()
 
   useEffect(() => {
     if (state.status === "success" || state.status === "email-failed") {
       formRef.current?.reset()
+      router.refresh()
       if (state.status === "success") {
         toast.add({
           type: "success",
@@ -32,7 +35,7 @@ export function AddUserForm() {
         })
       }
     }
-  }, [state, t])
+  }, [state, t, router])
 
   return (
     <form ref={formRef} action={action} className="space-y-6">

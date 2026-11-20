@@ -1,20 +1,25 @@
 import "server-only"
 
 import { and, eq, lt } from "drizzle-orm"
-import { requirePermission } from "@/core/authz"
-import { db } from "@/core/db"
 import { conversation, conversationReadState, directConversation, groupMembership } from "@/core/db/schema/messaging"
 import { queueActivity } from "@/core/realtime/outbox"
 import { acknowledgeConversationActivity } from "../../activity"
 import { canViewGroupSequence } from "../../group-conversations/access"
+import { type MessagingContext, messagingContext } from "../../model/context"
 import { getDirectCounterpartId } from "../../model/direct-conversation"
 import { MessagingAccessError } from "../../model/messaging-error"
 import { verifiesReadToken } from "./read-token"
 
 /** Advances the signed-in User's read cursor; resolves whether it moved. */
-export async function markConversationRead(conversationId: string, sequence: number, token: string): Promise<boolean> {
-  return db.transaction(async (tx) => {
-    const { userId } = await requirePermission({ action: "app.access" }, tx)
+export async function markConversationRead(
+  conversationId: string,
+  sequence: number,
+  token: string,
+  context?: MessagingContext
+): Promise<boolean> {
+  const { database, authorize } = await messagingContext(context)
+  return database.transaction(async (tx) => {
+    const { userId } = await authorize({ action: "app.access" }, tx)
     if (!Number.isInteger(sequence) || sequence < 1 || !verifiesReadToken(token, conversationId, userId, sequence))
       throw new MessagingAccessError("read-position-invalid")
 

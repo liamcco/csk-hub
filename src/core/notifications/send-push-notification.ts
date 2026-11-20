@@ -5,7 +5,7 @@ import { and, eq, getTableColumns, inArray, isNull, or, sql } from "drizzle-orm"
 import webpush from "web-push"
 import { app } from "@/core/config/app"
 import { env } from "@/core/config/env"
-import { db } from "@/core/db"
+import { type Database, db } from "@/core/db"
 import { user } from "@/core/db/schema/auth"
 import { pushSubscription } from "@/core/db/schema/notifications"
 import { parseSafeInternalPath } from "@/core/navigation/navigation-utils"
@@ -56,7 +56,7 @@ function failureCategory(error: unknown): NotificationDeliveryFailureCategory {
   return statusCode === undefined ? "transport" : "providerRejected"
 }
 
-async function deliverOne(stored: StoredSubscription, payload: string) {
+async function deliverOne(stored: StoredSubscription, payload: string, database: Database) {
   const agent = new https.Agent({ keepAlive: false })
   let category: NotificationDeliveryFailureCategory | undefined
   try {
@@ -80,7 +80,7 @@ async function deliverOne(stored: StoredSubscription, payload: string) {
 
   let bookkeepingFailed = false
   try {
-    const update = category === undefined ? recordSuccess(stored) : recordFailure(stored, category)
+    const update = category === undefined ? recordSuccess(stored, database) : recordFailure(stored, category, database)
     await withDeadline(update, BOOKKEEPING_DEADLINE_MS)
   } catch {
     bookkeepingFailed = true
@@ -99,7 +99,8 @@ function toPayload({ body, url, tag }: PushNotification) {
 
 async function sendToSubscriptions(
   subscriptions: StoredSubscription[],
-  notification: PushNotification
+  notification: PushNotification,
+  database: Database
 ): Promise<NotificationDeliveryResult> {
   const payload = toPayload(notification)
   if (subscriptions.length === 0) {
@@ -114,7 +115,7 @@ async function sendToSubscriptions(
   await Promise.all(
     Array.from({ length: Math.min(DEFAULT_CONCURRENCY, subscriptions.length) }, async () => {
       while (nextIndex < subscriptions.length) {
-        const attempt = await deliverOne(subscriptions[nextIndex++], payload)
+        const attempt = await deliverOne(subscriptions[nextIndex++], payload, database)
         if (attempt.accepted) accepted += 1
         if (attempt.category) countFailure(attempt.category)
         if (attempt.bookkeepingFailed) countFailure("bookkeeping")
@@ -126,7 +127,11 @@ async function sendToSubscriptions(
   return accepted > 0 ? { success: true, ...diagnostics } : { success: false, error: "deliveryFailed", ...diagnostics }
 }
 
-async function recordFailure(stored: StoredSubscription, category: NotificationDeliveryFailureCategory) {
+async function recordFailure(
+  stored: StoredSubscription,
+  category: NotificationDeliveryFailureCategory,
+  database: Database
+) {
   const disabledReasons: Partial<Record<NotificationDeliveryFailureCategory, string>> = {
     invalidSubscription: "Stored push subscription failed validation",
     subscriptionGone: "Push provider returned HTTP 404 or 410"
@@ -135,7 +140,7 @@ async function recordFailure(stored: StoredSubscription, category: NotificationD
   const permanentlyInvalid = disabledReason !== null
   const now = new Date()
 
-  await db
+  await database
     .update(pushSubscription)
     .set({
       status: permanentlyInvalid ? "disabled" : "active",
@@ -148,17 +153,17 @@ async function recordFailure(stored: StoredSubscription, category: NotificationD
     .where(eq(pushSubscription.id, stored.id))
 }
 
-async function recordSuccess(stored: StoredSubscription) {
+async function recordSuccess(stored: StoredSubscription, database: Database) {
   const now = new Date()
-  await db
+  await database
     .update(pushSubscription)
     .set({ lastSuccessAt: now, lastSeenAt: now, failureCount: 0, updatedAt: now })
     .where(eq(pushSubscription.id, stored.id))
 }
 
 /** Delivers a notification to every active push subscription belonging to one User. */
-export async function sendToUser(userId: string, notification: PushNotification) {
-  return sendToUsers([userId], notification)
+export async function sendToUser(userId: string, notification: PushNotification, database: Database = db) {
+  return sendToUsers([userId], notification, database)
 }
 
 /**
@@ -167,21 +172,22 @@ export async function sendToUser(userId: string, notification: PushNotification)
  */
 export async function sendToUsers(
   userIds: string[],
-  notification: PushNotification
+  notification: PushNotification,
+  database: Database = db
 ): Promise<NotificationDeliveryResult> {
   if (userIds.length === 0) {
     return { success: false, error: "noRecipients", accepted: 0, failed: 0, failureCategories: {} }
   }
-  return sendToSubscriptions(await listDeliverySubscriptions(userIds), notification)
+  return sendToSubscriptions(await listDeliverySubscriptions(database, userIds), notification, database)
 }
 
 /** Delivers a notification to every eligible active User's push subscriptions. */
-export async function sendToAll(notification: PushNotification) {
-  return sendToSubscriptions(await listDeliverySubscriptions(), notification)
+export async function sendToAll(notification: PushNotification, database: Database = db) {
+  return sendToSubscriptions(await listDeliverySubscriptions(database), notification, database)
 }
 
-function listDeliverySubscriptions(userIds?: string[]) {
-  return db
+function listDeliverySubscriptions(database: Database, userIds?: string[]) {
+  return database
     .select(getTableColumns(pushSubscription))
     .from(pushSubscription)
     .innerJoin(user, eq(user.id, pushSubscription.userId))

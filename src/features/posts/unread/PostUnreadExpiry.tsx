@@ -1,10 +1,13 @@
-import { getRequestSession } from "@/core/auth/session.server"
+import { readPostUnread } from "../query"
 import { PostBadgeExpiry } from "./PostBadgeExpiry"
-import { nextUnreadPostChangeAt } from "./service"
 
 /** Refreshes unread counts when a Post enters or leaves the unread horizon. */
 export async function PostUnreadExpiry() {
-  const session = await getRequestSession()
-  if (!session) return null
-  return <PostBadgeExpiry at={await nextUnreadPostChangeAt(session.user.id)} />
+  const { nextChangeAt } = await readPostUnread()
+  return <PostBadgeExpiry at={nextChangeAt === null ? null : Date.parse(nextChangeAt)} />
+}
+
+/** The caller's unread Post count, for the navigation badge. */
+export async function countUnreadPostsForBadge() {
+  return (await readPostUnread()).count
 }

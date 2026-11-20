@@ -34,10 +34,85 @@ const { withEventPermission } = await import("../access")
 const { getEventEditor, getEventFormOptions } = await import("./editor/query")
 const { listManagedEvents } = await import("./list/query")
 const { listLocations } = await import("./locations/query")
-const { createEventAction, updateEventAction, changeEventStatusAction, deleteEventAction } = await import(
-  "./editor/actions"
-)
-const { createLocationAction, updateLocationAction, archiveLocationAction } = await import("./locations/actions")
+const { readEventForm, eventFormSchema } = await import("./editor/form-input")
+const { createEvent: create, updateEvent: update } = await import("../events")
+const { changeEventStatus, deleteEvent } = await import("../lifecycle")
+const { archiveLocation, createLocation, updateLocation } = await import("../locations")
+
+type Denied = { status: "error"; error: "access-denied" }
+
+/**
+ * The Event commands as the HTTP API runs them (`events/http/routes.ts`): an active actor first,
+ * then the exact Event policy inside the write transaction. A denial inside it is `access-denied`;
+ * a created or deleted Event reports where the web app goes next.
+ */
+async function runCommand(
+  action: "event.create" | "event.update" | "event.changeStatus" | "event.delete",
+  eventId: string | null,
+  proposed: { organiserGroupId: string | null } | undefined,
+  work: Parameters<typeof withEventPermission>[3]
+) {
+  await (access as NonNullable<typeof access>).requirePermission({ action: "app.access" })
+  try {
+    const result = (await withEventPermission(action, eventId, proposed, work)) as { success: boolean; error?: string }
+    return result.success ? ({ status: "success" } as const) : ({ status: "error", error: result.error } as const)
+  } catch (error) {
+    if ((error as { code?: string }).code === AUTHORIZATION_DENIED)
+      return { status: "error", error: "access-denied" } as Denied
+    throw error
+  }
+}
+
+function eventFrom(data: FormData) {
+  return eventFormSchema.parse(readEventForm(data))
+}
+
+async function createEventAction(_state: unknown, data: FormData) {
+  const input = eventFrom(data)
+  const result = await runCommand(
+    "event.create",
+    null,
+    { organiserGroupId: input.organiserGroupId ?? null },
+    (db, actorId) => create(db, { ...input, createdBy: actorId })
+  )
+  if (result.status === "success") throw new Error("redirect:/events/manage/")
+  return result
+}
+
+async function updateEventAction(eventId: string, _state: unknown, data: FormData) {
+  const input = eventFrom(data)
+  return runCommand("event.update", eventId, { organiserGroupId: input.organiserGroupId ?? null }, (db) =>
+    update(db, eventId, input)
+  )
+}
+
+async function changeEventStatusAction(_state: unknown, data: FormData) {
+  const eventId = String(data.get("eventId"))
+  return runCommand("event.changeStatus", eventId, undefined, (db) =>
+    changeEventStatus(db, eventId, String(data.get("status")) as "Published")
+  )
+}
+
+async function deleteEventAction(_state: unknown, data: FormData) {
+  const eventId = String(data.get("eventId"))
+  const result = await runCommand("event.delete", eventId, undefined, (db) => deleteEvent(db, eventId))
+  if (result.status === "success") throw new Error("redirect:/events/manage")
+  return result
+}
+
+/** Location commands require Admin-only `event.administer` before any input is read. */
+function locationAction(run: () => Promise<unknown>) {
+  return async (_state: unknown, _data: FormData) => {
+    await (access as NonNullable<typeof access>).requirePermission({ action: "event.administer" })
+    return run()
+  }
+}
+const createLocationAction = locationAction(() => createLocation(t().db, { name: "Hall" }))
+const updateLocationAction = locationAction(() => updateLocation(t().db, crypto.randomUUID(), { name: "Hall" }))
+const archiveLocationAction = locationAction(() => archiveLocation(t().db, crypto.randomUUID()))
+function t() {
+  return database as NonNullable<typeof database>
+}
 const idle = { status: "idle" } as const
 const denied = { status: "error", error: "access-denied" } as const
 

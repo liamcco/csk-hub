@@ -2,11 +2,10 @@ import "server-only"
 
 import { createHash } from "node:crypto"
 import { and, eq, inArray, sql } from "drizzle-orm"
-import { requirePermission } from "@/core/authz"
-import { db } from "@/core/db"
 import { user } from "@/core/db/schema/auth"
 import { conversation, conversationReadState, groupConversation, groupMembership } from "@/core/db/schema/messaging"
 import { queueConversationActivity } from "../activity"
+import { type MessagingContext, messagingContext } from "../model/context"
 import { groupMemberIds, normalizeGroupName } from "../model/group-conversation"
 import { MessagingAccessError } from "../model/messaging-error"
 import type { MessageTransaction } from "../sending"
@@ -28,11 +27,15 @@ async function requireActiveUsers(tx: MessageTransaction, ids: string[]) {
   }
 }
 
-export async function createGroupConversation(input: { name: unknown; memberIds: string[]; idempotencyKey: string }) {
+export async function createGroupConversation(
+  input: { name: unknown; memberIds: string[]; idempotencyKey: string },
+  context?: MessagingContext
+) {
+  const { database, authorize } = await messagingContext(context)
   const name = normalizeGroupName(input.name)
   if (!input.idempotencyKey.trim()) throw new MessagingAccessError("idempotency-key-required")
-  return db.transaction(async (tx) => {
-    const { userId } = await requirePermission({ action: "app.access" }, tx)
+  return database.transaction(async (tx) => {
+    const { userId } = await authorize({ action: "app.access" }, tx)
     const ids = groupMemberIds(input.memberIds, userId)
     const payloadHash = createHash("sha256")
       .update(JSON.stringify([name, ids]))
@@ -73,10 +76,14 @@ export async function createGroupConversation(input: { name: unknown; memberIds:
   })
 }
 
-export async function addGroupMembers(input: { conversationId: string; memberIds: string[] }) {
+export async function addGroupMembers(
+  input: { conversationId: string; memberIds: string[] },
+  context?: MessagingContext
+) {
+  const { database, authorize } = await messagingContext(context)
   const ids = groupMemberIds(input.memberIds)
-  return db.transaction(async (tx) => {
-    const { userId } = await requirePermission({ action: "app.access" }, tx)
+  return database.transaction(async (tx) => {
+    const { userId } = await authorize({ action: "app.access" }, tx)
     const row = await lockGroupConversation(tx, input.conversationId)
     await requireActiveGroupMember(tx, input.conversationId, userId, "group-management-forbidden")
     await requireActiveUsers(tx, ids)
@@ -109,10 +116,14 @@ export async function addGroupMembers(input: { conversationId: string; memberIds
   })
 }
 
-export async function renameGroupConversation(input: { conversationId: string; name: unknown }) {
+export async function renameGroupConversation(
+  input: { conversationId: string; name: unknown },
+  context?: MessagingContext
+) {
+  const { database, authorize } = await messagingContext(context)
   const name = normalizeGroupName(input.name)
-  return db.transaction(async (tx) => {
-    const { userId } = await requirePermission({ action: "app.access" }, tx)
+  return database.transaction(async (tx) => {
+    const { userId } = await authorize({ action: "app.access" }, tx)
     await lockGroupConversation(tx, input.conversationId)
     await requireActiveGroupMember(tx, input.conversationId, userId, "group-management-forbidden")
     await tx
@@ -124,9 +135,10 @@ export async function renameGroupConversation(input: { conversationId: string; n
   })
 }
 
-export async function leaveGroupConversation(conversationId: string) {
-  return db.transaction(async (tx) => {
-    const { userId } = await requirePermission({ action: "app.access" }, tx)
+export async function leaveGroupConversation(conversationId: string, context?: MessagingContext) {
+  const { database, authorize } = await messagingContext(context)
+  return database.transaction(async (tx) => {
+    const { userId } = await authorize({ action: "app.access" }, tx)
     const row = await lockGroupConversation(tx, conversationId)
     await requireActiveGroupMember(tx, conversationId, userId, "group-management-forbidden")
     await tx

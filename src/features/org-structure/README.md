@@ -119,19 +119,24 @@ ui/
   detail/      one group's Members and Position holders, with their history
   catalogue/   the Positions, the group types each is allowed in, and any limit to groups
   group-summaries.ts, group-list.tsx   what both overviews show of a group
-  group-command-dialog.tsx, run-command.ts   the shared shape of every admin command
+  group-command-dialog.tsx, commands.ts   the shared shape of every admin command
+  screen-reads.ts   the screens' reads through the API
+http/          the Hono routes (`/api/v1/choirs`, `/groups`, `/positions`)
 ```
 
-Every Server Action goes through `runGroupCommand`: require `org.manage`, validate the form,
-then check the exact Group administration policy and run the module command in one transaction.
+The screens read and write through the HTTP API and its generated client. Every route requires
+`org.manage` for the request's fresh actor, validates its input, and runs one module command in a
+transaction.
 Structure/catalogue operations use `org.manage`; Membership/Voice and holder operations use
 `group.manageMemberships` and `group.managePositions`. All remain Admin-only; an ordinary Position
 holder cannot appoint holders or administer Memberships. Screen queries establish their own
 `org.manage` boundary. Domain commands retain their savepoints, locks and period semantics.
-Return domain violations as `{ status: "error", error }`. The client translates
+Domain violations travel as stable codes (`group-name-taken` as `GROUP_NAME_TAKEN`) and the client
+maps them back to `{ status: "error", error }`. It translates
 the kind from `Groups.errors`, so adding an `OrgStructureViolation` means adding its message to
 every catalogue; the typed translation keys fail the typecheck until you do. Reads for a screen
-live beside it (`query.ts`) and are shaped for that screen.
+live beside it (`query.ts`), are shaped for that screen, take the database and leave authorization
+to the route.
 
 ## Tests
 

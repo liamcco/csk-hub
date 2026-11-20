@@ -66,10 +66,11 @@ export async function createOrgStructureTestDatabase() {
   return fixture(database)
 }
 
-function fixture({ db, drop }: TestDatabase) {
+function fixture({ db, drop, url }: TestDatabase) {
   return {
     db,
     drop,
+    url,
 
     /** A new user; every test makes its own so tests never share Memberships. */
     async user(name = "Singer") {

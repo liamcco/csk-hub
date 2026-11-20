@@ -100,6 +100,7 @@ if (!process.env.CSK_ACTIVITY_TEST) {
     const { handleActivityStream, handleActivityAcknowledgement } = await import("@/app/api/realtime/delivery")
     const { notifyUsers, searchNotificationRecipients } = await import("@/features/notification-broadcast/service")
     const { createPost, saveDraft, unpublishPost } = await import("@/features/posts/lifecycle")
+    const broadcast = { database: testDatabase.db, scheduleDelivery: scheduleActivityDispatch }
     const { markPostRead, nextUnreadPostChangeAt } = await import("@/features/posts/unread/service")
 
     afterAll(async () => {
@@ -470,9 +471,9 @@ if (!process.env.CSK_ACTIVITY_TEST) {
       test("Admin broadcast push uses one immediate bulk call and never queues fallback push", async () => {
         const recipients = await Promise.all(Array.from({ length: 8 }, () => singer()))
         const ids = recipients.map(({ userId }) => userId)
-        expect(await notifyUsers("Rehearsal moved", ids)).toMatchObject({ success: true, delivery: "sent" })
+        expect(await notifyUsers(broadcast, "Rehearsal moved", ids)).toMatchObject({ success: true, delivery: "sent" })
         expect(push).toHaveBeenCalledTimes(1)
-        expect(push).toHaveBeenCalledWith(ids, { body: "Rehearsal moved" })
+        expect(push).toHaveBeenCalledWith(ids, { body: "Rehearsal moved" }, testDatabase.db)
         expect((await testDatabase.db.select().from(activityDelivery)).every((row) => row.pushAfter === null)).toBe(
           true
         )
@@ -496,17 +497,17 @@ if (!process.env.CSK_ACTIVITY_TEST) {
       test("published Post events and personal reads propagate, Draft content stays private", async () => {
         const member = await singer()
         const content = { title: "Private Draft", body: { type: "doc" as const, content: [] } }
-        const post = await createPost({ authorId: member.userId, content, publish: false })
+        const post = await createPost({ authorId: member.userId, content, publish: false }, testDatabase.db)
         expect(await testDatabase.db.select().from(activityDelivery)).toHaveLength(0)
-        await saveDraft({ authorId: member.userId, postId: post.id, content, publish: true })
+        await saveDraft({ authorId: member.userId, postId: post.id, content, publish: true }, testDatabase.db)
         expect((await testDatabase.db.select().from(activityDelivery))[0]?.change).toEqual({ kind: "posts.changed" })
-        expect(await nextUnreadPostChangeAt(member.userId)).toBeGreaterThan(Date.now())
-        await markPostRead(member.userId, post.id)
+        expect(await nextUnreadPostChangeAt(testDatabase.db, member.userId)).toBeGreaterThan(Date.now())
+        await markPostRead(testDatabase.db, member.userId, post.id)
         expect(
           (await testDatabase.db.select().from(activityDelivery)).some((row) => row.change.kind === "unread.changed")
         ).toBe(true)
-        expect(await nextUnreadPostChangeAt(member.userId)).toBeNull()
-        await unpublishPost(post.id)
+        expect(await nextUnreadPostChangeAt(testDatabase.db, member.userId)).toBeNull()
+        await unpublishPost(post.id, testDatabase.db)
         expect(
           (await testDatabase.db.select().from(activityDelivery)).filter((row) => row.change.kind === "posts.changed")
         ).toHaveLength(2)
@@ -518,12 +519,12 @@ if (!process.env.CSK_ACTIVITY_TEST) {
         await testDatabase.db.update(user).set({ name: "Singer %_\\" }).where(eq(user.id, literal.userId))
         await testDatabase.db.update(user).set({ name: "Singer ordinary" }).where(eq(user.id, other.userId))
         for (const search of ["%", "_", "\\"]) {
-          const result = await searchNotificationRecipients(search)
+          const result = await searchNotificationRecipients(testDatabase.db, search)
           expect(result.requiresPush).toBe(false)
           expect(result.users.map(({ id }) => id)).toEqual([literal.userId])
         }
         await testDatabase.db.update(user).set({ banned: true }).where(eq(user.id, literal.userId))
-        expect((await searchNotificationRecipients("%")).users).toEqual([])
+        expect((await searchNotificationRecipients(testDatabase.db, "%")).users).toEqual([])
       })
 
       test("notifications include active Users without push subscriptions", async () => {
@@ -537,7 +538,11 @@ if (!process.env.CSK_ACTIVITY_TEST) {
           failed: 0,
           failureCategories: {}
         })
-        expect(await notifyUsers("Rehearsal moved")).toEqual({ success: true, delivery: "queued", queued: 1 })
+        expect(await notifyUsers(broadcast, "Rehearsal moved")).toEqual({
+          success: true,
+          delivery: "queued",
+          queued: 1
+        })
         const rows = await testDatabase.db.select().from(activityDelivery)
         expect(rows).toHaveLength(1)
         expect(rows[0]?.userId).toBe(member.userId)

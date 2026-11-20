@@ -20,6 +20,838 @@ export type ApiError = {
     code: 'UNAUTHENTICATED' | 'FORBIDDEN' | 'NOT_FOUND' | 'VALIDATION_FAILED' | 'INTERNAL';
 };
 
+export type CurrentCapabilities = {
+    user: {
+        id: string;
+        name: string;
+        image: string | null;
+    };
+    /**
+     * UI hints for the current User, computed per request. Operations re-check authority.
+     */
+    permissions: {
+        /**
+         * May open the administration area.
+         */
+        admin: boolean;
+        administerUsers: boolean;
+        /**
+         * May manage Groups, Memberships and Positions.
+         */
+        manageOrganisation: boolean;
+        /**
+         * May administer all Events and Locations.
+         */
+        administerEvents: boolean;
+        broadcastNotifications: boolean;
+    };
+};
+
+export type MemberDirectory = {
+    /**
+     * The trimmed search that was applied.
+     */
+    query: string;
+    /**
+     * The page served, clamped to the last page.
+     */
+    page: number;
+    totalPages: number;
+    total: number;
+    items: Array<DirectoryMember>;
+};
+
+export type DirectoryMember = {
+    id: string;
+    name: string;
+    username: string | null;
+    image: string | null;
+    choirs: Array<{
+        id: string;
+        name: string;
+        section: string | null;
+    }>;
+};
+
+export type ValidationError = {
+    code: 'VALIDATION_FAILED';
+    issues: Array<{
+        path: Array<string | number>;
+        /**
+         * Zod issue code or a validation message ID.
+         */
+        code: string;
+    }>;
+};
+
+export type MemberProfileView = {
+    profile: MemberProfile;
+    /**
+     * UI hints for the current User; every operation re-checks authority.
+     */
+    permissions: {
+        editProfile: boolean;
+        /**
+         * Whether the caller may message this member.
+         */
+        message: boolean;
+    };
+    /**
+     * The existing Direct Conversation with this member, if any.
+     */
+    messageConversationId: string | null;
+};
+
+export type MemberProfile = {
+    id: string;
+    name: string;
+    username: string | null;
+    image: string | null;
+    /**
+     * Only the profile's owner sees an email.
+     */
+    email: string | null;
+    isOwn: boolean;
+    /**
+     * Self-reported voices the member can sing.
+     */
+    capabilities: Array<'S1' | 'S2' | 'A1' | 'A2' | 'T1' | 'T2' | 'B1' | 'B2'>;
+    choirs: Array<MemberGroup & {
+        section: {
+            groupId: string;
+            name: string;
+            type: 'Choir' | 'Section' | 'Board' | 'GigGroup' | 'Gigmästeri' | 'Sexmästeri' | 'Roddgrupp' | 'Festgrupp' | 'Rephelg' | 'Konsertmästeri' | 'Rekryteringskommitté' | 'Turnékommitté' | 'Valberedning' | 'Webmästeri' | 'Föräldramötet' | 'Arkivarie' | 'Utantillkommitté' | 'Övrig';
+            choirId: string | null;
+            choirName: string | null;
+            active: boolean;
+            startDate: string;
+            voice: 'S1' | 'S2' | 'A1' | 'A2' | 'T1' | 'T2' | 'B1' | 'B2' | null;
+            sectionVoice: 'S' | 'A' | 'T' | 'B' | 'S1' | 'S2' | 'A1' | 'A2' | 'T1' | 'T2' | 'B1' | 'B2' | null;
+            positions: Array<{
+                groupId: string;
+                positionId: string;
+                name: string;
+            }>;
+        } | null;
+        groups: Array<MemberGroup>;
+    }>;
+    groups: Array<MemberGroup>;
+    /**
+     * Active Groups of an archived Choir, shown with their Choir's name.
+     */
+    otherGroups: Array<MemberGroup>;
+    positions: Array<{
+        id: string;
+        name: string;
+        groups: Array<{
+            id: string;
+            name: string;
+            choirName: string | null;
+        }>;
+    }>;
+};
+
+export type MemberGroup = {
+    groupId: string;
+    name: string;
+    type: 'Choir' | 'Section' | 'Board' | 'GigGroup' | 'Gigmästeri' | 'Sexmästeri' | 'Roddgrupp' | 'Festgrupp' | 'Rephelg' | 'Konsertmästeri' | 'Rekryteringskommitté' | 'Turnékommitté' | 'Valberedning' | 'Webmästeri' | 'Föräldramötet' | 'Arkivarie' | 'Utantillkommitté' | 'Övrig';
+    choirId: string | null;
+    choirName: string | null;
+    active: boolean;
+    startDate: string;
+    voice: 'S1' | 'S2' | 'A1' | 'A2' | 'T1' | 'T2' | 'B1' | 'B2' | null;
+    sectionVoice: 'S' | 'A' | 'T' | 'B' | 'S1' | 'S2' | 'A1' | 'A2' | 'T1' | 'T2' | 'B1' | 'B2' | null;
+    positions: Array<{
+        groupId: string;
+        positionId: string;
+        name: string;
+    }>;
+};
+
+export type ProfileVoices = {
+    voices: Array<'S1' | 'S2' | 'A1' | 'A2' | 'T1' | 'T2' | 'B1' | 'B2'>;
+};
+
+export type NewsFeed = {
+    /**
+     * Newest first.
+     */
+    items: Array<PublishedPost & {
+        unread: boolean;
+    }>;
+    permissions: {
+        create: boolean;
+    };
+};
+
+/**
+ * The editor's document (ProseMirror JSON), restricted to what a Post body may contain.
+ */
+export type RichTextDocument = {
+    [key: string]: unknown;
+};
+
+export type PublishedPost = {
+    id: string;
+    title: string;
+    /**
+     * Null once the author has been erased.
+     */
+    authorName: string | null;
+    publishedAt: string;
+    /**
+     * When the title or body last changed after publishing.
+     */
+    editedAt: string | null;
+    body: RichTextDocument;
+};
+
+export type LatestPosts = {
+    items: Array<{
+        id: string;
+        title: string;
+        /**
+         * Null once the author has been erased.
+         */
+        authorName: string | null;
+        publishedAt: string;
+        /**
+         * When the title or body last changed after publishing.
+         */
+        editedAt: string | null;
+    }>;
+};
+
+export type OwnDrafts = {
+    items: Array<{
+        id: string;
+        title: string;
+        savedAt: string;
+    }>;
+};
+
+export type PostUnread = {
+    /**
+     * Published Posts from the last 30 days the User has not opened.
+     */
+    count: number;
+    /**
+     * When the count next changes without a write: a publication or a 30-day expiry.
+     */
+    nextChangeAt: string | null;
+};
+
+export type PostView = {
+    post: PublishedPost;
+    permissions: {
+        update: boolean;
+        unpublish: boolean;
+    };
+};
+
+export type EditablePost = {
+    id: string;
+    title: string;
+    body: RichTextDocument;
+    state: 'draft' | 'published';
+    savedAt: string;
+};
+
+export type SavedPost = {
+    id: string;
+};
+
+export type RecalledPost = {
+    id: string;
+    unpublishedTo: 'own' | 'author';
+};
+
+export type PostReadResult = {
+    changed: boolean;
+};
+
+export type Inbox = {
+    items: Array<{
+        kind: 'direct' | 'group';
+        id: string;
+        /**
+         * The other member, or the Group Conversation's name; null after Erasure.
+         */
+        otherMemberName: string | null;
+        preview: string | null;
+        sentAt: string;
+        unreadCount: number;
+        /**
+         * False after departure or when the other member is inactive.
+         */
+        canSend: boolean;
+    }>;
+};
+
+export type ConversationUnread = {
+    count: number;
+};
+
+export type MessageRecipients = {
+    items: Array<{
+        id: string;
+        name: string;
+        username: string | null;
+    }>;
+};
+
+export type ConversationPage = {
+    kind: 'direct' | 'group';
+    conversationId: string;
+    otherMemberName: string | null;
+    /**
+     * Direct only: the active member's id.
+     */
+    otherMemberProfileId: string | null;
+    canSend: boolean;
+    members: Array<{
+        id: string;
+        name: string;
+    }>;
+    messages: Array<{
+        id: string;
+        sequence: number;
+        text: string;
+        sentAt: string;
+        authorUserId: string | null;
+        authorName: string | null;
+        isOwnMessage: boolean;
+    }>;
+    hasOlder: boolean;
+    nextBeforeSequence: number | null;
+    newestSequence: number;
+    /**
+     * Proves the caller saw `newestSequence`; required to mark it read.
+     */
+    readToken: string | null;
+};
+
+export type MessagingError = {
+    /**
+     * Stable Messaging failure code. Clients must tolerate unknown codes.
+     */
+    code: 'GROUP_NAME_INVALID' | 'GROUP_MEMBERS_TOO_MANY' | 'BLANK_MESSAGE' | 'MESSAGE_TOO_LONG' | 'SIGN_IN_REQUIRED' | 'RECIPIENT_REQUIRED' | 'RECIPIENT_INACTIVE' | 'IDEMPOTENCY_KEY_REQUIRED' | 'IDEMPOTENCY_KEY_REUSED' | 'SELF_RECIPIENT' | 'CONVERSATION_SEND_FORBIDDEN' | 'GROUP_MANAGEMENT_FORBIDDEN' | 'CONVERSATION_RECIPIENT_INACTIVE' | 'CONVERSATION_UNAVAILABLE' | 'CONVERSATION_VIEW_FORBIDDEN' | 'CONVERSATION_NOT_FOUND' | 'READ_POSITION_INVALID';
+};
+
+export type ConversationRef = {
+    conversationId: string;
+};
+
+export type SentMessage = {
+    conversationId: string;
+    id: string;
+    sequence: number;
+    created: boolean;
+};
+
+export type ConversationReadResult = {
+    changed: boolean;
+};
+
+export type UpcomingEvents = {
+    items: Array<{
+        id: string;
+        title: string;
+        type: 'Rehearsal' | 'Gig' | 'Concert' | 'Social' | 'Rephelg' | 'Körmöte' | 'Booking' | 'Meeting' | 'Other';
+        rehearsalKind: 'ChoirRehearsal' | 'ExtraRehearsal' | 'SectionalRehearsal' | 'Rehearsal' | null;
+        status: 'Published' | 'Cancelled';
+        startsAt: string;
+        endsAt: string;
+        allDay: boolean;
+        location: string | null;
+    }>;
+    permissions: {
+        create: boolean;
+    };
+};
+
+export type ManagedEvents = {
+    items: Array<{
+        id: string;
+        title: string;
+        type: 'Rehearsal' | 'Gig' | 'Concert' | 'Social' | 'Rephelg' | 'Körmöte' | 'Booking' | 'Meeting' | 'Other';
+        status: 'Draft' | 'Published' | 'Cancelled';
+        startsAt: string;
+        endsAt: string;
+        allDay: boolean;
+        organiserGroup: string | null;
+        targets: Array<{
+            group: string | null;
+            voiceFamily: 'S' | 'A' | 'T' | 'B' | null;
+        }>;
+    }>;
+    permissions: {
+        create: boolean;
+        administer: boolean;
+    };
+};
+
+export type EventFormOptions = {
+    canCreate: boolean;
+    locations: Array<{
+        id: string;
+        name: string;
+        active: boolean;
+    }>;
+    organiserGroups: Array<{
+        id: string;
+        name: string;
+        type: 'Choir' | 'Section' | 'Board' | 'GigGroup' | 'Gigmästeri' | 'Sexmästeri' | 'Roddgrupp' | 'Festgrupp' | 'Rephelg' | 'Konsertmästeri' | 'Rekryteringskommitté' | 'Turnékommitté' | 'Valberedning' | 'Webmästeri' | 'Föräldramötet' | 'Arkivarie' | 'Utantillkommitté' | 'Övrig';
+        active: boolean;
+    }>;
+    groups: Array<{
+        id: string;
+        name: string;
+        type: 'Choir' | 'Section' | 'Board' | 'GigGroup' | 'Gigmästeri' | 'Sexmästeri' | 'Roddgrupp' | 'Festgrupp' | 'Rephelg' | 'Konsertmästeri' | 'Rekryteringskommitté' | 'Turnékommitté' | 'Valberedning' | 'Webmästeri' | 'Föräldramötet' | 'Arkivarie' | 'Utantillkommitté' | 'Övrig';
+        active: boolean;
+    }>;
+    users: Array<{
+        id: string;
+        name: string;
+        /**
+         * Admins only.
+         */
+        email?: string;
+    }>;
+};
+
+export type EventEditor = {
+    id: string;
+    title: string;
+    status: 'Draft' | 'Published' | 'Cancelled';
+    values: EventFormValues;
+    options: EventFormOptions;
+    impact: {
+        responses: number;
+        registrations: number;
+        attendance: number;
+    };
+};
+
+export type EventFormValues = {
+    type: 'Rehearsal' | 'Gig' | 'Concert' | 'Social' | 'Rephelg' | 'Körmöte' | 'Booking' | 'Meeting' | 'Other';
+    title: string;
+    description: EventDescription;
+    allDay: boolean;
+    startsAt: string;
+    endsAt: string;
+    firstDay: string;
+    lastDay: string;
+    callTime: string;
+    respondBy: string;
+    participationMode: 'None' | 'ResponseRequired' | 'ResponseRequiredStrict' | 'Registration';
+    locationId: string;
+    locationText: string;
+    organiserGroupId: string;
+    leaderUserId: string;
+    responsibleUserId: string;
+    contactName: string;
+    contactDetails: string;
+    costInfo: string;
+    targets: Array<{
+        groupId: string;
+        voiceFamily: string;
+    }>;
+    details: Array<{
+        label: string;
+        value: string;
+    }>;
+};
+
+/**
+ * The editor's document (ProseMirror JSON) for an Event description.
+ */
+export type EventDescription = {
+    [key: string]: unknown;
+} | null;
+
+export type EventPage = {
+    id: string;
+    title: string;
+    type: 'Rehearsal' | 'Gig' | 'Concert' | 'Social' | 'Rephelg' | 'Körmöte' | 'Booking' | 'Meeting' | 'Other';
+    rehearsalKind: 'ChoirRehearsal' | 'ExtraRehearsal' | 'SectionalRehearsal' | 'Rehearsal' | null;
+    status: 'Published' | 'Cancelled';
+    startsAt: string;
+    endsAt: string;
+    allDay: boolean;
+    canManage: boolean;
+    description: EventDescription;
+    callTime: string | null;
+    locationText: string | null;
+    location: {
+        name: string;
+        address: string | null;
+        mapUrl: string | null;
+    } | null;
+    organiserGroup: string | null;
+    details: Array<{
+        label: string;
+        value: string;
+    }>;
+    leaderName: string | null;
+    responsibleName: string | null;
+    costInfo: string | null;
+    targets: Array<{
+        groupName: string | null;
+        voiceFamily: 'S' | 'A' | 'T' | 'B' | null;
+    }>;
+};
+
+export type EventCommandResult = {
+    id: string;
+};
+
+export type EventError = {
+    /**
+     * Stable Events failure code: a rule the Event or Location broke. Tolerate unknown codes.
+     */
+    code: 'EVENT_NOT_FOUND' | 'TITLE_REQUIRED' | 'DESCRIPTION_INVALID' | 'INVALID_DATE' | 'ENDS_BEFORE_START' | 'CALL_TIME_AFTER_START' | 'RESPOND_BY_AFTER_START' | 'RESPOND_BY_WITHOUT_PARTICIPATION' | 'PARTICIPATION_MODE_LOCKED' | 'STATUS_CHANGE_NOT_ALLOWED' | 'LOCATION_NOT_FOUND' | 'LOCATION_ARCHIVED' | 'LOCATION_NAME_REQUIRED' | 'LOCATION_NAME_TAKEN' | 'INVALID_MAP_URL' | 'ORGANISER_GROUP_NOT_FOUND' | 'ORGANISER_GROUP_ARCHIVED' | 'TARGET_GROUP_NOT_FOUND' | 'TARGET_GROUP_ARCHIVED' | 'TARGET_EMPTY' | 'TARGET_DUPLICATE' | 'DETAIL_INCOMPLETE' | 'USER_NOT_FOUND' | 'INVALID_INPUT';
+};
+
+export type EventInput = {
+    type?: string;
+    title: string;
+    /**
+     * The description document as a JSON string.
+     */
+    description?: string;
+    schedule: {
+        allDay: boolean;
+        startsAt?: string;
+        endsAt?: string;
+        firstDay?: string;
+        lastDay?: string;
+    };
+    callTime?: string;
+    respondBy?: string;
+    participationMode?: string;
+    locationId?: string;
+    locationText?: string;
+    organiserGroupId?: string;
+    rehearsal: {
+        leaderUserId?: string;
+    };
+    gig: {
+        responsibleUserId?: string;
+        contactName?: string;
+        contactDetails?: string;
+    };
+    social: {
+        costInfo?: string;
+    };
+    targets: Array<{
+        groupId?: string;
+        voiceFamily?: string;
+    }>;
+    details: Array<{
+        label: string;
+        value: string;
+    }>;
+};
+
+export type Locations = {
+    items: Array<Location>;
+};
+
+export type Location = {
+    id: string;
+    name: string;
+    address: string | null;
+    mapUrl: string | null;
+    active: boolean;
+    eventCount: number;
+};
+
+export type LocationInput = {
+    name: string;
+    address?: string;
+    mapUrl?: string;
+};
+
+export type LocalePreference = {
+    locale: 'en' | 'sv' | 'de';
+};
+
+export type PushSubscriptionStatus = {
+    binding: 'bound' | 'unbound' | 'unsupported';
+};
+
+export type PushEndpoint = {
+    endpoint: string;
+};
+
+export type PushSubscriptionError = {
+    /**
+     * The endpoint or keys are not a supported browser push subscription.
+     */
+    code: 'INVALID_SUBSCRIPTION';
+};
+
+/**
+ * A browser's `PushSubscription.toJSON()`.
+ */
+export type PushSubscription = {
+    endpoint: string;
+    expirationTime?: number | null;
+    keys: {
+        p256dh: string;
+        auth: string;
+    };
+};
+
+export type PushDeliveryResult = {
+    success: true;
+    accepted: number;
+    failed: number;
+    failureCategories: {
+        [key: string]: number;
+    };
+} | {
+    success: false;
+    error: 'noActiveSubscriptions' | 'noRecipients' | 'deliveryFailed';
+    accepted: number;
+    failed: number;
+    failureCategories: {
+        [key: string]: number;
+    };
+};
+
+export type ActivationError = {
+    /**
+     * Why activation failed. Tolerate unknown codes.
+     */
+    code: 'PASSWORD_REQUIRED' | 'PASSWORD_TOO_SHORT' | 'CONFIRM_PASSWORD_REQUIRED' | 'PASSWORDS_MISMATCH' | 'INVALID_LINK';
+};
+
+export type Activation = {
+    password: string;
+    confirmPassword: string;
+};
+
+export type AdministeredUsers = {
+    items: Array<AdministeredUser>;
+};
+
+export type AdministeredUser = {
+    id: string;
+    name: string;
+    username: string | null;
+    email: string;
+    emailVerified: boolean;
+    /**
+     * False until the User completes activation.
+     */
+    hasPassword: boolean;
+    role: string | null;
+    inactive: boolean | null;
+    createdAt: string;
+};
+
+export type InvitedUser = {
+    id: string;
+    delivery: 'sent' | 'email-failed';
+};
+
+export type InviteError = {
+    code: 'NAME_REQUIRED' | 'EMAIL_REQUIRED' | 'EMAIL_INVALID' | 'EMAIL_EXISTS' | 'UNAVAILABLE';
+};
+
+export type UserImportResult = {
+    created: Array<{
+        row: number;
+        name: string;
+        email: string;
+    }>;
+    emailFailed: Array<{
+        row: number;
+        name: string;
+        email: string;
+    }>;
+    failed: Array<{
+        row: number;
+        error: 'EMAIL_EXISTS' | 'UNAVAILABLE';
+    }>;
+};
+
+export type UserImport = {
+    users: Array<{
+        row: number;
+        name: string;
+        email: string;
+    }>;
+};
+
+export type UserCommandResult = {
+    id: string;
+};
+
+export type UserCommandError = {
+    /**
+     * The rule a User administration command broke. Tolerate unknown codes.
+     */
+    code: 'USER_NOT_FOUND' | 'ALREADY_ACTIVE' | 'ALREADY_INACTIVE' | 'CANNOT_CHANGE_SELF' | 'LAST_ADMIN' | 'DEACTIVATE_FIRST' | 'CONFIRMATION_MISMATCH' | 'ALREADY_ACTIVATED' | 'UNAVAILABLE';
+};
+
+export type ChoirPlacement = {
+    choirs: Array<{
+        choir: GroupSummary;
+        sections: Array<GroupSummary>;
+    }>;
+};
+
+export type GroupSummary = {
+    id: string;
+    name: string;
+    type: 'Choir' | 'Section' | 'Board' | 'GigGroup' | 'Gigmästeri' | 'Sexmästeri' | 'Roddgrupp' | 'Festgrupp' | 'Rephelg' | 'Konsertmästeri' | 'Rekryteringskommitté' | 'Turnékommitté' | 'Valberedning' | 'Webmästeri' | 'Föräldramötet' | 'Arkivarie' | 'Utantillkommitté' | 'Övrig';
+    choirId: string | null;
+    active: boolean;
+    memberCount: number;
+    voices: Array<'S' | 'A' | 'T' | 'B' | 'S1' | 'S2' | 'A1' | 'A2' | 'T1' | 'T2' | 'B1' | 'B2'>;
+    holders: Array<{
+        position: string;
+        holder: string;
+    }>;
+};
+
+export type GroupsOverview = {
+    cskWide: Array<GroupSummary>;
+    choirs: Array<{
+        choir: GroupSummary;
+        groups: Array<GroupSummary>;
+    }>;
+};
+
+export type PositionCatalogue = {
+    positions: Array<{
+        id: string;
+        name: string;
+        groupTypes: Array<'Choir' | 'Section' | 'Board' | 'GigGroup' | 'Gigmästeri' | 'Sexmästeri' | 'Roddgrupp' | 'Festgrupp' | 'Rephelg' | 'Konsertmästeri' | 'Rekryteringskommitté' | 'Turnékommitté' | 'Valberedning' | 'Webmästeri' | 'Föräldramötet' | 'Arkivarie' | 'Utantillkommitté' | 'Övrig'>;
+        groups: Array<{
+            id: string;
+            name: string;
+            type: 'Choir' | 'Section' | 'Board' | 'GigGroup' | 'Gigmästeri' | 'Sexmästeri' | 'Roddgrupp' | 'Festgrupp' | 'Rephelg' | 'Konsertmästeri' | 'Rekryteringskommitté' | 'Turnékommitté' | 'Valberedning' | 'Webmästeri' | 'Föräldramötet' | 'Arkivarie' | 'Utantillkommitté' | 'Övrig';
+            choirName: string | null;
+        }>;
+    }>;
+    groups: Array<{
+        id: string;
+        name: string;
+        type: 'Choir' | 'Section' | 'Board' | 'GigGroup' | 'Gigmästeri' | 'Sexmästeri' | 'Roddgrupp' | 'Festgrupp' | 'Rephelg' | 'Konsertmästeri' | 'Rekryteringskommitté' | 'Turnékommitté' | 'Valberedning' | 'Webmästeri' | 'Föräldramötet' | 'Arkivarie' | 'Utantillkommitté' | 'Övrig';
+        choirName: string | null;
+    }>;
+};
+
+export type GroupDetail = {
+    group: {
+        id: string;
+        name: string;
+        type: 'Choir' | 'Section' | 'Board' | 'GigGroup' | 'Gigmästeri' | 'Sexmästeri' | 'Roddgrupp' | 'Festgrupp' | 'Rephelg' | 'Konsertmästeri' | 'Rekryteringskommitté' | 'Turnékommitté' | 'Valberedning' | 'Webmästeri' | 'Föräldramötet' | 'Arkivarie' | 'Utantillkommitté' | 'Övrig';
+        active: boolean;
+        choir: {
+            id: string;
+            name: string;
+        } | null;
+    };
+    sectionVoice: 'S' | 'A' | 'T' | 'B' | 'S1' | 'S2' | 'A1' | 'A2' | 'T1' | 'T2' | 'B1' | 'B2' | null;
+    sectionVoices: Array<'S' | 'A' | 'T' | 'B' | 'S1' | 'S2' | 'A1' | 'A2' | 'T1' | 'T2' | 'B1' | 'B2'>;
+    choirVoices: Array<'S' | 'A' | 'T' | 'B' | 'S1' | 'S2' | 'A1' | 'A2' | 'T1' | 'T2' | 'B1' | 'B2'>;
+    members: Array<{
+        userId: string;
+        name: string;
+        email: string;
+        startDate: string;
+        voice: 'S' | 'A' | 'T' | 'B' | 'S1' | 'S2' | 'A1' | 'A2' | 'T1' | 'T2' | 'B1' | 'B2' | null;
+        positions: Array<string>;
+    }>;
+    pastMembers: Array<{
+        userId: string;
+        name: string;
+        startDate: string;
+        endDate: string;
+        voice: 'S' | 'A' | 'T' | 'B' | 'S1' | 'S2' | 'A1' | 'A2' | 'T1' | 'T2' | 'B1' | 'B2' | null;
+    }>;
+    positions: Array<{
+        id: string;
+        name: string;
+        holder: {
+            userId: string;
+            name: string;
+            startDate: string;
+        } | null;
+    }>;
+    pastHolders: Array<{
+        position: string;
+        name: string;
+        startDate: string;
+        endDate: string;
+    }>;
+    candidates: Array<{
+        id: string;
+        name: string;
+        email: string;
+    }>;
+};
+
+export type OrgStructureCommandResult = {
+    id: string;
+};
+
+export type OrgStructureError = {
+    /**
+     * The organisation rule a command broke. Tolerate unknown codes.
+     */
+    code: 'INVALID_DATE' | 'GROUP_NOT_FOUND' | 'GROUP_ARCHIVED' | 'GROUP_NAME_TAKEN' | 'CHOIR_NOT_FOUND' | 'CHOIR_CREATED_WITH_SECTIONS' | 'SECTION_COUNT' | 'VOICE_IN_SEVERAL_SECTIONS' | 'SECTION_ARCHIVED_WITH_CHOIR' | 'ALREADY_MEMBER' | 'NOT_A_MEMBER' | 'NOT_A_CHOIR_MEMBER' | 'SECTION_REQUIRES_PLACEMENT' | 'VOICE_NOT_SUNG_IN_CHOIR' | 'VOICE_NOT_SUNG_IN_SECTION' | 'ALREADY_IN_SECTION' | 'NOT_A_SINGER' | 'SAME_VOICE' | 'POSITION_NOT_FOUND' | 'POSITION_NAME_TAKEN' | 'POSITION_NOT_ALLOWED' | 'POSITION_LIMITED_TO_OTHER_GROUPS' | 'POSITION_LIMIT_TYPE_NOT_ALLOWED' | 'POSITION_HELD_OUTSIDE_LIMIT' | 'POSITION_TAKEN' | 'POSITION_IN_USE' | 'ALREADY_HOLDING_POSITION' | 'ALREADY_HOLDING_ELECTED_POST' | 'NOT_HOLDING_POSITION' | 'PERIOD_CONFLICT';
+};
+
+export type PositionInput = {
+    name: string;
+    groupTypes: Array<'Choir' | 'Section' | 'Board' | 'GigGroup' | 'Gigmästeri' | 'Sexmästeri' | 'Roddgrupp' | 'Festgrupp' | 'Rephelg' | 'Konsertmästeri' | 'Rekryteringskommitté' | 'Turnékommitté' | 'Valberedning' | 'Webmästeri' | 'Föräldramötet' | 'Arkivarie' | 'Utantillkommitté' | 'Övrig'>;
+    groupIds: Array<string>;
+};
+
+/**
+ * Queued for in-app delivery, or accepted by push providers; neither guarantees reception.
+ */
+export type BroadcastResult = {
+    success: true;
+    delivery: 'queued';
+    queued: number;
+} | {
+    success: true;
+    delivery: 'sent';
+    accepted: number;
+    failed: number;
+    failureCategories: {
+        [key: string]: number;
+    };
+} | {
+    success: false;
+    error: 'noRecipients' | 'noActiveSubscriptions' | 'deliveryFailed';
+};
+
+export type BroadcastError = {
+    code: 'MESSAGE_REQUIRED' | 'USER_REQUIRED';
+};
+
+export type Broadcast = {
+    message: string;
+    userIds?: Array<string>;
+};
+
+export type BroadcastRecipients = {
+    users: Array<{
+        id: string;
+        name: string;
+        email: string;
+    }>;
+    requiresPush: boolean;
+};
+
 export type MemberIdSession = {
     member: MemberIdMember;
     /**
@@ -107,6 +939,2535 @@ export type GetCurrentActorResponses = {
 };
 
 export type GetCurrentActorResponse = GetCurrentActorResponses[keyof GetCurrentActorResponses];
+
+export type GetCurrentCapabilitiesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/me/capabilities';
+};
+
+export type GetCurrentCapabilitiesErrors = {
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+};
+
+export type GetCurrentCapabilitiesError = GetCurrentCapabilitiesErrors[keyof GetCurrentCapabilitiesErrors];
+
+export type GetCurrentCapabilitiesResponses = {
+    /**
+     * The current User's capabilities.
+     */
+    200: CurrentCapabilities;
+};
+
+export type GetCurrentCapabilitiesResponse = GetCurrentCapabilitiesResponses[keyof GetCurrentCapabilitiesResponses];
+
+export type ListMembersData = {
+    body?: never;
+    path?: never;
+    query?: {
+        query?: string;
+        page?: number;
+    };
+    url: '/api/v1/members';
+};
+
+export type ListMembersErrors = {
+    /**
+     * The request failed validation.
+     */
+    400: ValidationError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+};
+
+export type ListMembersError = ListMembersErrors[keyof ListMembersErrors];
+
+export type ListMembersResponses = {
+    /**
+     * One directory page.
+     */
+    200: MemberDirectory;
+};
+
+export type ListMembersResponse = ListMembersResponses[keyof ListMembersResponses];
+
+export type GetMemberProfileData = {
+    body?: never;
+    path: {
+        memberId: string;
+    };
+    query?: never;
+    url: '/api/v1/members/{memberId}';
+};
+
+export type GetMemberProfileErrors = {
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The resource does not exist or is not visible to the current User.
+     */
+    404: ApiError;
+};
+
+export type GetMemberProfileError = GetMemberProfileErrors[keyof GetMemberProfileErrors];
+
+export type GetMemberProfileResponses = {
+    /**
+     * The profile.
+     */
+    200: MemberProfileView;
+};
+
+export type GetMemberProfileResponse = GetMemberProfileResponses[keyof GetMemberProfileResponses];
+
+export type GetOwnProfileData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/profile';
+};
+
+export type GetOwnProfileErrors = {
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The resource does not exist or is not visible to the current User.
+     */
+    404: ApiError;
+};
+
+export type GetOwnProfileError = GetOwnProfileErrors[keyof GetOwnProfileErrors];
+
+export type GetOwnProfileResponses = {
+    /**
+     * The profile.
+     */
+    200: MemberProfileView;
+};
+
+export type GetOwnProfileResponse = GetOwnProfileResponses[keyof GetOwnProfileResponses];
+
+export type GetProfileEditorData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/profile/voices';
+};
+
+export type GetProfileEditorErrors = {
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The current User may not perform this operation.
+     */
+    403: ApiError;
+};
+
+export type GetProfileEditorError = GetProfileEditorErrors[keyof GetProfileEditorErrors];
+
+export type GetProfileEditorResponses = {
+    /**
+     * The caller's voices.
+     */
+    200: ProfileVoices;
+};
+
+export type GetProfileEditorResponse = GetProfileEditorResponses[keyof GetProfileEditorResponses];
+
+export type UpdateProfileVoicesData = {
+    body: {
+        voices: Array<'S1' | 'S2' | 'A1' | 'A2' | 'T1' | 'T2' | 'B1' | 'B2'>;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/v1/profile/voices';
+};
+
+export type UpdateProfileVoicesErrors = {
+    /**
+     * The request failed validation.
+     */
+    400: ValidationError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The current User may not perform this operation.
+     */
+    403: ApiError;
+};
+
+export type UpdateProfileVoicesError = UpdateProfileVoicesErrors[keyof UpdateProfileVoicesErrors];
+
+export type UpdateProfileVoicesResponses = {
+    /**
+     * The saved voices.
+     */
+    200: ProfileVoices;
+};
+
+export type UpdateProfileVoicesResponse = UpdateProfileVoicesResponses[keyof UpdateProfileVoicesResponses];
+
+export type ListNewsFeedData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/posts';
+};
+
+export type ListNewsFeedErrors = {
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+};
+
+export type ListNewsFeedError = ListNewsFeedErrors[keyof ListNewsFeedErrors];
+
+export type ListNewsFeedResponses = {
+    /**
+     * The feed.
+     */
+    200: NewsFeed;
+};
+
+export type ListNewsFeedResponse = ListNewsFeedResponses[keyof ListNewsFeedResponses];
+
+export type CreatePostData = {
+    body: {
+        title: string;
+        body: RichTextDocument;
+        publish: boolean;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/v1/posts';
+};
+
+export type CreatePostErrors = {
+    /**
+     * The request failed validation.
+     */
+    400: ValidationError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The current User may not perform this operation.
+     */
+    403: ApiError;
+    /**
+     * The resource does not exist or is not visible to the current User.
+     */
+    404: ApiError;
+    /**
+     * `INTERNAL`: the write failed and nothing was saved.
+     */
+    500: ApiError;
+};
+
+export type CreatePostError = CreatePostErrors[keyof CreatePostErrors];
+
+export type CreatePostResponses = {
+    /**
+     * The new Post.
+     */
+    201: SavedPost;
+};
+
+export type CreatePostResponse = CreatePostResponses[keyof CreatePostResponses];
+
+export type ListLatestPostsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        limit?: number;
+    };
+    url: '/api/v1/posts/latest';
+};
+
+export type ListLatestPostsErrors = {
+    /**
+     * The request failed validation.
+     */
+    400: ValidationError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+};
+
+export type ListLatestPostsError = ListLatestPostsErrors[keyof ListLatestPostsErrors];
+
+export type ListLatestPostsResponses = {
+    /**
+     * The newest Posts.
+     */
+    200: LatestPosts;
+};
+
+export type ListLatestPostsResponse = ListLatestPostsResponses[keyof ListLatestPostsResponses];
+
+export type ListOwnDraftsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/posts/drafts';
+};
+
+export type ListOwnDraftsErrors = {
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+};
+
+export type ListOwnDraftsError = ListOwnDraftsErrors[keyof ListOwnDraftsErrors];
+
+export type ListOwnDraftsResponses = {
+    /**
+     * The caller's Drafts.
+     */
+    200: OwnDrafts;
+};
+
+export type ListOwnDraftsResponse = ListOwnDraftsResponses[keyof ListOwnDraftsResponses];
+
+export type GetPostUnreadData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/posts/unread';
+};
+
+export type GetPostUnreadErrors = {
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+};
+
+export type GetPostUnreadError = GetPostUnreadErrors[keyof GetPostUnreadErrors];
+
+export type GetPostUnreadResponses = {
+    /**
+     * Unread state.
+     */
+    200: PostUnread;
+};
+
+export type GetPostUnreadResponse = GetPostUnreadResponses[keyof GetPostUnreadResponses];
+
+export type GetPostData = {
+    body?: never;
+    path: {
+        postId: string;
+    };
+    query?: never;
+    url: '/api/v1/posts/{postId}';
+};
+
+export type GetPostErrors = {
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The resource does not exist or is not visible to the current User.
+     */
+    404: ApiError;
+};
+
+export type GetPostError = GetPostErrors[keyof GetPostErrors];
+
+export type GetPostResponses = {
+    /**
+     * The Post.
+     */
+    200: PostView;
+};
+
+export type GetPostResponse = GetPostResponses[keyof GetPostResponses];
+
+export type GetEditablePostData = {
+    body?: never;
+    path: {
+        postId: string;
+    };
+    query?: never;
+    url: '/api/v1/posts/{postId}/edit';
+};
+
+export type GetEditablePostErrors = {
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The resource does not exist or is not visible to the current User.
+     */
+    404: ApiError;
+};
+
+export type GetEditablePostError = GetEditablePostErrors[keyof GetEditablePostErrors];
+
+export type GetEditablePostResponses = {
+    /**
+     * The Post.
+     */
+    200: EditablePost;
+};
+
+export type GetEditablePostResponse = GetEditablePostResponses[keyof GetEditablePostResponses];
+
+export type SaveDraftData = {
+    body: {
+        title: string;
+        body: RichTextDocument;
+        publish: boolean;
+    };
+    path: {
+        postId: string;
+    };
+    query?: never;
+    url: '/api/v1/posts/{postId}/draft';
+};
+
+export type SaveDraftErrors = {
+    /**
+     * The request failed validation.
+     */
+    400: ValidationError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The current User may not perform this operation.
+     */
+    403: ApiError;
+    /**
+     * The resource does not exist or is not visible to the current User.
+     */
+    404: ApiError;
+    /**
+     * `INTERNAL`: the write failed and nothing was saved.
+     */
+    500: ApiError;
+};
+
+export type SaveDraftError = SaveDraftErrors[keyof SaveDraftErrors];
+
+export type SaveDraftResponses = {
+    /**
+     * The saved Post.
+     */
+    200: SavedPost;
+};
+
+export type SaveDraftResponse = SaveDraftResponses[keyof SaveDraftResponses];
+
+export type EditPublishedPostData = {
+    body: {
+        title: string;
+        body: RichTextDocument;
+    };
+    path: {
+        postId: string;
+    };
+    query?: never;
+    url: '/api/v1/posts/{postId}/published';
+};
+
+export type EditPublishedPostErrors = {
+    /**
+     * The request failed validation.
+     */
+    400: ValidationError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The current User may not perform this operation.
+     */
+    403: ApiError;
+    /**
+     * The resource does not exist or is not visible to the current User.
+     */
+    404: ApiError;
+    /**
+     * `INTERNAL`: the write failed and nothing was saved.
+     */
+    500: ApiError;
+};
+
+export type EditPublishedPostError = EditPublishedPostErrors[keyof EditPublishedPostErrors];
+
+export type EditPublishedPostResponses = {
+    /**
+     * The saved Post.
+     */
+    200: SavedPost;
+};
+
+export type EditPublishedPostResponse = EditPublishedPostResponses[keyof EditPublishedPostResponses];
+
+export type RecallPostData = {
+    body?: never;
+    path: {
+        postId: string;
+    };
+    query?: never;
+    url: '/api/v1/posts/{postId}/recall';
+};
+
+export type RecallPostErrors = {
+    /**
+     * The request failed validation.
+     */
+    400: ValidationError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The current User may not perform this operation.
+     */
+    403: ApiError;
+    /**
+     * The resource does not exist or is not visible to the current User.
+     */
+    404: ApiError;
+    /**
+     * `INTERNAL`: the write failed and nothing was saved.
+     */
+    500: ApiError;
+};
+
+export type RecallPostError = RecallPostErrors[keyof RecallPostErrors];
+
+export type RecallPostResponses = {
+    /**
+     * Whose Drafts received the Post.
+     */
+    200: RecalledPost;
+};
+
+export type RecallPostResponse = RecallPostResponses[keyof RecallPostResponses];
+
+export type DiscardDraftData = {
+    body?: never;
+    path: {
+        postId: string;
+    };
+    query?: never;
+    url: '/api/v1/posts/{postId}/discard';
+};
+
+export type DiscardDraftErrors = {
+    /**
+     * The request failed validation.
+     */
+    400: ValidationError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The current User may not perform this operation.
+     */
+    403: ApiError;
+    /**
+     * The resource does not exist or is not visible to the current User.
+     */
+    404: ApiError;
+    /**
+     * `INTERNAL`: the write failed and nothing was saved.
+     */
+    500: ApiError;
+};
+
+export type DiscardDraftError = DiscardDraftErrors[keyof DiscardDraftErrors];
+
+export type DiscardDraftResponses = {
+    /**
+     * Discarded.
+     */
+    204: void;
+};
+
+export type DiscardDraftResponse = DiscardDraftResponses[keyof DiscardDraftResponses];
+
+export type MarkPostReadData = {
+    body?: never;
+    path: {
+        postId: string;
+    };
+    query?: never;
+    url: '/api/v1/posts/{postId}/read';
+};
+
+export type MarkPostReadErrors = {
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+};
+
+export type MarkPostReadError = MarkPostReadErrors[keyof MarkPostReadErrors];
+
+export type MarkPostReadResponses = {
+    /**
+     * Whether this was the first time, so a client can skip refreshing unchanged badges.
+     */
+    200: PostReadResult;
+};
+
+export type MarkPostReadResponse = MarkPostReadResponses[keyof MarkPostReadResponses];
+
+export type ListConversationsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/conversations';
+};
+
+export type ListConversationsErrors = {
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+};
+
+export type ListConversationsError = ListConversationsErrors[keyof ListConversationsErrors];
+
+export type ListConversationsResponses = {
+    /**
+     * The inbox.
+     */
+    200: Inbox;
+};
+
+export type ListConversationsResponse = ListConversationsResponses[keyof ListConversationsResponses];
+
+export type StartConversationData = {
+    body: {
+        memberIds: Array<string>;
+        /**
+         * The first Message; required for a Direct Conversation.
+         */
+        text?: string;
+        /**
+         * Required for a Group Conversation.
+         */
+        name?: string;
+        idempotencyKey: string;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/v1/conversations';
+};
+
+export type StartConversationErrors = {
+    /**
+     * Messaging codes: `GROUP_NAME_INVALID`, `GROUP_MEMBERS_TOO_MANY`, `BLANK_MESSAGE`, `MESSAGE_TOO_LONG`, `RECIPIENT_REQUIRED`, `IDEMPOTENCY_KEY_REQUIRED`, `SELF_RECIPIENT`, `READ_POSITION_INVALID`.
+     */
+    400: MessagingError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * Messaging codes: `CONVERSATION_SEND_FORBIDDEN`, `GROUP_MANAGEMENT_FORBIDDEN`, `CONVERSATION_VIEW_FORBIDDEN`.
+     */
+    403: MessagingError;
+    /**
+     * Messaging codes: `CONVERSATION_UNAVAILABLE`, `CONVERSATION_NOT_FOUND`.
+     */
+    404: MessagingError;
+    /**
+     * Messaging codes: `RECIPIENT_INACTIVE`, `IDEMPOTENCY_KEY_REUSED`, `CONVERSATION_RECIPIENT_INACTIVE`.
+     */
+    409: MessagingError;
+};
+
+export type StartConversationError = StartConversationErrors[keyof StartConversationErrors];
+
+export type StartConversationResponses = {
+    /**
+     * The Conversation.
+     */
+    200: ConversationRef;
+};
+
+export type StartConversationResponse = StartConversationResponses[keyof StartConversationResponses];
+
+export type GetConversationUnreadData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/conversations/unread';
+};
+
+export type GetConversationUnreadErrors = {
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+};
+
+export type GetConversationUnreadError = GetConversationUnreadErrors[keyof GetConversationUnreadErrors];
+
+export type GetConversationUnreadResponses = {
+    /**
+     * The unread count.
+     */
+    200: ConversationUnread;
+};
+
+export type GetConversationUnreadResponse = GetConversationUnreadResponses[keyof GetConversationUnreadResponses];
+
+export type SearchMessageRecipientsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        query?: string;
+    };
+    url: '/api/v1/conversations/recipients';
+};
+
+export type SearchMessageRecipientsErrors = {
+    /**
+     * The request failed validation.
+     */
+    400: ValidationError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+};
+
+export type SearchMessageRecipientsError = SearchMessageRecipientsErrors[keyof SearchMessageRecipientsErrors];
+
+export type SearchMessageRecipientsResponses = {
+    /**
+     * Up to 20 members.
+     */
+    200: MessageRecipients;
+};
+
+export type SearchMessageRecipientsResponse = SearchMessageRecipientsResponses[keyof SearchMessageRecipientsResponses];
+
+export type GetConversationData = {
+    body?: never;
+    path: {
+        conversationId: string;
+    };
+    query?: {
+        before?: number;
+    };
+    url: '/api/v1/conversations/{conversationId}';
+};
+
+export type GetConversationErrors = {
+    /**
+     * The request failed validation.
+     */
+    400: ValidationError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * Messaging codes: `CONVERSATION_SEND_FORBIDDEN`, `GROUP_MANAGEMENT_FORBIDDEN`, `CONVERSATION_VIEW_FORBIDDEN`.
+     */
+    403: MessagingError;
+    /**
+     * Messaging codes: `CONVERSATION_UNAVAILABLE`, `CONVERSATION_NOT_FOUND`.
+     */
+    404: MessagingError;
+};
+
+export type GetConversationError = GetConversationErrors[keyof GetConversationErrors];
+
+export type GetConversationResponses = {
+    /**
+     * The Conversation page.
+     */
+    200: ConversationPage;
+};
+
+export type GetConversationResponse = GetConversationResponses[keyof GetConversationResponses];
+
+export type SendMessageData = {
+    body: {
+        text: string;
+        idempotencyKey: string;
+    };
+    path: {
+        conversationId: string;
+    };
+    query?: never;
+    url: '/api/v1/conversations/{conversationId}/messages';
+};
+
+export type SendMessageErrors = {
+    /**
+     * Messaging codes: `GROUP_NAME_INVALID`, `GROUP_MEMBERS_TOO_MANY`, `BLANK_MESSAGE`, `MESSAGE_TOO_LONG`, `RECIPIENT_REQUIRED`, `IDEMPOTENCY_KEY_REQUIRED`, `SELF_RECIPIENT`, `READ_POSITION_INVALID`.
+     */
+    400: MessagingError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * Messaging codes: `CONVERSATION_SEND_FORBIDDEN`, `GROUP_MANAGEMENT_FORBIDDEN`, `CONVERSATION_VIEW_FORBIDDEN`.
+     */
+    403: MessagingError;
+    /**
+     * Messaging codes: `CONVERSATION_UNAVAILABLE`, `CONVERSATION_NOT_FOUND`.
+     */
+    404: MessagingError;
+    /**
+     * Messaging codes: `RECIPIENT_INACTIVE`, `IDEMPOTENCY_KEY_REUSED`, `CONVERSATION_RECIPIENT_INACTIVE`.
+     */
+    409: MessagingError;
+};
+
+export type SendMessageError = SendMessageErrors[keyof SendMessageErrors];
+
+export type SendMessageResponses = {
+    /**
+     * The Message; `created` is false for a retry.
+     */
+    200: SentMessage;
+};
+
+export type SendMessageResponse = SendMessageResponses[keyof SendMessageResponses];
+
+export type MarkConversationReadData = {
+    body: {
+        sequence: number;
+        token: string;
+    };
+    path: {
+        conversationId: string;
+    };
+    query?: never;
+    url: '/api/v1/conversations/{conversationId}/read';
+};
+
+export type MarkConversationReadErrors = {
+    /**
+     * Messaging codes: `GROUP_NAME_INVALID`, `GROUP_MEMBERS_TOO_MANY`, `BLANK_MESSAGE`, `MESSAGE_TOO_LONG`, `RECIPIENT_REQUIRED`, `IDEMPOTENCY_KEY_REQUIRED`, `SELF_RECIPIENT`, `READ_POSITION_INVALID`.
+     */
+    400: MessagingError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * Messaging codes: `CONVERSATION_SEND_FORBIDDEN`, `GROUP_MANAGEMENT_FORBIDDEN`, `CONVERSATION_VIEW_FORBIDDEN`.
+     */
+    403: MessagingError;
+};
+
+export type MarkConversationReadError = MarkConversationReadErrors[keyof MarkConversationReadErrors];
+
+export type MarkConversationReadResponses = {
+    /**
+     * Whether the cursor moved.
+     */
+    200: ConversationReadResult;
+};
+
+export type MarkConversationReadResponse = MarkConversationReadResponses[keyof MarkConversationReadResponses];
+
+export type AddGroupMembersData = {
+    body: {
+        memberIds: Array<string>;
+    };
+    path: {
+        conversationId: string;
+    };
+    query?: never;
+    url: '/api/v1/conversations/{conversationId}/members';
+};
+
+export type AddGroupMembersErrors = {
+    /**
+     * Messaging codes: `GROUP_NAME_INVALID`, `GROUP_MEMBERS_TOO_MANY`, `BLANK_MESSAGE`, `MESSAGE_TOO_LONG`, `RECIPIENT_REQUIRED`, `IDEMPOTENCY_KEY_REQUIRED`, `SELF_RECIPIENT`, `READ_POSITION_INVALID`.
+     */
+    400: MessagingError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * Messaging codes: `CONVERSATION_SEND_FORBIDDEN`, `GROUP_MANAGEMENT_FORBIDDEN`, `CONVERSATION_VIEW_FORBIDDEN`.
+     */
+    403: MessagingError;
+    /**
+     * Messaging codes: `CONVERSATION_UNAVAILABLE`, `CONVERSATION_NOT_FOUND`.
+     */
+    404: MessagingError;
+    /**
+     * Messaging codes: `RECIPIENT_INACTIVE`, `IDEMPOTENCY_KEY_REUSED`, `CONVERSATION_RECIPIENT_INACTIVE`.
+     */
+    409: MessagingError;
+};
+
+export type AddGroupMembersError = AddGroupMembersErrors[keyof AddGroupMembersErrors];
+
+export type AddGroupMembersResponses = {
+    /**
+     * The Conversation.
+     */
+    200: ConversationRef;
+};
+
+export type AddGroupMembersResponse = AddGroupMembersResponses[keyof AddGroupMembersResponses];
+
+export type RenameGroupConversationData = {
+    body: {
+        name: string;
+    };
+    path: {
+        conversationId: string;
+    };
+    query?: never;
+    url: '/api/v1/conversations/{conversationId}/name';
+};
+
+export type RenameGroupConversationErrors = {
+    /**
+     * Messaging codes: `GROUP_NAME_INVALID`, `GROUP_MEMBERS_TOO_MANY`, `BLANK_MESSAGE`, `MESSAGE_TOO_LONG`, `RECIPIENT_REQUIRED`, `IDEMPOTENCY_KEY_REQUIRED`, `SELF_RECIPIENT`, `READ_POSITION_INVALID`.
+     */
+    400: MessagingError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * Messaging codes: `CONVERSATION_SEND_FORBIDDEN`, `GROUP_MANAGEMENT_FORBIDDEN`, `CONVERSATION_VIEW_FORBIDDEN`.
+     */
+    403: MessagingError;
+    /**
+     * Messaging codes: `CONVERSATION_UNAVAILABLE`, `CONVERSATION_NOT_FOUND`.
+     */
+    404: MessagingError;
+};
+
+export type RenameGroupConversationError = RenameGroupConversationErrors[keyof RenameGroupConversationErrors];
+
+export type RenameGroupConversationResponses = {
+    /**
+     * The Conversation.
+     */
+    200: ConversationRef;
+};
+
+export type RenameGroupConversationResponse = RenameGroupConversationResponses[keyof RenameGroupConversationResponses];
+
+export type LeaveGroupConversationData = {
+    body?: never;
+    path: {
+        conversationId: string;
+    };
+    query?: never;
+    url: '/api/v1/conversations/{conversationId}/leave';
+};
+
+export type LeaveGroupConversationErrors = {
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * Messaging codes: `CONVERSATION_SEND_FORBIDDEN`, `GROUP_MANAGEMENT_FORBIDDEN`, `CONVERSATION_VIEW_FORBIDDEN`.
+     */
+    403: MessagingError;
+    /**
+     * Messaging codes: `CONVERSATION_UNAVAILABLE`, `CONVERSATION_NOT_FOUND`.
+     */
+    404: MessagingError;
+};
+
+export type LeaveGroupConversationError = LeaveGroupConversationErrors[keyof LeaveGroupConversationErrors];
+
+export type LeaveGroupConversationResponses = {
+    /**
+     * The Conversation.
+     */
+    200: ConversationRef;
+};
+
+export type LeaveGroupConversationResponse = LeaveGroupConversationResponses[keyof LeaveGroupConversationResponses];
+
+export type ListUpcomingEventsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/events/upcoming';
+};
+
+export type ListUpcomingEventsErrors = {
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+};
+
+export type ListUpcomingEventsError = ListUpcomingEventsErrors[keyof ListUpcomingEventsErrors];
+
+export type ListUpcomingEventsResponses = {
+    /**
+     * Upcoming Events.
+     */
+    200: UpcomingEvents;
+};
+
+export type ListUpcomingEventsResponse = ListUpcomingEventsResponses[keyof ListUpcomingEventsResponses];
+
+export type ListManagedEventsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        when?: 'upcoming' | 'past';
+        status?: 'Draft' | 'Published' | 'Cancelled';
+        type?: 'Rehearsal' | 'Gig' | 'Concert' | 'Social' | 'Rephelg' | 'Körmöte' | 'Booking' | 'Meeting' | 'Other';
+    };
+    url: '/api/v1/events/manage';
+};
+
+export type ListManagedEventsErrors = {
+    /**
+     * The request failed validation.
+     */
+    400: ValidationError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+};
+
+export type ListManagedEventsError = ListManagedEventsErrors[keyof ListManagedEventsErrors];
+
+export type ListManagedEventsResponses = {
+    /**
+     * Manageable Events.
+     */
+    200: ManagedEvents;
+};
+
+export type ListManagedEventsResponse = ListManagedEventsResponses[keyof ListManagedEventsResponses];
+
+export type CreateEventData = {
+    body: EventInput;
+    path?: never;
+    query?: never;
+    url: '/api/v1/events/manage';
+};
+
+export type CreateEventErrors = {
+    /**
+     * The input broke an Event or Location rule.
+     */
+    400: EventError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The current User may not perform this operation.
+     */
+    403: ApiError;
+    /**
+     * `EVENT_NOT_FOUND`: no such Event.
+     */
+    404: EventError;
+};
+
+export type CreateEventError = CreateEventErrors[keyof CreateEventErrors];
+
+export type CreateEventResponses = {
+    /**
+     * The Draft.
+     */
+    201: EventCommandResult;
+};
+
+export type CreateEventResponse = CreateEventResponses[keyof CreateEventResponses];
+
+export type GetEventFormOptionsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/events/manage/options';
+};
+
+export type GetEventFormOptionsErrors = {
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+};
+
+export type GetEventFormOptionsError = GetEventFormOptionsErrors[keyof GetEventFormOptionsErrors];
+
+export type GetEventFormOptionsResponses = {
+    /**
+     * Form options.
+     */
+    200: EventFormOptions;
+};
+
+export type GetEventFormOptionsResponse = GetEventFormOptionsResponses[keyof GetEventFormOptionsResponses];
+
+export type DeleteEventData = {
+    body?: never;
+    path: {
+        eventId: string;
+    };
+    query?: never;
+    url: '/api/v1/events/manage/{eventId}';
+};
+
+export type DeleteEventErrors = {
+    /**
+     * The input broke an Event or Location rule.
+     */
+    400: EventError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The current User may not perform this operation.
+     */
+    403: ApiError;
+    /**
+     * `EVENT_NOT_FOUND`: no such Event.
+     */
+    404: EventError;
+};
+
+export type DeleteEventError = DeleteEventErrors[keyof DeleteEventErrors];
+
+export type DeleteEventResponses = {
+    /**
+     * Deleted.
+     */
+    200: EventCommandResult;
+};
+
+export type DeleteEventResponse = DeleteEventResponses[keyof DeleteEventResponses];
+
+export type GetEventEditorData = {
+    body?: never;
+    path: {
+        eventId: string;
+    };
+    query?: never;
+    url: '/api/v1/events/manage/{eventId}';
+};
+
+export type GetEventEditorErrors = {
+    /**
+     * The request failed validation.
+     */
+    400: ValidationError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The resource does not exist or is not visible to the current User.
+     */
+    404: ApiError;
+};
+
+export type GetEventEditorError = GetEventEditorErrors[keyof GetEventEditorErrors];
+
+export type GetEventEditorResponses = {
+    /**
+     * The editor.
+     */
+    200: EventEditor;
+};
+
+export type GetEventEditorResponse = GetEventEditorResponses[keyof GetEventEditorResponses];
+
+export type UpdateEventData = {
+    body: EventInput;
+    path: {
+        eventId: string;
+    };
+    query?: never;
+    url: '/api/v1/events/manage/{eventId}';
+};
+
+export type UpdateEventErrors = {
+    /**
+     * The input broke an Event or Location rule.
+     */
+    400: EventError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The current User may not perform this operation.
+     */
+    403: ApiError;
+    /**
+     * `EVENT_NOT_FOUND`: no such Event.
+     */
+    404: EventError;
+};
+
+export type UpdateEventError = UpdateEventErrors[keyof UpdateEventErrors];
+
+export type UpdateEventResponses = {
+    /**
+     * Saved.
+     */
+    200: EventCommandResult;
+};
+
+export type UpdateEventResponse = UpdateEventResponses[keyof UpdateEventResponses];
+
+export type GetEventPageData = {
+    body?: never;
+    path: {
+        eventId: string;
+    };
+    query?: never;
+    url: '/api/v1/events/{eventId}';
+};
+
+export type GetEventPageErrors = {
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The resource does not exist or is not visible to the current User.
+     */
+    404: ApiError;
+};
+
+export type GetEventPageError = GetEventPageErrors[keyof GetEventPageErrors];
+
+export type GetEventPageResponses = {
+    /**
+     * The Event.
+     */
+    200: EventPage;
+};
+
+export type GetEventPageResponse = GetEventPageResponses[keyof GetEventPageResponses];
+
+export type ChangeEventStatusData = {
+    body: {
+        status: 'Draft' | 'Published' | 'Cancelled';
+    };
+    path: {
+        eventId: string;
+    };
+    query?: never;
+    url: '/api/v1/events/manage/{eventId}/status';
+};
+
+export type ChangeEventStatusErrors = {
+    /**
+     * The input broke an Event or Location rule.
+     */
+    400: EventError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The current User may not perform this operation.
+     */
+    403: ApiError;
+    /**
+     * `EVENT_NOT_FOUND`: no such Event.
+     */
+    404: EventError;
+};
+
+export type ChangeEventStatusError = ChangeEventStatusErrors[keyof ChangeEventStatusErrors];
+
+export type ChangeEventStatusResponses = {
+    /**
+     * Changed.
+     */
+    200: EventCommandResult;
+};
+
+export type ChangeEventStatusResponse = ChangeEventStatusResponses[keyof ChangeEventStatusResponses];
+
+export type ListLocationsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/locations';
+};
+
+export type ListLocationsErrors = {
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The current User may not perform this operation.
+     */
+    403: ApiError;
+};
+
+export type ListLocationsError = ListLocationsErrors[keyof ListLocationsErrors];
+
+export type ListLocationsResponses = {
+    /**
+     * Locations.
+     */
+    200: Locations;
+};
+
+export type ListLocationsResponse = ListLocationsResponses[keyof ListLocationsResponses];
+
+export type CreateLocationData = {
+    body: LocationInput;
+    path?: never;
+    query?: never;
+    url: '/api/v1/locations';
+};
+
+export type CreateLocationErrors = {
+    /**
+     * The input broke an Event or Location rule.
+     */
+    400: EventError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The current User may not perform this operation.
+     */
+    403: ApiError;
+    /**
+     * `EVENT_NOT_FOUND`: no such Event.
+     */
+    404: EventError;
+};
+
+export type CreateLocationError = CreateLocationErrors[keyof CreateLocationErrors];
+
+export type CreateLocationResponses = {
+    /**
+     * The Location.
+     */
+    201: EventCommandResult;
+};
+
+export type CreateLocationResponse = CreateLocationResponses[keyof CreateLocationResponses];
+
+export type UpdateLocationData = {
+    body: LocationInput;
+    path: {
+        locationId: string;
+    };
+    query?: never;
+    url: '/api/v1/locations/{locationId}';
+};
+
+export type UpdateLocationErrors = {
+    /**
+     * The input broke an Event or Location rule.
+     */
+    400: EventError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The current User may not perform this operation.
+     */
+    403: ApiError;
+    /**
+     * `EVENT_NOT_FOUND`: no such Event.
+     */
+    404: EventError;
+};
+
+export type UpdateLocationError = UpdateLocationErrors[keyof UpdateLocationErrors];
+
+export type UpdateLocationResponses = {
+    /**
+     * Saved.
+     */
+    200: EventCommandResult;
+};
+
+export type UpdateLocationResponse = UpdateLocationResponses[keyof UpdateLocationResponses];
+
+export type ArchiveLocationData = {
+    body?: never;
+    path: {
+        locationId: string;
+    };
+    query?: never;
+    url: '/api/v1/locations/{locationId}/archive';
+};
+
+export type ArchiveLocationErrors = {
+    /**
+     * The input broke an Event or Location rule.
+     */
+    400: EventError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The current User may not perform this operation.
+     */
+    403: ApiError;
+    /**
+     * `EVENT_NOT_FOUND`: no such Event.
+     */
+    404: EventError;
+};
+
+export type ArchiveLocationError = ArchiveLocationErrors[keyof ArchiveLocationErrors];
+
+export type ArchiveLocationResponses = {
+    /**
+     * Archived.
+     */
+    200: EventCommandResult;
+};
+
+export type ArchiveLocationResponse = ArchiveLocationResponses[keyof ArchiveLocationResponses];
+
+export type UpdateLocalePreferenceData = {
+    body: LocalePreference;
+    path?: never;
+    query?: never;
+    url: '/api/v1/account/locale';
+};
+
+export type UpdateLocalePreferenceErrors = {
+    /**
+     * The request failed validation.
+     */
+    400: ValidationError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+};
+
+export type UpdateLocalePreferenceError = UpdateLocalePreferenceErrors[keyof UpdateLocalePreferenceErrors];
+
+export type UpdateLocalePreferenceResponses = {
+    /**
+     * Saved.
+     */
+    204: void;
+};
+
+export type UpdateLocalePreferenceResponse = UpdateLocalePreferenceResponses[keyof UpdateLocalePreferenceResponses];
+
+export type GetPushSubscriptionStatusData = {
+    body: PushEndpoint;
+    path?: never;
+    query?: never;
+    url: '/api/v1/account/push-subscriptions/status';
+};
+
+export type GetPushSubscriptionStatusErrors = {
+    /**
+     * The request failed validation.
+     */
+    400: ValidationError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+};
+
+export type GetPushSubscriptionStatusError = GetPushSubscriptionStatusErrors[keyof GetPushSubscriptionStatusErrors];
+
+export type GetPushSubscriptionStatusResponses = {
+    /**
+     * The binding.
+     */
+    200: PushSubscriptionStatus;
+};
+
+export type GetPushSubscriptionStatusResponse = GetPushSubscriptionStatusResponses[keyof GetPushSubscriptionStatusResponses];
+
+export type RegisterPushSubscriptionData = {
+    body: PushSubscription;
+    path?: never;
+    query?: never;
+    url: '/api/v1/account/push-subscriptions';
+};
+
+export type RegisterPushSubscriptionErrors = {
+    /**
+     * Not a supported push subscription, or the request failed validation.
+     */
+    400: PushSubscriptionError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+};
+
+export type RegisterPushSubscriptionError = RegisterPushSubscriptionErrors[keyof RegisterPushSubscriptionErrors];
+
+export type RegisterPushSubscriptionResponses = {
+    /**
+     * Bound.
+     */
+    204: void;
+};
+
+export type RegisterPushSubscriptionResponse = RegisterPushSubscriptionResponses[keyof RegisterPushSubscriptionResponses];
+
+export type RemovePushSubscriptionData = {
+    body: PushEndpoint;
+    path?: never;
+    query?: never;
+    url: '/api/v1/account/push-subscriptions/remove';
+};
+
+export type RemovePushSubscriptionErrors = {
+    /**
+     * Not a supported push endpoint, or the request failed validation.
+     */
+    400: PushSubscriptionError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+};
+
+export type RemovePushSubscriptionError = RemovePushSubscriptionErrors[keyof RemovePushSubscriptionErrors];
+
+export type RemovePushSubscriptionResponses = {
+    /**
+     * Whether a binding of the caller's was removed.
+     */
+    200: {
+        removed: boolean;
+    };
+};
+
+export type RemovePushSubscriptionResponse = RemovePushSubscriptionResponses[keyof RemovePushSubscriptionResponses];
+
+export type SendTestPushNotificationData = {
+    body: {
+        message: string;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/v1/account/push-subscriptions/test';
+};
+
+export type SendTestPushNotificationErrors = {
+    /**
+     * The request failed validation.
+     */
+    400: ValidationError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+};
+
+export type SendTestPushNotificationError = SendTestPushNotificationErrors[keyof SendTestPushNotificationErrors];
+
+export type SendTestPushNotificationResponses = {
+    /**
+     * How the push providers answered.
+     */
+    200: PushDeliveryResult;
+};
+
+export type SendTestPushNotificationResponse = SendTestPushNotificationResponses[keyof SendTestPushNotificationResponses];
+
+export type ActivateAccountData = {
+    body: Activation;
+    path?: never;
+    query?: never;
+    url: '/api/v1/account/activation';
+};
+
+export type ActivateAccountErrors = {
+    /**
+     * The passwords break the password policy.
+     */
+    400: ActivationError;
+    /**
+     * `INVALID_LINK`: no valid magic-link session.
+     */
+    401: ActivationError;
+};
+
+export type ActivateAccountError = ActivateAccountErrors[keyof ActivateAccountErrors];
+
+export type ActivateAccountResponses = {
+    /**
+     * Activated.
+     */
+    204: void;
+};
+
+export type ActivateAccountResponse = ActivateAccountResponses[keyof ActivateAccountResponses];
+
+export type ListUsersData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/users';
+};
+
+export type ListUsersErrors = {
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The current User may not perform this operation.
+     */
+    403: ApiError;
+};
+
+export type ListUsersError = ListUsersErrors[keyof ListUsersErrors];
+
+export type ListUsersResponses = {
+    /**
+     * Users.
+     */
+    200: AdministeredUsers;
+};
+
+export type ListUsersResponse = ListUsersResponses[keyof ListUsersResponses];
+
+export type InviteUserData = {
+    body: {
+        name: string;
+        email: string;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/v1/users';
+};
+
+export type InviteUserErrors = {
+    /**
+     * The name or email is missing or malformed.
+     */
+    400: InviteError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The current User may not perform this operation.
+     */
+    403: ApiError;
+    /**
+     * `EMAIL_EXISTS`: a User already has this email.
+     */
+    409: InviteError;
+    /**
+     * `UNAVAILABLE`: the User could not be created.
+     */
+    500: InviteError;
+};
+
+export type InviteUserError = InviteUserErrors[keyof InviteUserErrors];
+
+export type InviteUserResponses = {
+    /**
+     * Created. `email-failed` means the User exists but the invitation email could not be sent.
+     */
+    201: InvitedUser;
+};
+
+export type InviteUserResponse = InviteUserResponses[keyof InviteUserResponses];
+
+export type FindExistingUserEmailsData = {
+    body: {
+        emails: Array<string>;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/v1/users/emails/existing';
+};
+
+export type FindExistingUserEmailsErrors = {
+    /**
+     * The request failed validation.
+     */
+    400: ValidationError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The current User may not perform this operation.
+     */
+    403: ApiError;
+};
+
+export type FindExistingUserEmailsError = FindExistingUserEmailsErrors[keyof FindExistingUserEmailsErrors];
+
+export type FindExistingUserEmailsResponses = {
+    /**
+     * The taken emails, lower-cased.
+     */
+    200: {
+        emails: Array<string>;
+    };
+};
+
+export type FindExistingUserEmailsResponse = FindExistingUserEmailsResponses[keyof FindExistingUserEmailsResponses];
+
+export type ImportUsersData = {
+    body: UserImport;
+    path?: never;
+    query?: never;
+    url: '/api/v1/users/import';
+};
+
+export type ImportUsersErrors = {
+    /**
+     * The request failed validation.
+     */
+    400: ValidationError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The current User may not perform this operation.
+     */
+    403: ApiError;
+};
+
+export type ImportUsersError = ImportUsersErrors[keyof ImportUsersErrors];
+
+export type ImportUsersResponses = {
+    /**
+     * Each row's outcome.
+     */
+    200: UserImportResult;
+};
+
+export type ImportUsersResponse = ImportUsersResponses[keyof ImportUsersResponses];
+
+export type ActivateUserData = {
+    body?: never;
+    path: {
+        userId: string;
+    };
+    query?: never;
+    url: '/api/v1/users/{userId}/activate';
+};
+
+export type ActivateUserErrors = {
+    /**
+     * The command broke a rule, or the request failed validation.
+     */
+    400: UserCommandError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The current User may not perform this operation.
+     */
+    403: ApiError;
+    /**
+     * `USER_NOT_FOUND`: no such User.
+     */
+    404: UserCommandError;
+    /**
+     * `UNAVAILABLE`: Better Auth could not complete the change.
+     */
+    500: UserCommandError;
+};
+
+export type ActivateUserError = ActivateUserErrors[keyof ActivateUserErrors];
+
+export type ActivateUserResponses = {
+    /**
+     * Done.
+     */
+    200: UserCommandResult;
+};
+
+export type ActivateUserResponse = ActivateUserResponses[keyof ActivateUserResponses];
+
+export type DeactivateUserData = {
+    body?: never;
+    path: {
+        userId: string;
+    };
+    query?: never;
+    url: '/api/v1/users/{userId}/deactivate';
+};
+
+export type DeactivateUserErrors = {
+    /**
+     * The command broke a rule, or the request failed validation.
+     */
+    400: UserCommandError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The current User may not perform this operation.
+     */
+    403: ApiError;
+    /**
+     * `USER_NOT_FOUND`: no such User.
+     */
+    404: UserCommandError;
+    /**
+     * `UNAVAILABLE`: Better Auth could not complete the change.
+     */
+    500: UserCommandError;
+};
+
+export type DeactivateUserError = DeactivateUserErrors[keyof DeactivateUserErrors];
+
+export type DeactivateUserResponses = {
+    /**
+     * Done.
+     */
+    200: UserCommandResult;
+};
+
+export type DeactivateUserResponse = DeactivateUserResponses[keyof DeactivateUserResponses];
+
+export type EraseUserData = {
+    body: {
+        confirmation?: string;
+    };
+    path: {
+        userId: string;
+    };
+    query?: never;
+    url: '/api/v1/users/{userId}/erase';
+};
+
+export type EraseUserErrors = {
+    /**
+     * The command broke a rule, or the request failed validation.
+     */
+    400: UserCommandError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The current User may not perform this operation.
+     */
+    403: ApiError;
+    /**
+     * `USER_NOT_FOUND`: no such User.
+     */
+    404: UserCommandError;
+    /**
+     * `UNAVAILABLE`: Better Auth could not complete the change.
+     */
+    500: UserCommandError;
+};
+
+export type EraseUserError = EraseUserErrors[keyof EraseUserErrors];
+
+export type EraseUserResponses = {
+    /**
+     * Done.
+     */
+    200: UserCommandResult;
+};
+
+export type EraseUserResponse = EraseUserResponses[keyof EraseUserResponses];
+
+export type ResendInvitationData = {
+    body?: never;
+    path: {
+        userId: string;
+    };
+    query?: never;
+    url: '/api/v1/users/{userId}/invitation';
+};
+
+export type ResendInvitationErrors = {
+    /**
+     * The command broke a rule, or the request failed validation.
+     */
+    400: UserCommandError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The current User may not perform this operation.
+     */
+    403: ApiError;
+    /**
+     * `USER_NOT_FOUND`: no such User.
+     */
+    404: UserCommandError;
+    /**
+     * `UNAVAILABLE`: Better Auth could not complete the change.
+     */
+    500: UserCommandError;
+};
+
+export type ResendInvitationError = ResendInvitationErrors[keyof ResendInvitationErrors];
+
+export type ResendInvitationResponses = {
+    /**
+     * Done.
+     */
+    200: UserCommandResult;
+};
+
+export type ResendInvitationResponse = ResendInvitationResponses[keyof ResendInvitationResponses];
+
+export type ChangeUserRolesData = {
+    body: {
+        roles: Array<'user' | 'admin'>;
+    };
+    path: {
+        userId: string;
+    };
+    query?: never;
+    url: '/api/v1/users/{userId}/roles';
+};
+
+export type ChangeUserRolesErrors = {
+    /**
+     * The command broke a rule, or the request failed validation.
+     */
+    400: UserCommandError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The current User may not perform this operation.
+     */
+    403: ApiError;
+    /**
+     * `USER_NOT_FOUND`: no such User.
+     */
+    404: UserCommandError;
+    /**
+     * `UNAVAILABLE`: Better Auth could not complete the change.
+     */
+    500: UserCommandError;
+};
+
+export type ChangeUserRolesError = ChangeUserRolesErrors[keyof ChangeUserRolesErrors];
+
+export type ChangeUserRolesResponses = {
+    /**
+     * Done.
+     */
+    200: UserCommandResult;
+};
+
+export type ChangeUserRolesResponse = ChangeUserRolesResponses[keyof ChangeUserRolesResponses];
+
+export type GetChoirPlacementData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/choirs';
+};
+
+export type GetChoirPlacementErrors = {
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The current User may not perform this operation.
+     */
+    403: ApiError;
+};
+
+export type GetChoirPlacementError = GetChoirPlacementErrors[keyof GetChoirPlacementErrors];
+
+export type GetChoirPlacementResponses = {
+    /**
+     * Choirs.
+     */
+    200: ChoirPlacement;
+};
+
+export type GetChoirPlacementResponse = GetChoirPlacementResponses[keyof GetChoirPlacementResponses];
+
+export type GetGroupsOverviewData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/groups';
+};
+
+export type GetGroupsOverviewErrors = {
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The current User may not perform this operation.
+     */
+    403: ApiError;
+};
+
+export type GetGroupsOverviewError = GetGroupsOverviewErrors[keyof GetGroupsOverviewErrors];
+
+export type GetGroupsOverviewResponses = {
+    /**
+     * Groups.
+     */
+    200: GroupsOverview;
+};
+
+export type GetGroupsOverviewResponse = GetGroupsOverviewResponses[keyof GetGroupsOverviewResponses];
+
+export type CreateGroupData = {
+    body: {
+        name: string;
+        type: 'Board' | 'GigGroup' | 'Gigmästeri' | 'Sexmästeri' | 'Roddgrupp' | 'Festgrupp' | 'Rephelg' | 'Konsertmästeri' | 'Rekryteringskommitté' | 'Turnékommitté' | 'Valberedning' | 'Webmästeri' | 'Föräldramötet' | 'Arkivarie' | 'Utantillkommitté' | 'Övrig';
+        choirId?: string;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/v1/groups';
+};
+
+export type CreateGroupErrors = {
+    /**
+     * The command broke an organisation rule, or the request failed validation.
+     */
+    400: OrgStructureError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The current User may not perform this operation.
+     */
+    403: ApiError;
+};
+
+export type CreateGroupError = CreateGroupErrors[keyof CreateGroupErrors];
+
+export type CreateGroupResponses = {
+    /**
+     * Done.
+     */
+    201: OrgStructureCommandResult;
+};
+
+export type CreateGroupResponse = CreateGroupResponses[keyof CreateGroupResponses];
+
+export type ListPositionCatalogueData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/positions';
+};
+
+export type ListPositionCatalogueErrors = {
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The current User may not perform this operation.
+     */
+    403: ApiError;
+};
+
+export type ListPositionCatalogueError = ListPositionCatalogueErrors[keyof ListPositionCatalogueErrors];
+
+export type ListPositionCatalogueResponses = {
+    /**
+     * The catalogue.
+     */
+    200: PositionCatalogue;
+};
+
+export type ListPositionCatalogueResponse = ListPositionCatalogueResponses[keyof ListPositionCatalogueResponses];
+
+export type CreatePositionData = {
+    body: PositionInput;
+    path?: never;
+    query?: never;
+    url: '/api/v1/positions';
+};
+
+export type CreatePositionErrors = {
+    /**
+     * The command broke an organisation rule, or the request failed validation.
+     */
+    400: OrgStructureError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The current User may not perform this operation.
+     */
+    403: ApiError;
+};
+
+export type CreatePositionError = CreatePositionErrors[keyof CreatePositionErrors];
+
+export type CreatePositionResponses = {
+    /**
+     * Done.
+     */
+    201: OrgStructureCommandResult;
+};
+
+export type CreatePositionResponse = CreatePositionResponses[keyof CreatePositionResponses];
+
+export type GetGroupDetailData = {
+    body?: never;
+    path: {
+        groupId: string;
+    };
+    query?: never;
+    url: '/api/v1/groups/{groupId}';
+};
+
+export type GetGroupDetailErrors = {
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The current User may not perform this operation.
+     */
+    403: ApiError;
+    /**
+     * The resource does not exist or is not visible to the current User.
+     */
+    404: ApiError;
+};
+
+export type GetGroupDetailError = GetGroupDetailErrors[keyof GetGroupDetailErrors];
+
+export type GetGroupDetailResponses = {
+    /**
+     * The group.
+     */
+    200: GroupDetail;
+};
+
+export type GetGroupDetailResponse = GetGroupDetailResponses[keyof GetGroupDetailResponses];
+
+export type RenameGroupData = {
+    body: {
+        name: string;
+    };
+    path: {
+        groupId: string;
+    };
+    query?: never;
+    url: '/api/v1/groups/{groupId}/name';
+};
+
+export type RenameGroupErrors = {
+    /**
+     * The command broke an organisation rule, or the request failed validation.
+     */
+    400: OrgStructureError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The current User may not perform this operation.
+     */
+    403: ApiError;
+};
+
+export type RenameGroupError = RenameGroupErrors[keyof RenameGroupErrors];
+
+export type RenameGroupResponses = {
+    /**
+     * Done.
+     */
+    200: OrgStructureCommandResult;
+};
+
+export type RenameGroupResponse = RenameGroupResponses[keyof RenameGroupResponses];
+
+export type ArchiveGroupData = {
+    body?: never;
+    path: {
+        groupId: string;
+    };
+    query?: never;
+    url: '/api/v1/groups/{groupId}/archive';
+};
+
+export type ArchiveGroupErrors = {
+    /**
+     * The command broke an organisation rule, or the request failed validation.
+     */
+    400: OrgStructureError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The current User may not perform this operation.
+     */
+    403: ApiError;
+};
+
+export type ArchiveGroupError = ArchiveGroupErrors[keyof ArchiveGroupErrors];
+
+export type ArchiveGroupResponses = {
+    /**
+     * Done.
+     */
+    200: OrgStructureCommandResult;
+};
+
+export type ArchiveGroupResponse = ArchiveGroupResponses[keyof ArchiveGroupResponses];
+
+export type AddGroupMemberData = {
+    body: {
+        userId: string;
+        startDate: string;
+        voice?: 'S1' | 'S2' | 'A1' | 'A2' | 'T1' | 'T2' | 'B1' | 'B2';
+    };
+    path: {
+        groupId: string;
+    };
+    query?: never;
+    url: '/api/v1/groups/{groupId}/members';
+};
+
+export type AddGroupMemberErrors = {
+    /**
+     * The command broke an organisation rule, or the request failed validation.
+     */
+    400: OrgStructureError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The current User may not perform this operation.
+     */
+    403: ApiError;
+};
+
+export type AddGroupMemberError = AddGroupMemberErrors[keyof AddGroupMemberErrors];
+
+export type AddGroupMemberResponses = {
+    /**
+     * Done.
+     */
+    200: OrgStructureCommandResult;
+};
+
+export type AddGroupMemberResponse = AddGroupMemberResponses[keyof AddGroupMemberResponses];
+
+export type EndGroupMembershipData = {
+    body: {
+        endDate: string;
+    };
+    path: {
+        groupId: string;
+        userId: string;
+    };
+    query?: never;
+    url: '/api/v1/groups/{groupId}/members/{userId}/end';
+};
+
+export type EndGroupMembershipErrors = {
+    /**
+     * The command broke an organisation rule, or the request failed validation.
+     */
+    400: OrgStructureError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The current User may not perform this operation.
+     */
+    403: ApiError;
+};
+
+export type EndGroupMembershipError = EndGroupMembershipErrors[keyof EndGroupMembershipErrors];
+
+export type EndGroupMembershipResponses = {
+    /**
+     * Done.
+     */
+    200: OrgStructureCommandResult;
+};
+
+export type EndGroupMembershipResponse = EndGroupMembershipResponses[keyof EndGroupMembershipResponses];
+
+export type ChangeSingerVoiceData = {
+    body: {
+        voice: 'S1' | 'S2' | 'A1' | 'A2' | 'T1' | 'T2' | 'B1' | 'B2';
+        date: string;
+    };
+    path: {
+        groupId: string;
+        userId: string;
+    };
+    query?: never;
+    url: '/api/v1/groups/{groupId}/members/{userId}/voice';
+};
+
+export type ChangeSingerVoiceErrors = {
+    /**
+     * The command broke an organisation rule, or the request failed validation.
+     */
+    400: OrgStructureError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The current User may not perform this operation.
+     */
+    403: ApiError;
+};
+
+export type ChangeSingerVoiceError = ChangeSingerVoiceErrors[keyof ChangeSingerVoiceErrors];
+
+export type ChangeSingerVoiceResponses = {
+    /**
+     * Done.
+     */
+    200: OrgStructureCommandResult;
+};
+
+export type ChangeSingerVoiceResponse = ChangeSingerVoiceResponses[keyof ChangeSingerVoiceResponses];
+
+export type AssignPositionHolderData = {
+    body: {
+        userId: string;
+        startDate: string;
+    };
+    path: {
+        groupId: string;
+        positionId: string;
+    };
+    query?: never;
+    url: '/api/v1/groups/{groupId}/positions/{positionId}/holder';
+};
+
+export type AssignPositionHolderErrors = {
+    /**
+     * The command broke an organisation rule, or the request failed validation.
+     */
+    400: OrgStructureError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The current User may not perform this operation.
+     */
+    403: ApiError;
+};
+
+export type AssignPositionHolderError = AssignPositionHolderErrors[keyof AssignPositionHolderErrors];
+
+export type AssignPositionHolderResponses = {
+    /**
+     * Done.
+     */
+    200: OrgStructureCommandResult;
+};
+
+export type AssignPositionHolderResponse = AssignPositionHolderResponses[keyof AssignPositionHolderResponses];
+
+export type EndPositionHoldingData = {
+    body: {
+        userId: string;
+        endDate: string;
+    };
+    path: {
+        groupId: string;
+        positionId: string;
+    };
+    query?: never;
+    url: '/api/v1/groups/{groupId}/positions/{positionId}/end';
+};
+
+export type EndPositionHoldingErrors = {
+    /**
+     * The command broke an organisation rule, or the request failed validation.
+     */
+    400: OrgStructureError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The current User may not perform this operation.
+     */
+    403: ApiError;
+};
+
+export type EndPositionHoldingError = EndPositionHoldingErrors[keyof EndPositionHoldingErrors];
+
+export type EndPositionHoldingResponses = {
+    /**
+     * Done.
+     */
+    200: OrgStructureCommandResult;
+};
+
+export type EndPositionHoldingResponse = EndPositionHoldingResponses[keyof EndPositionHoldingResponses];
+
+export type UpdatePositionData = {
+    body: PositionInput;
+    path: {
+        positionId: string;
+    };
+    query?: never;
+    url: '/api/v1/positions/{positionId}';
+};
+
+export type UpdatePositionErrors = {
+    /**
+     * The command broke an organisation rule, or the request failed validation.
+     */
+    400: OrgStructureError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The current User may not perform this operation.
+     */
+    403: ApiError;
+};
+
+export type UpdatePositionError = UpdatePositionErrors[keyof UpdatePositionErrors];
+
+export type UpdatePositionResponses = {
+    /**
+     * Done.
+     */
+    200: OrgStructureCommandResult;
+};
+
+export type UpdatePositionResponse = UpdatePositionResponses[keyof UpdatePositionResponses];
+
+export type SendBroadcastData = {
+    body: Broadcast;
+    path?: never;
+    query?: never;
+    url: '/api/v1/broadcasts';
+};
+
+export type SendBroadcastErrors = {
+    /**
+     * No message, or an empty selection of Users.
+     */
+    400: BroadcastError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The current User may not perform this operation.
+     */
+    403: ApiError;
+};
+
+export type SendBroadcastError = SendBroadcastErrors[keyof SendBroadcastErrors];
+
+export type SendBroadcastResponses = {
+    /**
+     * How delivery went.
+     */
+    200: BroadcastResult;
+};
+
+export type SendBroadcastResponse = SendBroadcastResponses[keyof SendBroadcastResponses];
+
+export type SearchBroadcastRecipientsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        search?: string;
+    };
+    url: '/api/v1/broadcasts/recipients';
+};
+
+export type SearchBroadcastRecipientsErrors = {
+    /**
+     * The request failed validation.
+     */
+    400: ValidationError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The current User may not perform this operation.
+     */
+    403: ApiError;
+};
+
+export type SearchBroadcastRecipientsError = SearchBroadcastRecipientsErrors[keyof SearchBroadcastRecipientsErrors];
+
+export type SearchBroadcastRecipientsResponses = {
+    /**
+     * Recipients.
+     */
+    200: BroadcastRecipients;
+};
+
+export type SearchBroadcastRecipientsResponse = SearchBroadcastRecipientsResponses[keyof SearchBroadcastRecipientsResponses];
 
 export type GetMemberIdSessionData = {
     body?: never;

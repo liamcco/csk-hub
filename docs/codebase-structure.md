@@ -69,7 +69,12 @@ Use `src/core` for infrastructure and app shell modules:
   request headers. A feature exposes its operations by exporting a router from its public
   entrypoint; `src/api` mounts it under `/api/v1` (Member ID keeps its released
   `/api/member-id` paths). Run `bun run api:generate` after changing
-  route schemas and commit `contract/`.
+  route schemas and commit `contract/`. A feature whose public entrypoint exports screens puts
+  its router in an `http/` subfolder with its own `index.ts`, so the API never loads React.
+- `src/core/api-client`: the web application's only way to authoritative behaviour: the generated
+  client (`@contract/client`) bound to the server (`getServerApiClient`, `readForScreen`) or the
+  browser (`browserApiClient`). Migrated screens never import `@/core/db`, `@/core/authz` or
+  feature services. Progress is tracked in `docs/migration/api-slices.md`.
 - `src/core/email`: email delivery adapters.
 - `src/core/i18n`: locale definitions, locale-cookie handling, next-intl routing/request configuration, and translation loading. See `src/core/i18n/README.md` before adding translated UI.
 - `src/core/preferences`: the application-wide user-preferences contract, including storage, runtime validation, backward-compatible defaults, and atomic partial updates used by app-shell and feature modules.

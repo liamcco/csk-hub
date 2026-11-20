@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation"
 import { Suspense } from "react"
 import { z } from "zod"
-import { requirePermission } from "@/core/authz"
+import { requireCapability } from "@/core/api-client/capabilities"
 import { GroupDetailScreen, GroupDetailScreenSkeleton } from "@/features/org-structure/ui"
 
 const groupIdSchema = z.uuid()
@@ -16,7 +16,7 @@ export default function AdminGroupPage({ params }: { params: Promise<{ groupId: 
 
 async function AdminGroup({ params }: { params: Promise<{ groupId: string }> }) {
   // Authorize before validating the address, so non-Admins get the same response for any group.
-  await requirePermission({ action: "admin.access" })
+  await requireCapability("admin")
   const { groupId } = await params
   if (!groupIdSchema.safeParse(groupId).success) notFound()
 

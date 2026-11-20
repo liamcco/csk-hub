@@ -7,12 +7,12 @@ import { ContentPage } from "@/shared/layouts/content-page"
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/shared/ui/base/empty"
 import { Skeleton } from "@/shared/ui/base/skeleton"
 import { cn } from "@/shared/utils"
-import { getEventManagementCapabilities } from "../access"
 import { EVENT_TYPES, stockholmInstant } from "../model"
 import { StatusBadge } from "../ui/StatusBadge"
+import { readUpcomingEvents } from "../ui/screen-reads"
 import { eventDays, groupByDay } from "./days"
 import { EventKind } from "./EventKind"
-import { listCurrentUpcomingEvents, type UpcomingEvent } from "./query"
+import type { UpcomingEvent } from "./query"
 import { UpcomingEventsFilter } from "./UpcomingEventsFilter"
 
 async function UpcomingEventsHeader() {
@@ -32,7 +32,7 @@ type SearchParams = Record<string, string | string[] | undefined>
 export async function UpcomingEventsScreen({ searchParams }: { searchParams: SearchParams }) {
   await io()
   const [{ events: upcoming }, t, format] = await Promise.all([
-    listCurrentUpcomingEvents(new Date()),
+    readUpcomingEvents(),
     getTranslations("Events.calendar"),
     getFormatter()
   ])
@@ -150,7 +150,7 @@ export async function UpcomingEventsScreenSkeleton() {
 
 async function ManagementLink() {
   const t = await getTranslations("Navigation.routes")
-  const { canCreate } = await getEventManagementCapabilities()
+  const { canCreate } = await readUpcomingEvents()
   return canCreate ? (
     <Link href={ROUTES.eventsManage} className="text-sm underline">
       {t("eventsManage")}
