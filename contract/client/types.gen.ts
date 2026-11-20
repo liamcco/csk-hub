@@ -814,6 +814,44 @@ export type PositionInput = {
     groupIds: Array<string>;
 };
 
+/**
+ * Queued for in-app delivery, or accepted by push providers; neither guarantees reception.
+ */
+export type BroadcastResult = {
+    success: true;
+    delivery: 'queued';
+    queued: number;
+} | {
+    success: true;
+    delivery: 'sent';
+    accepted: number;
+    failed: number;
+    failureCategories: {
+        [key: string]: number;
+    };
+} | {
+    success: false;
+    error: 'noRecipients' | 'noActiveSubscriptions' | 'deliveryFailed';
+};
+
+export type BroadcastError = {
+    code: 'MESSAGE_REQUIRED' | 'USER_REQUIRED';
+};
+
+export type Broadcast = {
+    message: string;
+    userIds?: Array<string>;
+};
+
+export type BroadcastRecipients = {
+    users: Array<{
+        id: string;
+        name: string;
+        email: string;
+    }>;
+    requiresPush: boolean;
+};
+
 export type MemberIdSession = {
     member: MemberIdMember;
     /**
@@ -3362,6 +3400,74 @@ export type UpdatePositionResponses = {
 };
 
 export type UpdatePositionResponse = UpdatePositionResponses[keyof UpdatePositionResponses];
+
+export type SendBroadcastData = {
+    body: Broadcast;
+    path?: never;
+    query?: never;
+    url: '/api/v1/broadcasts';
+};
+
+export type SendBroadcastErrors = {
+    /**
+     * No message, or an empty selection of Users.
+     */
+    400: BroadcastError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The current User may not perform this operation.
+     */
+    403: ApiError;
+};
+
+export type SendBroadcastError = SendBroadcastErrors[keyof SendBroadcastErrors];
+
+export type SendBroadcastResponses = {
+    /**
+     * How delivery went.
+     */
+    200: BroadcastResult;
+};
+
+export type SendBroadcastResponse = SendBroadcastResponses[keyof SendBroadcastResponses];
+
+export type SearchBroadcastRecipientsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        search?: string;
+    };
+    url: '/api/v1/broadcasts/recipients';
+};
+
+export type SearchBroadcastRecipientsErrors = {
+    /**
+     * The request failed validation.
+     */
+    400: ValidationError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The current User may not perform this operation.
+     */
+    403: ApiError;
+};
+
+export type SearchBroadcastRecipientsError = SearchBroadcastRecipientsErrors[keyof SearchBroadcastRecipientsErrors];
+
+export type SearchBroadcastRecipientsResponses = {
+    /**
+     * Recipients.
+     */
+    200: BroadcastRecipients;
+};
+
+export type SearchBroadcastRecipientsResponse = SearchBroadcastRecipientsResponses[keyof SearchBroadcastRecipientsResponses];
 
 export type GetMemberIdSessionData = {
     body?: never;

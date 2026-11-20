@@ -5,7 +5,7 @@ import { useTranslations } from "@/core/i18n/translations"
 import { Button } from "@/shared/ui/base/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/base/card"
 import { Textarea } from "@/shared/ui/base/textarea"
-import { sendTestNotificationToAll } from "./actions"
+import { sendTestNotificationToAll } from "./broadcasts"
 import { type NotificationFeedback, NotificationFeedbackMessage } from "./notification-feedback"
 
 export function BroadcastToAllCard() {

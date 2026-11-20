@@ -4,6 +4,7 @@ import { eventsRouter } from "@/features/events/http"
 import { memberIdRouter } from "@/features/member-id"
 import { membersRouter } from "@/features/members/http"
 import { messagingRouter } from "@/features/messaging/http"
+import { broadcastsRouter } from "@/features/notification-broadcast/http"
 import { orgStructureRouter } from "@/features/org-structure/http"
 import { postsRouter } from "@/features/posts/http"
 import { usersRouter } from "@/features/user-management/http"
@@ -71,6 +72,7 @@ export function createApi(dependencies: ApiDependencies) {
     .route("/", accountRouter)
     .route("/", usersRouter)
     .route("/", orgStructureRouter)
+    .route("/", broadcastsRouter)
   api.route("/api/v1", v1)
   // Released before /api/v1; its paths and representations stay frozen for installed clients.
   api.route("/api/member-id", memberIdRouter)

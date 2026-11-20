@@ -75,12 +75,12 @@ export async function hasActiveSubscription(userId: string, endpoint: string, da
 }
 
 /** Returns at most 25 active push subscribers whose name or email matches the optional search text. */
-export async function listUsersWithActiveSubscriptions(search: string = "") {
+export async function listUsersWithActiveSubscriptions(search: string = "", database: Database = db) {
   const normalizedSearch = search.trim()
   const pattern = `%${normalizedSearch.replaceAll("\\", "\\\\").replaceAll("%", "\\%").replaceAll("_", "\\_")}%`
   const searchFilter = normalizedSearch ? or(ilike(user.name, pattern), ilike(user.email, pattern)) : undefined
 
-  return db
+  return database
     .selectDistinct({ id: user.id, name: user.name, email: user.email })
     .from(user)
     .innerJoin(pushSubscription, eq(pushSubscription.userId, user.id))

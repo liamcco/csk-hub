@@ -2,7 +2,6 @@ import { afterEach, beforeEach, describe, expect, jest, mock, spyOn, test } from
 import { createECDH } from "node:crypto"
 import https from "node:https"
 
-const requireAdmin = mock(async () => undefined)
 let subscriptions: Record<string, unknown>[] = []
 const where = mock(async () => subscriptions)
 const select = mock(() => ({ from: () => ({ innerJoin: () => ({ where }) }) }))
@@ -16,27 +15,8 @@ const sendNotification = mock(
 const getTranslations = mock(async () => {
   throw new Error("Notification actions must not resolve a rendering locale")
 })
-const getSession = mock(
-  async (): Promise<{ user: { id: string } } | null> => ({
-    user: { id: "user-1" }
-  })
-)
-const subscribe = mock(async () => undefined)
-const unsubscribe = mock(async () => false)
-const hasActiveSubscription = mock(async () => true)
 
-mock.module("@/core/authz", () => ({
-  requirePermission: async (request: { action: string }) => {
-    if (request.action === "notification.broadcast") return requireAdmin()
-    const session = await getSession()
-    if (!session) throw new Error("Unauthorized")
-    return { userId: session.user.id }
-  }
-}))
 mock.module("@/core/i18n/server", () => ({ getTranslations }))
-mock.module("@/core/auth/session.server", () => ({
-  getRequestSession: getSession
-}))
 mock.module("@/core/db", () => ({
   db: { select, update, transaction: async (run: (tx: unknown) => Promise<unknown>) => run({}) }
 }))
@@ -47,28 +27,20 @@ mock.module("web-push", () => ({
 const delivery = await import("@/core/notifications/send-push-notification")
 mock.module("@/core/notifications", () => ({
   ...delivery,
-  hasActiveSubscription,
-  subscribe,
-  unsubscribe,
   listUsersWithActiveSubscriptions: mock(async () => [])
 }))
-const { searchNotificationUsers, sendTestNotificationToAll, sendTestNotificationToUsers } = await import("./actions")
+const { db } = await import("@/core/db")
+const { notifyUsers, searchNotificationRecipients } = await import("./service")
+const broadcast = { database: db, scheduleDelivery: () => {} }
 
 beforeEach(() => {
   subscriptions = []
-  requireAdmin.mockClear()
-  requireAdmin.mockResolvedValue(undefined)
-  getSession.mockClear()
-  getSession.mockResolvedValue({ user: { id: "user-1" } })
   getTranslations.mockClear()
   select.mockClear()
   updateWhere.mockClear()
   set.mockClear()
   sendNotification.mockReset()
   sendNotification.mockResolvedValue(undefined)
-  subscribe.mockClear()
-  unsubscribe.mockReset().mockResolvedValue(false)
-  hasActiveSubscription.mockReset().mockResolvedValue(true)
 })
 
 const activeSubscription = {
@@ -79,35 +51,22 @@ const activeSubscription = {
   failureCount: 0
 }
 
-describe("notification actions without a translation context", () => {
+describe("broadcast delivery without a translation context", () => {
   test("recipient search explains that push subscriptions are required without Redis", async () => {
-    expect(await searchNotificationUsers("Singer")).toEqual({ users: [], requiresPush: true })
-    expect(requireAdmin).toHaveBeenCalledTimes(1)
+    expect(await searchNotificationRecipients(db, "Singer")).toEqual({ users: [], requiresPush: true })
   })
 
   test("broadcast returns a delivery error code for the UI to translate", async () => {
-    expect(await sendTestNotificationToAll("Hello")).toEqual({
+    expect(await notifyUsers(broadcast, "Hello")).toEqual({
       success: false,
       error: "noActiveSubscriptions"
     })
-    expect(requireAdmin).toHaveBeenCalledTimes(1)
     expect(getTranslations).not.toHaveBeenCalled()
   })
 
-  test("rejects empty messages and recipient selections before delivery", async () => {
-    expect(await sendTestNotificationToAll("  ")).toEqual({ success: false, error: "messageRequired" })
-    expect(await sendTestNotificationToUsers(["user-1"], "  ")).toEqual({
-      success: false,
-      error: "messageRequired"
-    })
-    expect(await sendTestNotificationToUsers([], "Hello")).toEqual({ success: false, error: "userRequired" })
-    expect(select).not.toHaveBeenCalled()
-    expect(getTranslations).not.toHaveBeenCalled()
-  })
-
-  test("selected delivery uses the app title and trims the message", async () => {
+  test("selected delivery uses the app title", async () => {
     subscriptions = [activeSubscription]
-    expect(await sendTestNotificationToUsers(["user-1"], "  Hello  ")).toEqual({
+    expect(await notifyUsers(broadcast, "Hello", ["user-1"])).toEqual({
       success: true,
       delivery: "sent",
       accepted: 1,
@@ -172,7 +131,7 @@ describe("notification actions without a translation context", () => {
   test("all failed deliveries return a code and record the provider failure", async () => {
     subscriptions = [activeSubscription]
     sendNotification.mockRejectedValue(Object.assign(new Error("Gone"), { statusCode: 410 }))
-    expect(await sendTestNotificationToAll("Hello")).toEqual({
+    expect(await notifyUsers(broadcast, "Hello")).toEqual({
       success: false,
       error: "deliveryFailed"
     })
@@ -188,7 +147,7 @@ describe("notification actions without a translation context", () => {
   test("a partial delivery still succeeds", async () => {
     subscriptions = [activeSubscription, { ...activeSubscription, id: "subscription-2" }]
     sendNotification.mockRejectedValueOnce(new Error("Provider unavailable"))
-    expect(await sendTestNotificationToAll("Hello")).toEqual({
+    expect(await notifyUsers(broadcast, "Hello")).toEqual({
       success: true,
       delivery: "sent",
       accepted: 1,
@@ -196,13 +155,6 @@ describe("notification actions without a translation context", () => {
       failureCategories: { transport: 1 }
     })
     expect(sendNotification).toHaveBeenCalledTimes(2)
-  })
-
-  test("denied admin authorization prevents delivery", async () => {
-    requireAdmin.mockRejectedValue(new Error("Forbidden"))
-    await expect(sendTestNotificationToAll("Hello")).rejects.toThrow("Forbidden")
-    await expect(sendTestNotificationToUsers(["user-1"], "Hello")).rejects.toThrow("Forbidden")
-    expect(select).not.toHaveBeenCalled()
   })
 })
 

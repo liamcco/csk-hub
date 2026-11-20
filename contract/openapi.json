@@ -3380,6 +3380,163 @@
           "groupIds"
         ]
       },
+      "BroadcastResult": {
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "success": {
+                "type": "boolean",
+                "enum": [
+                  true
+                ]
+              },
+              "delivery": {
+                "type": "string",
+                "enum": [
+                  "queued"
+                ]
+              },
+              "queued": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "success",
+              "delivery",
+              "queued"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "success": {
+                "type": "boolean",
+                "enum": [
+                  true
+                ]
+              },
+              "delivery": {
+                "type": "string",
+                "enum": [
+                  "sent"
+                ]
+              },
+              "accepted": {
+                "type": "integer"
+              },
+              "failed": {
+                "type": "integer"
+              },
+              "failureCategories": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "integer"
+                }
+              }
+            },
+            "required": [
+              "success",
+              "delivery",
+              "accepted",
+              "failed",
+              "failureCategories"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "success": {
+                "type": "boolean",
+                "enum": [
+                  false
+                ]
+              },
+              "error": {
+                "type": "string",
+                "enum": [
+                  "noRecipients",
+                  "noActiveSubscriptions",
+                  "deliveryFailed"
+                ]
+              }
+            },
+            "required": [
+              "success",
+              "error"
+            ]
+          }
+        ],
+        "description": "Queued for in-app delivery, or accepted by push providers; neither guarantees reception."
+      },
+      "BroadcastError": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "MESSAGE_REQUIRED",
+              "USER_REQUIRED"
+            ]
+          }
+        },
+        "required": [
+          "code"
+        ]
+      },
+      "Broadcast": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "userIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 500
+          }
+        },
+        "required": [
+          "message"
+        ]
+      },
+      "BroadcastRecipients": {
+        "type": "object",
+        "properties": {
+          "users": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "email": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "name",
+                "email"
+              ]
+            }
+          },
+          "requiresPush": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "users",
+          "requiresPush"
+        ]
+      },
       "MemberIdSession": {
         "type": "object",
         "properties": {
@@ -8245,6 +8402,131 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/OrgStructureError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No active signed-in User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The current User may not perform this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/broadcasts": {
+      "post": {
+        "operationId": "sendBroadcast",
+        "summary": "Sends an Admin broadcast to every active User, or to the selected ones. Admins only.",
+        "description": "Push goes out immediately in bulk. With real-time delivery configured, in-app feedback is also queued as `push: false` activity and dispatched after the write commits.",
+        "tags": [
+          "broadcasts"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Broadcast"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "How delivery went.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BroadcastResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "No message, or an empty selection of Users.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BroadcastError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No active signed-in User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The current User may not perform this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/broadcasts/recipients": {
+      "get": {
+        "operationId": "searchBroadcastRecipients",
+        "summary": "Up to 25 active Users a broadcast can reach, by name or email. Admins only.",
+        "description": "`requiresPush` is true when only Users with an active push subscription can be reached.",
+        "tags": [
+          "broadcasts"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "required": false,
+            "name": "search",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Recipients.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BroadcastRecipients"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request failed validation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
                 }
               }
             }

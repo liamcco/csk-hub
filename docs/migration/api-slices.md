@@ -38,7 +38,7 @@ behind `scheduleActivityDispatch()` (see "Delivery boundary").
 | 7 | Account activation and settings: locale, push subscriptions | `activateAccount`, `updateLocalePreference`, `getPushSubscriptionStatus`, `registerPushSubscription`, `removePushSubscription`, `sendTestPushNotification` | `account.test.ts` | `/activate`, `/me/settings` gate, language, notifications, push revocation on logout | `account.e2e.ts` | done |
 | 8 | User administration | `listUsers`, `inviteUser`, `findExistingUserEmails`, `importUsers`, `activateUser`, `deactivateUser`, `eraseUser`, `resendInvitation`, `changeUserRoles` | `users.test.ts` | `/admin/users`: list, add member, CSV import, row actions | `users.e2e.ts` | done |
 | 9 | Groups, Memberships, Positions | `getChoirPlacement`, `getGroupsOverview`, `listPositionCatalogue`, `getGroupDetail`, `createGroup`, `renameGroup`, `archiveGroup`, `addGroupMember`, `endGroupMembership`, `changeSingerVoice`, `assignPositionHolder`, `endPositionHolding`, `createPosition`, `updatePosition` | `org-structure.test.ts` | `/admin/org-structure`, `/admin/org-structure/groups`, `/admin/org-structure/[groupId]` and their dialogs | `org-structure.e2e.ts` | done |
-| 10 | Admin broadcasts | | | | | todo |
+| 10 | Admin broadcasts | `sendBroadcast`, `searchBroadcastRecipients` | `broadcasts.test.ts` | `/admin/notifications`: broadcast to all, recipient search, send to selected | `broadcasts.e2e.ts` | done |
 
 ## Baseline inventory
 
@@ -63,7 +63,10 @@ Auth's `/api/auth` (ADR 0008 draft) and are not part of this migration.
 Writes that queue outbox rows do so inside their own transaction (`queueActivity`,
 `queuePublicActivity`). After the transaction commits, routes call `scheduleActivityDispatch()`,
 the single explicit boundary that today runs dispatch through Next.js `after()`. Admin broadcasts
-keep their own path: `push: false` outbox rows plus direct Web Push.
+keep their own path: `push: false` outbox rows plus direct Web Push, and the broadcast route wakes
+delivery through the API's `scheduleDelivery` dependency, which `src/api/runtime.ts` binds to
+`scheduleActivityDispatch()`. Push subscriptions (`/account/push-subscriptions`) stay separate from
+broadcasts (`/broadcasts`).
 
 ## Gaps
 
