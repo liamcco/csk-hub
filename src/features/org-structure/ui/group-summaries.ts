@@ -1,8 +1,7 @@
 import "server-only"
 
 import { asc, count, eq, isNull } from "drizzle-orm"
-import { requirePermission } from "@/core/authz"
-import { db } from "@/core/db"
+import type { Database } from "@/core/db"
 import { user } from "@/core/db/schema/auth"
 import { group, groupMember, position, positionHolder, section } from "@/core/db/schema/org-structure"
 import type { Voice } from "@/features/voice/model"
@@ -19,18 +18,20 @@ export type GroupSummary = {
   holders: { position: string; holder: string }[]
 }
 
-/** Every group, archived ones included, with what the admin overviews show of it, ordered by name. */
-export async function listGroupSummaries(): Promise<GroupSummary[]> {
-  await requirePermission({ action: "org.manage" })
+/**
+ * Every group, archived ones included, with what the admin overviews show of it, ordered by name.
+ * The caller authorizes `org.manage`.
+ */
+export async function listGroupSummaries(database: Database): Promise<GroupSummary[]> {
   const [groups, counts, sections, holders] = await Promise.all([
-    db.select().from(group).orderBy(asc(group.name)),
-    db
+    database.select().from(group).orderBy(asc(group.name)),
+    database
       .select({ groupId: groupMember.groupId, members: count() })
       .from(groupMember)
       .where(isNull(groupMember.endDate))
       .groupBy(groupMember.groupId),
-    db.select().from(section),
-    db
+    database.select().from(section),
+    database
       .select({ groupId: positionHolder.groupId, position: position.name, holder: user.name })
       .from(positionHolder)
       .innerJoin(position, eq(position.id, positionHolder.positionId))

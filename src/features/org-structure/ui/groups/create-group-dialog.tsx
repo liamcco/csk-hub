@@ -4,9 +4,9 @@ import { useTranslations } from "@/core/i18n/translations"
 import { InputField, SelectField } from "@/shared/forms/fields"
 import { Button } from "@/shared/ui/base/button"
 import type { GroupType } from "../../model"
+import { createGroupAction } from "../commands"
 import { GroupCommandDialog } from "../group-command-dialog"
 import { NAME_MAX_LENGTH } from "../limits"
-import { createGroupAction } from "./actions"
 
 /** Choirs and Sections are created only with their Choir, so they are never offered here. */
 const CREATABLE_TYPES: GroupType[] = [

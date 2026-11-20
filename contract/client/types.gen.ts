@@ -697,6 +697,123 @@ export type UserCommandError = {
     code: 'USER_NOT_FOUND' | 'ALREADY_ACTIVE' | 'ALREADY_INACTIVE' | 'CANNOT_CHANGE_SELF' | 'LAST_ADMIN' | 'DEACTIVATE_FIRST' | 'CONFIRMATION_MISMATCH' | 'ALREADY_ACTIVATED' | 'UNAVAILABLE';
 };
 
+export type ChoirPlacement = {
+    choirs: Array<{
+        choir: GroupSummary;
+        sections: Array<GroupSummary>;
+    }>;
+};
+
+export type GroupSummary = {
+    id: string;
+    name: string;
+    type: 'Choir' | 'Section' | 'Board' | 'GigGroup' | 'Gigmästeri' | 'Sexmästeri' | 'Roddgrupp' | 'Festgrupp' | 'Rephelg' | 'Konsertmästeri' | 'Rekryteringskommitté' | 'Turnékommitté' | 'Valberedning' | 'Webmästeri' | 'Föräldramötet' | 'Arkivarie' | 'Utantillkommitté' | 'Övrig';
+    choirId: string | null;
+    active: boolean;
+    memberCount: number;
+    voices: Array<'S' | 'A' | 'T' | 'B' | 'S1' | 'S2' | 'A1' | 'A2' | 'T1' | 'T2' | 'B1' | 'B2'>;
+    holders: Array<{
+        position: string;
+        holder: string;
+    }>;
+};
+
+export type GroupsOverview = {
+    cskWide: Array<GroupSummary>;
+    choirs: Array<{
+        choir: GroupSummary;
+        groups: Array<GroupSummary>;
+    }>;
+};
+
+export type PositionCatalogue = {
+    positions: Array<{
+        id: string;
+        name: string;
+        groupTypes: Array<'Choir' | 'Section' | 'Board' | 'GigGroup' | 'Gigmästeri' | 'Sexmästeri' | 'Roddgrupp' | 'Festgrupp' | 'Rephelg' | 'Konsertmästeri' | 'Rekryteringskommitté' | 'Turnékommitté' | 'Valberedning' | 'Webmästeri' | 'Föräldramötet' | 'Arkivarie' | 'Utantillkommitté' | 'Övrig'>;
+        groups: Array<{
+            id: string;
+            name: string;
+            type: 'Choir' | 'Section' | 'Board' | 'GigGroup' | 'Gigmästeri' | 'Sexmästeri' | 'Roddgrupp' | 'Festgrupp' | 'Rephelg' | 'Konsertmästeri' | 'Rekryteringskommitté' | 'Turnékommitté' | 'Valberedning' | 'Webmästeri' | 'Föräldramötet' | 'Arkivarie' | 'Utantillkommitté' | 'Övrig';
+            choirName: string | null;
+        }>;
+    }>;
+    groups: Array<{
+        id: string;
+        name: string;
+        type: 'Choir' | 'Section' | 'Board' | 'GigGroup' | 'Gigmästeri' | 'Sexmästeri' | 'Roddgrupp' | 'Festgrupp' | 'Rephelg' | 'Konsertmästeri' | 'Rekryteringskommitté' | 'Turnékommitté' | 'Valberedning' | 'Webmästeri' | 'Föräldramötet' | 'Arkivarie' | 'Utantillkommitté' | 'Övrig';
+        choirName: string | null;
+    }>;
+};
+
+export type GroupDetail = {
+    group: {
+        id: string;
+        name: string;
+        type: 'Choir' | 'Section' | 'Board' | 'GigGroup' | 'Gigmästeri' | 'Sexmästeri' | 'Roddgrupp' | 'Festgrupp' | 'Rephelg' | 'Konsertmästeri' | 'Rekryteringskommitté' | 'Turnékommitté' | 'Valberedning' | 'Webmästeri' | 'Föräldramötet' | 'Arkivarie' | 'Utantillkommitté' | 'Övrig';
+        active: boolean;
+        choir: {
+            id: string;
+            name: string;
+        } | null;
+    };
+    sectionVoice: 'S' | 'A' | 'T' | 'B' | 'S1' | 'S2' | 'A1' | 'A2' | 'T1' | 'T2' | 'B1' | 'B2' | null;
+    sectionVoices: Array<'S' | 'A' | 'T' | 'B' | 'S1' | 'S2' | 'A1' | 'A2' | 'T1' | 'T2' | 'B1' | 'B2'>;
+    choirVoices: Array<'S' | 'A' | 'T' | 'B' | 'S1' | 'S2' | 'A1' | 'A2' | 'T1' | 'T2' | 'B1' | 'B2'>;
+    members: Array<{
+        userId: string;
+        name: string;
+        email: string;
+        startDate: string;
+        voice: 'S' | 'A' | 'T' | 'B' | 'S1' | 'S2' | 'A1' | 'A2' | 'T1' | 'T2' | 'B1' | 'B2' | null;
+        positions: Array<string>;
+    }>;
+    pastMembers: Array<{
+        userId: string;
+        name: string;
+        startDate: string;
+        endDate: string;
+        voice: 'S' | 'A' | 'T' | 'B' | 'S1' | 'S2' | 'A1' | 'A2' | 'T1' | 'T2' | 'B1' | 'B2' | null;
+    }>;
+    positions: Array<{
+        id: string;
+        name: string;
+        holder: {
+            userId: string;
+            name: string;
+            startDate: string;
+        } | null;
+    }>;
+    pastHolders: Array<{
+        position: string;
+        name: string;
+        startDate: string;
+        endDate: string;
+    }>;
+    candidates: Array<{
+        id: string;
+        name: string;
+        email: string;
+    }>;
+};
+
+export type OrgStructureCommandResult = {
+    id: string;
+};
+
+export type OrgStructureError = {
+    /**
+     * The organisation rule a command broke. Tolerate unknown codes.
+     */
+    code: 'INVALID_DATE' | 'GROUP_NOT_FOUND' | 'GROUP_ARCHIVED' | 'GROUP_NAME_TAKEN' | 'CHOIR_NOT_FOUND' | 'CHOIR_CREATED_WITH_SECTIONS' | 'SECTION_COUNT' | 'VOICE_IN_SEVERAL_SECTIONS' | 'SECTION_ARCHIVED_WITH_CHOIR' | 'ALREADY_MEMBER' | 'NOT_A_MEMBER' | 'NOT_A_CHOIR_MEMBER' | 'SECTION_REQUIRES_PLACEMENT' | 'VOICE_NOT_SUNG_IN_CHOIR' | 'VOICE_NOT_SUNG_IN_SECTION' | 'ALREADY_IN_SECTION' | 'NOT_A_SINGER' | 'SAME_VOICE' | 'POSITION_NOT_FOUND' | 'POSITION_NAME_TAKEN' | 'POSITION_NOT_ALLOWED' | 'POSITION_LIMITED_TO_OTHER_GROUPS' | 'POSITION_LIMIT_TYPE_NOT_ALLOWED' | 'POSITION_HELD_OUTSIDE_LIMIT' | 'POSITION_TAKEN' | 'POSITION_IN_USE' | 'ALREADY_HOLDING_POSITION' | 'ALREADY_HOLDING_ELECTED_POST' | 'NOT_HOLDING_POSITION' | 'PERIOD_CONFLICT';
+};
+
+export type PositionInput = {
+    name: string;
+    groupTypes: Array<'Choir' | 'Section' | 'Board' | 'GigGroup' | 'Gigmästeri' | 'Sexmästeri' | 'Roddgrupp' | 'Festgrupp' | 'Rephelg' | 'Konsertmästeri' | 'Rekryteringskommitté' | 'Turnékommitté' | 'Valberedning' | 'Webmästeri' | 'Föräldramötet' | 'Arkivarie' | 'Utantillkommitté' | 'Övrig'>;
+    groupIds: Array<string>;
+};
+
 export type MemberIdSession = {
     member: MemberIdMember;
     /**
@@ -2752,6 +2869,499 @@ export type ChangeUserRolesResponses = {
 };
 
 export type ChangeUserRolesResponse = ChangeUserRolesResponses[keyof ChangeUserRolesResponses];
+
+export type GetChoirPlacementData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/choirs';
+};
+
+export type GetChoirPlacementErrors = {
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The current User may not perform this operation.
+     */
+    403: ApiError;
+};
+
+export type GetChoirPlacementError = GetChoirPlacementErrors[keyof GetChoirPlacementErrors];
+
+export type GetChoirPlacementResponses = {
+    /**
+     * Choirs.
+     */
+    200: ChoirPlacement;
+};
+
+export type GetChoirPlacementResponse = GetChoirPlacementResponses[keyof GetChoirPlacementResponses];
+
+export type GetGroupsOverviewData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/groups';
+};
+
+export type GetGroupsOverviewErrors = {
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The current User may not perform this operation.
+     */
+    403: ApiError;
+};
+
+export type GetGroupsOverviewError = GetGroupsOverviewErrors[keyof GetGroupsOverviewErrors];
+
+export type GetGroupsOverviewResponses = {
+    /**
+     * Groups.
+     */
+    200: GroupsOverview;
+};
+
+export type GetGroupsOverviewResponse = GetGroupsOverviewResponses[keyof GetGroupsOverviewResponses];
+
+export type CreateGroupData = {
+    body: {
+        name: string;
+        type: 'Board' | 'GigGroup' | 'Gigmästeri' | 'Sexmästeri' | 'Roddgrupp' | 'Festgrupp' | 'Rephelg' | 'Konsertmästeri' | 'Rekryteringskommitté' | 'Turnékommitté' | 'Valberedning' | 'Webmästeri' | 'Föräldramötet' | 'Arkivarie' | 'Utantillkommitté' | 'Övrig';
+        choirId?: string;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/v1/groups';
+};
+
+export type CreateGroupErrors = {
+    /**
+     * The command broke an organisation rule, or the request failed validation.
+     */
+    400: OrgStructureError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The current User may not perform this operation.
+     */
+    403: ApiError;
+};
+
+export type CreateGroupError = CreateGroupErrors[keyof CreateGroupErrors];
+
+export type CreateGroupResponses = {
+    /**
+     * Done.
+     */
+    201: OrgStructureCommandResult;
+};
+
+export type CreateGroupResponse = CreateGroupResponses[keyof CreateGroupResponses];
+
+export type ListPositionCatalogueData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/positions';
+};
+
+export type ListPositionCatalogueErrors = {
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The current User may not perform this operation.
+     */
+    403: ApiError;
+};
+
+export type ListPositionCatalogueError = ListPositionCatalogueErrors[keyof ListPositionCatalogueErrors];
+
+export type ListPositionCatalogueResponses = {
+    /**
+     * The catalogue.
+     */
+    200: PositionCatalogue;
+};
+
+export type ListPositionCatalogueResponse = ListPositionCatalogueResponses[keyof ListPositionCatalogueResponses];
+
+export type CreatePositionData = {
+    body: PositionInput;
+    path?: never;
+    query?: never;
+    url: '/api/v1/positions';
+};
+
+export type CreatePositionErrors = {
+    /**
+     * The command broke an organisation rule, or the request failed validation.
+     */
+    400: OrgStructureError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The current User may not perform this operation.
+     */
+    403: ApiError;
+};
+
+export type CreatePositionError = CreatePositionErrors[keyof CreatePositionErrors];
+
+export type CreatePositionResponses = {
+    /**
+     * Done.
+     */
+    201: OrgStructureCommandResult;
+};
+
+export type CreatePositionResponse = CreatePositionResponses[keyof CreatePositionResponses];
+
+export type GetGroupDetailData = {
+    body?: never;
+    path: {
+        groupId: string;
+    };
+    query?: never;
+    url: '/api/v1/groups/{groupId}';
+};
+
+export type GetGroupDetailErrors = {
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The current User may not perform this operation.
+     */
+    403: ApiError;
+    /**
+     * The resource does not exist or is not visible to the current User.
+     */
+    404: ApiError;
+};
+
+export type GetGroupDetailError = GetGroupDetailErrors[keyof GetGroupDetailErrors];
+
+export type GetGroupDetailResponses = {
+    /**
+     * The group.
+     */
+    200: GroupDetail;
+};
+
+export type GetGroupDetailResponse = GetGroupDetailResponses[keyof GetGroupDetailResponses];
+
+export type RenameGroupData = {
+    body: {
+        name: string;
+    };
+    path: {
+        groupId: string;
+    };
+    query?: never;
+    url: '/api/v1/groups/{groupId}/name';
+};
+
+export type RenameGroupErrors = {
+    /**
+     * The command broke an organisation rule, or the request failed validation.
+     */
+    400: OrgStructureError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The current User may not perform this operation.
+     */
+    403: ApiError;
+};
+
+export type RenameGroupError = RenameGroupErrors[keyof RenameGroupErrors];
+
+export type RenameGroupResponses = {
+    /**
+     * Done.
+     */
+    200: OrgStructureCommandResult;
+};
+
+export type RenameGroupResponse = RenameGroupResponses[keyof RenameGroupResponses];
+
+export type ArchiveGroupData = {
+    body?: never;
+    path: {
+        groupId: string;
+    };
+    query?: never;
+    url: '/api/v1/groups/{groupId}/archive';
+};
+
+export type ArchiveGroupErrors = {
+    /**
+     * The command broke an organisation rule, or the request failed validation.
+     */
+    400: OrgStructureError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The current User may not perform this operation.
+     */
+    403: ApiError;
+};
+
+export type ArchiveGroupError = ArchiveGroupErrors[keyof ArchiveGroupErrors];
+
+export type ArchiveGroupResponses = {
+    /**
+     * Done.
+     */
+    200: OrgStructureCommandResult;
+};
+
+export type ArchiveGroupResponse = ArchiveGroupResponses[keyof ArchiveGroupResponses];
+
+export type AddGroupMemberData = {
+    body: {
+        userId: string;
+        startDate: string;
+        voice?: 'S1' | 'S2' | 'A1' | 'A2' | 'T1' | 'T2' | 'B1' | 'B2';
+    };
+    path: {
+        groupId: string;
+    };
+    query?: never;
+    url: '/api/v1/groups/{groupId}/members';
+};
+
+export type AddGroupMemberErrors = {
+    /**
+     * The command broke an organisation rule, or the request failed validation.
+     */
+    400: OrgStructureError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The current User may not perform this operation.
+     */
+    403: ApiError;
+};
+
+export type AddGroupMemberError = AddGroupMemberErrors[keyof AddGroupMemberErrors];
+
+export type AddGroupMemberResponses = {
+    /**
+     * Done.
+     */
+    200: OrgStructureCommandResult;
+};
+
+export type AddGroupMemberResponse = AddGroupMemberResponses[keyof AddGroupMemberResponses];
+
+export type EndGroupMembershipData = {
+    body: {
+        endDate: string;
+    };
+    path: {
+        groupId: string;
+        userId: string;
+    };
+    query?: never;
+    url: '/api/v1/groups/{groupId}/members/{userId}/end';
+};
+
+export type EndGroupMembershipErrors = {
+    /**
+     * The command broke an organisation rule, or the request failed validation.
+     */
+    400: OrgStructureError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The current User may not perform this operation.
+     */
+    403: ApiError;
+};
+
+export type EndGroupMembershipError = EndGroupMembershipErrors[keyof EndGroupMembershipErrors];
+
+export type EndGroupMembershipResponses = {
+    /**
+     * Done.
+     */
+    200: OrgStructureCommandResult;
+};
+
+export type EndGroupMembershipResponse = EndGroupMembershipResponses[keyof EndGroupMembershipResponses];
+
+export type ChangeSingerVoiceData = {
+    body: {
+        voice: 'S1' | 'S2' | 'A1' | 'A2' | 'T1' | 'T2' | 'B1' | 'B2';
+        date: string;
+    };
+    path: {
+        groupId: string;
+        userId: string;
+    };
+    query?: never;
+    url: '/api/v1/groups/{groupId}/members/{userId}/voice';
+};
+
+export type ChangeSingerVoiceErrors = {
+    /**
+     * The command broke an organisation rule, or the request failed validation.
+     */
+    400: OrgStructureError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The current User may not perform this operation.
+     */
+    403: ApiError;
+};
+
+export type ChangeSingerVoiceError = ChangeSingerVoiceErrors[keyof ChangeSingerVoiceErrors];
+
+export type ChangeSingerVoiceResponses = {
+    /**
+     * Done.
+     */
+    200: OrgStructureCommandResult;
+};
+
+export type ChangeSingerVoiceResponse = ChangeSingerVoiceResponses[keyof ChangeSingerVoiceResponses];
+
+export type AssignPositionHolderData = {
+    body: {
+        userId: string;
+        startDate: string;
+    };
+    path: {
+        groupId: string;
+        positionId: string;
+    };
+    query?: never;
+    url: '/api/v1/groups/{groupId}/positions/{positionId}/holder';
+};
+
+export type AssignPositionHolderErrors = {
+    /**
+     * The command broke an organisation rule, or the request failed validation.
+     */
+    400: OrgStructureError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The current User may not perform this operation.
+     */
+    403: ApiError;
+};
+
+export type AssignPositionHolderError = AssignPositionHolderErrors[keyof AssignPositionHolderErrors];
+
+export type AssignPositionHolderResponses = {
+    /**
+     * Done.
+     */
+    200: OrgStructureCommandResult;
+};
+
+export type AssignPositionHolderResponse = AssignPositionHolderResponses[keyof AssignPositionHolderResponses];
+
+export type EndPositionHoldingData = {
+    body: {
+        userId: string;
+        endDate: string;
+    };
+    path: {
+        groupId: string;
+        positionId: string;
+    };
+    query?: never;
+    url: '/api/v1/groups/{groupId}/positions/{positionId}/end';
+};
+
+export type EndPositionHoldingErrors = {
+    /**
+     * The command broke an organisation rule, or the request failed validation.
+     */
+    400: OrgStructureError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The current User may not perform this operation.
+     */
+    403: ApiError;
+};
+
+export type EndPositionHoldingError = EndPositionHoldingErrors[keyof EndPositionHoldingErrors];
+
+export type EndPositionHoldingResponses = {
+    /**
+     * Done.
+     */
+    200: OrgStructureCommandResult;
+};
+
+export type EndPositionHoldingResponse = EndPositionHoldingResponses[keyof EndPositionHoldingResponses];
+
+export type UpdatePositionData = {
+    body: PositionInput;
+    path: {
+        positionId: string;
+    };
+    query?: never;
+    url: '/api/v1/positions/{positionId}';
+};
+
+export type UpdatePositionErrors = {
+    /**
+     * The command broke an organisation rule, or the request failed validation.
+     */
+    400: OrgStructureError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The current User may not perform this operation.
+     */
+    403: ApiError;
+};
+
+export type UpdatePositionError = UpdatePositionErrors[keyof UpdatePositionErrors];
+
+export type UpdatePositionResponses = {
+    /**
+     * Done.
+     */
+    200: OrgStructureCommandResult;
+};
+
+export type UpdatePositionResponse = UpdatePositionResponses[keyof UpdatePositionResponses];
 
 export type GetMemberIdSessionData = {
     body?: never;

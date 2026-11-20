@@ -105,15 +105,19 @@ The entrypoint exports their screens; everything else lives in `ui/`:
 ```text
 ui/
   list/        the Event list, its filters in the address, and the audience summary
-  editor/      the Event form, its Server Actions, and an Event's lifecycle
+  editor/      the Event form and an Event's lifecycle
   locations/   the Location catalogue
-  run-command.ts, EventCommandDialog.tsx   the shared shape of every admin command
+  use-event-command.ts, EventCommandDialog.tsx   the shared shape of every admin command
+  screen-reads.ts   the screens' reads through the API
+http/          the Hono routes (`/api/v1/events`, `/locations`)
   errors.ts    the field each violation is shown next to
 ```
 
-Every Server Action goes through `runEventsCommand`: establish active identity (or
-`event.administer` for Locations), validate the form, check the exact Event policy with trusted
-facts and locks in the command's transaction, run one module command, and return its violation as `{ status: "error", error }`. The client translates
+The screens read and write through the HTTP API and its generated client. Every Event route
+establishes the request's fresh actor (or `event.administer` for Locations), validates the form,
+checks the exact Event policy with trusted facts and locks in the command's transaction, runs one
+module command, and answers its violation as a stable code (`title-required` as
+`TITLE_REQUIRED`), which the client maps back to `{ status: "error", error }`. The client translates
 the kind from `Events.errors` and shows it beside the field `ERROR_FIELD` names, so adding an
 `EventViolation` means adding its message to every catalogue and its field to `ERROR_FIELD`; the
 typecheck fails until you do. Reads for a screen live beside it (`query.ts`) and are shaped for

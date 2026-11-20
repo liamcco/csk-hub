@@ -37,7 +37,7 @@ behind `scheduleActivityDispatch()` (see "Delivery boundary").
 | 6 | Events and Locations | `listUpcomingEvents`, `getEventPage`, `listManagedEvents`, `getEventFormOptions`, `getEventEditor`, `createEvent`, `updateEvent`, `changeEventStatus`, `deleteEvent`, `listLocations`, `createLocation`, `updateLocation`, `archiveLocation` | `events.test.ts` | `/events`, `/events/[id]`, `/events/manage` (and `/admin/events`), new and edit forms, lifecycle dialogs, Locations | `events.e2e.ts` | done |
 | 7 | Account activation and settings: locale, push subscriptions | `activateAccount`, `updateLocalePreference`, `getPushSubscriptionStatus`, `registerPushSubscription`, `removePushSubscription`, `sendTestPushNotification` | `account.test.ts` | `/activate`, `/me/settings` gate, language, notifications, push revocation on logout | `account.e2e.ts` | done |
 | 8 | User administration | `listUsers`, `inviteUser`, `findExistingUserEmails`, `importUsers`, `activateUser`, `deactivateUser`, `eraseUser`, `resendInvitation`, `changeUserRoles` | `users.test.ts` | `/admin/users`: list, add member, CSV import, row actions | `users.e2e.ts` | done |
-| 9 | Groups, Memberships, Positions | | | | | todo |
+| 9 | Groups, Memberships, Positions | `getChoirPlacement`, `getGroupsOverview`, `listPositionCatalogue`, `getGroupDetail`, `createGroup`, `renameGroup`, `archiveGroup`, `addGroupMember`, `endGroupMembership`, `changeSingerVoice`, `assignPositionHolder`, `endPositionHolding`, `createPosition`, `updatePosition` | `org-structure.test.ts` | `/admin/org-structure`, `/admin/org-structure/groups`, `/admin/org-structure/[groupId]` and their dialogs | `org-structure.e2e.ts` | done |
 | 10 | Admin broadcasts | | | | | todo |
 
 ## Baseline inventory

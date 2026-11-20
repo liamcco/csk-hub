@@ -1,7 +1,6 @@
 import "server-only"
 
-import { requirePermission } from "@/core/authz"
-
+import type { Database } from "@/core/db"
 import { type GroupSummary, listGroupSummaries } from "../group-summaries"
 
 export type GroupsOverview = {
@@ -12,9 +11,8 @@ export type GroupsOverview = {
 }
 
 /** Every group but the Choirs and their Sections, archived ones included, for the groups page. */
-export async function getGroupsOverview(): Promise<GroupsOverview> {
-  await requirePermission({ action: "org.manage" })
-  const summaries = await listGroupSummaries()
+export async function getGroupsOverview(database: Database): Promise<GroupsOverview> {
+  const summaries = await listGroupSummaries(database)
   return {
     cskWide: summaries
       .filter(({ choirId, type }) => choirId === null && type !== "Choir")

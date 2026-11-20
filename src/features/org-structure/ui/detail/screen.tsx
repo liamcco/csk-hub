@@ -1,13 +1,12 @@
-import { notFound } from "next/navigation"
 import { getTranslations } from "@/core/i18n/server"
 import { timeZone } from "@/core/i18n/time-zone"
 import { PageBreadcrumb } from "@/core/navigation/PageBreadcrumb"
 import { Badge } from "@/shared/ui/base/badge"
 import { Skeleton } from "@/shared/ui/base/skeleton"
+import { readGroupDetail } from "../screen-reads"
 import { GroupHeaderActions } from "./group-header-actions"
 import { MembersSection } from "./members-section"
 import { PositionsSection } from "./positions-section"
-import { getGroupDetail } from "./query"
 
 /** Today in CSK's time zone, as the default date for new Memberships and holdings. */
 function today() {
@@ -16,11 +15,10 @@ function today() {
 
 export async function GroupDetailScreen({ groupId }: { groupId: string }) {
   const [detail, t, types] = await Promise.all([
-    getGroupDetail(groupId),
+    readGroupDetail(groupId),
     getTranslations("Groups"),
     getTranslations("Groups.types")
   ])
-  if (!detail) notFound()
   const { group } = detail
   const isChoirOrSection = group.type === "Choir" || group.type === "Section"
   const date = today()

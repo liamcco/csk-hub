@@ -8,9 +8,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/base/card"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/shared/ui/base/collapsible"
 import { FieldDescription } from "@/shared/ui/base/field"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/base/table"
+import { addMemberAction, changeVoiceAction, endMembershipAction } from "../commands"
 import { GroupCommandDialog } from "../group-command-dialog"
 import { SortableHead, useSortedRows } from "../sortable-table"
-import { addMemberAction, changeVoiceAction, endMembershipAction } from "./actions"
 import type { GroupDetail } from "./query"
 
 type Member = GroupDetail["members"][number]

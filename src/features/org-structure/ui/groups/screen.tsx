@@ -4,16 +4,15 @@ import { PageBreadcrumb } from "@/core/navigation/PageBreadcrumb"
 import { ROUTES } from "@/core/navigation/site"
 import { Skeleton } from "@/shared/ui/base/skeleton"
 import { PositionCatalogue } from "../catalogue/position-catalogue"
-import { listPositionCatalogue } from "../catalogue/query"
+import { readGroupsOverview, readPositionCatalogue } from "../screen-reads"
 import { CreateGroupDialog } from "./create-group-dialog"
 import { GroupsOverview } from "./overview"
-import { getGroupsOverview } from "./query"
 
 /** The groups beside the Choirs' Sections, and the Positions they can have. */
 export async function GroupsScreen() {
   const [overview, catalogue, t] = await Promise.all([
-    getGroupsOverview(),
-    listPositionCatalogue(),
+    readGroupsOverview(),
+    readPositionCatalogue(),
     getTranslations("Groups")
   ])
   const choirs = overview.choirs

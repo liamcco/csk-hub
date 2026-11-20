@@ -1,6 +1,6 @@
 import type { groupType } from "@/core/db/schema/org-structure"
 
-export type { OrgStructureResult, OrgStructureViolation } from "./result"
+export { ORG_STRUCTURE_VIOLATIONS, type OrgStructureResult, type OrgStructureViolation } from "./result"
 
 export type GroupType = (typeof groupType.enumValues)[number]
 

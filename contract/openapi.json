@@ -2644,6 +2644,742 @@
           "code"
         ]
       },
+      "ChoirPlacement": {
+        "type": "object",
+        "properties": {
+          "choirs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "choir": {
+                  "$ref": "#/components/schemas/GroupSummary"
+                },
+                "sections": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GroupSummary"
+                  }
+                }
+              },
+              "required": [
+                "choir",
+                "sections"
+              ]
+            }
+          }
+        },
+        "required": [
+          "choirs"
+        ]
+      },
+      "GroupSummary": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "Choir",
+              "Section",
+              "Board",
+              "GigGroup",
+              "Gigmästeri",
+              "Sexmästeri",
+              "Roddgrupp",
+              "Festgrupp",
+              "Rephelg",
+              "Konsertmästeri",
+              "Rekryteringskommitté",
+              "Turnékommitté",
+              "Valberedning",
+              "Webmästeri",
+              "Föräldramötet",
+              "Arkivarie",
+              "Utantillkommitté",
+              "Övrig"
+            ]
+          },
+          "choirId": {
+            "type": "string",
+            "nullable": true
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "memberCount": {
+            "type": "integer"
+          },
+          "voices": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "S",
+                "A",
+                "T",
+                "B",
+                "S1",
+                "S2",
+                "A1",
+                "A2",
+                "T1",
+                "T2",
+                "B1",
+                "B2"
+              ]
+            }
+          },
+          "holders": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "position": {
+                  "type": "string"
+                },
+                "holder": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "position",
+                "holder"
+              ]
+            }
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "type",
+          "choirId",
+          "active",
+          "memberCount",
+          "voices",
+          "holders"
+        ]
+      },
+      "GroupsOverview": {
+        "type": "object",
+        "properties": {
+          "cskWide": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GroupSummary"
+            }
+          },
+          "choirs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "choir": {
+                  "$ref": "#/components/schemas/GroupSummary"
+                },
+                "groups": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GroupSummary"
+                  }
+                }
+              },
+              "required": [
+                "choir",
+                "groups"
+              ]
+            }
+          }
+        },
+        "required": [
+          "cskWide",
+          "choirs"
+        ]
+      },
+      "PositionCatalogue": {
+        "type": "object",
+        "properties": {
+          "positions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "groupTypes": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "Choir",
+                      "Section",
+                      "Board",
+                      "GigGroup",
+                      "Gigmästeri",
+                      "Sexmästeri",
+                      "Roddgrupp",
+                      "Festgrupp",
+                      "Rephelg",
+                      "Konsertmästeri",
+                      "Rekryteringskommitté",
+                      "Turnékommitté",
+                      "Valberedning",
+                      "Webmästeri",
+                      "Föräldramötet",
+                      "Arkivarie",
+                      "Utantillkommitté",
+                      "Övrig"
+                    ]
+                  }
+                },
+                "groups": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "type": {
+                        "type": "string",
+                        "enum": [
+                          "Choir",
+                          "Section",
+                          "Board",
+                          "GigGroup",
+                          "Gigmästeri",
+                          "Sexmästeri",
+                          "Roddgrupp",
+                          "Festgrupp",
+                          "Rephelg",
+                          "Konsertmästeri",
+                          "Rekryteringskommitté",
+                          "Turnékommitté",
+                          "Valberedning",
+                          "Webmästeri",
+                          "Föräldramötet",
+                          "Arkivarie",
+                          "Utantillkommitté",
+                          "Övrig"
+                        ]
+                      },
+                      "choirName": {
+                        "type": "string",
+                        "nullable": true
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "name",
+                      "type",
+                      "choirName"
+                    ]
+                  }
+                }
+              },
+              "required": [
+                "id",
+                "name",
+                "groupTypes",
+                "groups"
+              ]
+            }
+          },
+          "groups": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "Choir",
+                    "Section",
+                    "Board",
+                    "GigGroup",
+                    "Gigmästeri",
+                    "Sexmästeri",
+                    "Roddgrupp",
+                    "Festgrupp",
+                    "Rephelg",
+                    "Konsertmästeri",
+                    "Rekryteringskommitté",
+                    "Turnékommitté",
+                    "Valberedning",
+                    "Webmästeri",
+                    "Föräldramötet",
+                    "Arkivarie",
+                    "Utantillkommitté",
+                    "Övrig"
+                  ]
+                },
+                "choirName": {
+                  "type": "string",
+                  "nullable": true
+                }
+              },
+              "required": [
+                "id",
+                "name",
+                "type",
+                "choirName"
+              ]
+            }
+          }
+        },
+        "required": [
+          "positions",
+          "groups"
+        ]
+      },
+      "GroupDetail": {
+        "type": "object",
+        "properties": {
+          "group": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "Choir",
+                  "Section",
+                  "Board",
+                  "GigGroup",
+                  "Gigmästeri",
+                  "Sexmästeri",
+                  "Roddgrupp",
+                  "Festgrupp",
+                  "Rephelg",
+                  "Konsertmästeri",
+                  "Rekryteringskommitté",
+                  "Turnékommitté",
+                  "Valberedning",
+                  "Webmästeri",
+                  "Föräldramötet",
+                  "Arkivarie",
+                  "Utantillkommitté",
+                  "Övrig"
+                ]
+              },
+              "active": {
+                "type": "boolean"
+              },
+              "choir": {
+                "type": "object",
+                "nullable": true,
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "name"
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "name",
+              "type",
+              "active",
+              "choir"
+            ]
+          },
+          "sectionVoice": {
+            "type": "string",
+            "nullable": true,
+            "enum": [
+              "S",
+              "A",
+              "T",
+              "B",
+              "S1",
+              "S2",
+              "A1",
+              "A2",
+              "T1",
+              "T2",
+              "B1",
+              "B2",
+              null
+            ]
+          },
+          "sectionVoices": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "S",
+                "A",
+                "T",
+                "B",
+                "S1",
+                "S2",
+                "A1",
+                "A2",
+                "T1",
+                "T2",
+                "B1",
+                "B2"
+              ]
+            }
+          },
+          "choirVoices": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "S",
+                "A",
+                "T",
+                "B",
+                "S1",
+                "S2",
+                "A1",
+                "A2",
+                "T1",
+                "T2",
+                "B1",
+                "B2"
+              ]
+            }
+          },
+          "members": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "userId": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "email": {
+                  "type": "string"
+                },
+                "startDate": {
+                  "type": "string",
+                  "format": "date"
+                },
+                "voice": {
+                  "type": "string",
+                  "nullable": true,
+                  "enum": [
+                    "S",
+                    "A",
+                    "T",
+                    "B",
+                    "S1",
+                    "S2",
+                    "A1",
+                    "A2",
+                    "T1",
+                    "T2",
+                    "B1",
+                    "B2",
+                    null
+                  ]
+                },
+                "positions": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "required": [
+                "userId",
+                "name",
+                "email",
+                "startDate",
+                "voice",
+                "positions"
+              ]
+            }
+          },
+          "pastMembers": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "userId": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "startDate": {
+                  "type": "string",
+                  "format": "date"
+                },
+                "endDate": {
+                  "type": "string",
+                  "format": "date"
+                },
+                "voice": {
+                  "type": "string",
+                  "nullable": true,
+                  "enum": [
+                    "S",
+                    "A",
+                    "T",
+                    "B",
+                    "S1",
+                    "S2",
+                    "A1",
+                    "A2",
+                    "T1",
+                    "T2",
+                    "B1",
+                    "B2",
+                    null
+                  ]
+                }
+              },
+              "required": [
+                "userId",
+                "name",
+                "startDate",
+                "endDate",
+                "voice"
+              ]
+            }
+          },
+          "positions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "holder": {
+                  "type": "object",
+                  "nullable": true,
+                  "properties": {
+                    "userId": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "startDate": {
+                      "type": "string",
+                      "format": "date"
+                    }
+                  },
+                  "required": [
+                    "userId",
+                    "name",
+                    "startDate"
+                  ]
+                }
+              },
+              "required": [
+                "id",
+                "name",
+                "holder"
+              ]
+            }
+          },
+          "pastHolders": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "position": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "startDate": {
+                  "type": "string",
+                  "format": "date"
+                },
+                "endDate": {
+                  "type": "string",
+                  "format": "date"
+                }
+              },
+              "required": [
+                "position",
+                "name",
+                "startDate",
+                "endDate"
+              ]
+            }
+          },
+          "candidates": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "email": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "name",
+                "email"
+              ]
+            }
+          }
+        },
+        "required": [
+          "group",
+          "sectionVoice",
+          "sectionVoices",
+          "choirVoices",
+          "members",
+          "pastMembers",
+          "positions",
+          "pastHolders",
+          "candidates"
+        ]
+      },
+      "OrgStructureCommandResult": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "OrgStructureError": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "INVALID_DATE",
+              "GROUP_NOT_FOUND",
+              "GROUP_ARCHIVED",
+              "GROUP_NAME_TAKEN",
+              "CHOIR_NOT_FOUND",
+              "CHOIR_CREATED_WITH_SECTIONS",
+              "SECTION_COUNT",
+              "VOICE_IN_SEVERAL_SECTIONS",
+              "SECTION_ARCHIVED_WITH_CHOIR",
+              "ALREADY_MEMBER",
+              "NOT_A_MEMBER",
+              "NOT_A_CHOIR_MEMBER",
+              "SECTION_REQUIRES_PLACEMENT",
+              "VOICE_NOT_SUNG_IN_CHOIR",
+              "VOICE_NOT_SUNG_IN_SECTION",
+              "ALREADY_IN_SECTION",
+              "NOT_A_SINGER",
+              "SAME_VOICE",
+              "POSITION_NOT_FOUND",
+              "POSITION_NAME_TAKEN",
+              "POSITION_NOT_ALLOWED",
+              "POSITION_LIMITED_TO_OTHER_GROUPS",
+              "POSITION_LIMIT_TYPE_NOT_ALLOWED",
+              "POSITION_HELD_OUTSIDE_LIMIT",
+              "POSITION_TAKEN",
+              "POSITION_IN_USE",
+              "ALREADY_HOLDING_POSITION",
+              "ALREADY_HOLDING_ELECTED_POST",
+              "NOT_HOLDING_POSITION",
+              "PERIOD_CONFLICT"
+            ],
+            "description": "The organisation rule a command broke. Tolerate unknown codes."
+          }
+        },
+        "required": [
+          "code"
+        ]
+      },
+      "PositionInput": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "groupTypes": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "Choir",
+                "Section",
+                "Board",
+                "GigGroup",
+                "Gigmästeri",
+                "Sexmästeri",
+                "Roddgrupp",
+                "Festgrupp",
+                "Rephelg",
+                "Konsertmästeri",
+                "Rekryteringskommitté",
+                "Turnékommitté",
+                "Valberedning",
+                "Webmästeri",
+                "Föräldramötet",
+                "Arkivarie",
+                "Utantillkommitté",
+                "Övrig"
+              ]
+            }
+          },
+          "groupIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        },
+        "required": [
+          "name",
+          "groupTypes",
+          "groupIds"
+        ]
+      },
       "MemberIdSession": {
         "type": "object",
         "properties": {
@@ -6492,6 +7228,1043 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/UserCommandError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/choirs": {
+      "get": {
+        "operationId": "getChoirPlacement",
+        "summary": "Every Choir with its Sections in score order, archived ones included. Admins only.",
+        "tags": [
+          "org-structure"
+        ],
+        "responses": {
+          "200": {
+            "description": "Choirs.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChoirPlacement"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No active signed-in User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The current User may not perform this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/groups": {
+      "get": {
+        "operationId": "getGroupsOverview",
+        "summary": "Every group but the Choirs and their Sections, archived ones included. Admins only.",
+        "tags": [
+          "org-structure"
+        ],
+        "responses": {
+          "200": {
+            "description": "Groups.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GroupsOverview"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No active signed-in User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The current User may not perform this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createGroup",
+        "summary": "Creates a CSK-wide group or one of a Choir's groups. Choirs and Sections are not created here.",
+        "tags": [
+          "org-structure"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "Board",
+                      "GigGroup",
+                      "Gigmästeri",
+                      "Sexmästeri",
+                      "Roddgrupp",
+                      "Festgrupp",
+                      "Rephelg",
+                      "Konsertmästeri",
+                      "Rekryteringskommitté",
+                      "Turnékommitté",
+                      "Valberedning",
+                      "Webmästeri",
+                      "Föräldramötet",
+                      "Arkivarie",
+                      "Utantillkommitté",
+                      "Övrig"
+                    ]
+                  },
+                  "choirId": {
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                },
+                "required": [
+                  "name",
+                  "type"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Done.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrgStructureCommandResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The command broke an organisation rule, or the request failed validation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrgStructureError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No active signed-in User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The current User may not perform this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/positions": {
+      "get": {
+        "operationId": "listPositionCatalogue",
+        "summary": "Every Position with its GroupTypes and limit to groups, and the groups a limit can name. Admins only.",
+        "tags": [
+          "org-structure"
+        ],
+        "responses": {
+          "200": {
+            "description": "The catalogue.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PositionCatalogue"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No active signed-in User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The current User may not perform this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createPosition",
+        "summary": "Adds a Position to the catalogue.",
+        "tags": [
+          "org-structure"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PositionInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Done.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrgStructureCommandResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The command broke an organisation rule, or the request failed validation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrgStructureError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No active signed-in User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The current User may not perform this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/groups/{groupId}": {
+      "get": {
+        "operationId": "getGroupDetail",
+        "summary": "One group with its members, Positions and history, and who can join it. Admins only.",
+        "tags": [
+          "org-structure"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "groupId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The group.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GroupDetail"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No active signed-in User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The current User may not perform this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The resource does not exist or is not visible to the current User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/groups/{groupId}/name": {
+      "post": {
+        "operationId": "renameGroup",
+        "summary": "Renames a group.",
+        "tags": [
+          "org-structure"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "groupId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  }
+                },
+                "required": [
+                  "name"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Done.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrgStructureCommandResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The command broke an organisation rule, or the request failed validation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrgStructureError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No active signed-in User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The current User may not perform this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/groups/{groupId}/archive": {
+      "post": {
+        "operationId": "archiveGroup",
+        "summary": "Archives a group, ending its Memberships and Position holdings.",
+        "tags": [
+          "org-structure"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "groupId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Done.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrgStructureCommandResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The command broke an organisation rule, or the request failed validation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrgStructureError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No active signed-in User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The current User may not perform this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/groups/{groupId}/members": {
+      "post": {
+        "operationId": "addGroupMember",
+        "summary": "Adds a member; in a Section, `voice` places them as a singer, which makes them a member of the Choir.",
+        "tags": [
+          "org-structure"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "groupId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "userId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "startDate": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "voice": {
+                    "type": "string",
+                    "enum": [
+                      "S1",
+                      "S2",
+                      "A1",
+                      "A2",
+                      "T1",
+                      "T2",
+                      "B1",
+                      "B2"
+                    ]
+                  }
+                },
+                "required": [
+                  "userId",
+                  "startDate"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Done.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrgStructureCommandResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The command broke an organisation rule, or the request failed validation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrgStructureError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No active signed-in User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The current User may not perform this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/groups/{groupId}/members/{userId}/end": {
+      "post": {
+        "operationId": "endGroupMembership",
+        "summary": "Ends a Membership and the member's Position holdings in the group.",
+        "tags": [
+          "org-structure"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "groupId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "userId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "endDate": {
+                    "type": "string",
+                    "format": "date"
+                  }
+                },
+                "required": [
+                  "endDate"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Done.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrgStructureCommandResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The command broke an organisation rule, or the request failed validation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrgStructureError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No active signed-in User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The current User may not perform this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/groups/{groupId}/members/{userId}/voice": {
+      "post": {
+        "operationId": "changeSingerVoice",
+        "summary": "Changes a singer's Voice in the group's Choir, which may move them to another Section.",
+        "tags": [
+          "org-structure"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "groupId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "userId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "voice": {
+                    "type": "string",
+                    "enum": [
+                      "S1",
+                      "S2",
+                      "A1",
+                      "A2",
+                      "T1",
+                      "T2",
+                      "B1",
+                      "B2"
+                    ]
+                  },
+                  "date": {
+                    "type": "string",
+                    "format": "date"
+                  }
+                },
+                "required": [
+                  "voice",
+                  "date"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Done.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrgStructureCommandResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The command broke an organisation rule, or the request failed validation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrgStructureError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No active signed-in User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The current User may not perform this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/groups/{groupId}/positions/{positionId}/holder": {
+      "post": {
+        "operationId": "assignPositionHolder",
+        "summary": "Gives a Position to a current member, ending any current holder's holding the same day.",
+        "tags": [
+          "org-structure"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "groupId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "positionId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "userId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "startDate": {
+                    "type": "string",
+                    "format": "date"
+                  }
+                },
+                "required": [
+                  "userId",
+                  "startDate"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Done.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrgStructureCommandResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The command broke an organisation rule, or the request failed validation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrgStructureError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No active signed-in User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The current User may not perform this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/groups/{groupId}/positions/{positionId}/end": {
+      "post": {
+        "operationId": "endPositionHolding",
+        "summary": "Ends a member's holding of a Position.",
+        "tags": [
+          "org-structure"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "groupId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "positionId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "userId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "endDate": {
+                    "type": "string",
+                    "format": "date"
+                  }
+                },
+                "required": [
+                  "userId",
+                  "endDate"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Done.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrgStructureCommandResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The command broke an organisation rule, or the request failed validation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrgStructureError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No active signed-in User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The current User may not perform this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/positions/{positionId}": {
+      "put": {
+        "operationId": "updatePosition",
+        "summary": "Renames a Position and replaces its GroupTypes and limit to groups, as one change.",
+        "tags": [
+          "org-structure"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "positionId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PositionInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Done.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrgStructureCommandResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The command broke an organisation rule, or the request failed validation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrgStructureError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No active signed-in User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The current User may not perform this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
                 }
               }
             }

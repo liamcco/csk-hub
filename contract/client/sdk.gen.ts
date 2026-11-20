@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { ActivateAccountData, ActivateAccountErrors, ActivateAccountResponses, ActivateUserData, ActivateUserErrors, ActivateUserResponses, AddGroupMembersData, AddGroupMembersErrors, AddGroupMembersResponses, ArchiveLocationData, ArchiveLocationErrors, ArchiveLocationResponses, ChangeEventStatusData, ChangeEventStatusErrors, ChangeEventStatusResponses, ChangeUserRolesData, ChangeUserRolesErrors, ChangeUserRolesResponses, CreateEventData, CreateEventErrors, CreateEventResponses, CreateLocationData, CreateLocationErrors, CreateLocationResponses, CreatePostData, CreatePostErrors, CreatePostResponses, DeactivateUserData, DeactivateUserErrors, DeactivateUserResponses, DeleteEventData, DeleteEventErrors, DeleteEventResponses, DiscardDraftData, DiscardDraftErrors, DiscardDraftResponses, EditPublishedPostData, EditPublishedPostErrors, EditPublishedPostResponses, EraseUserData, EraseUserErrors, EraseUserResponses, FindExistingUserEmailsData, FindExistingUserEmailsErrors, FindExistingUserEmailsResponses, GetConversationData, GetConversationErrors, GetConversationResponses, GetConversationUnreadData, GetConversationUnreadErrors, GetConversationUnreadResponses, GetCurrentActorData, GetCurrentActorErrors, GetCurrentActorResponses, GetCurrentCapabilitiesData, GetCurrentCapabilitiesErrors, GetCurrentCapabilitiesResponses, GetEditablePostData, GetEditablePostErrors, GetEditablePostResponses, GetEventEditorData, GetEventEditorErrors, GetEventEditorResponses, GetEventFormOptionsData, GetEventFormOptionsErrors, GetEventFormOptionsResponses, GetEventPageData, GetEventPageErrors, GetEventPageResponses, GetMemberIdSessionData, GetMemberIdSessionErrors, GetMemberIdSessionResponses, GetMemberProfileData, GetMemberProfileErrors, GetMemberProfileResponses, GetOwnProfileData, GetOwnProfileErrors, GetOwnProfileResponses, GetPostData, GetPostErrors, GetPostResponses, GetPostUnreadData, GetPostUnreadErrors, GetPostUnreadResponses, GetProfileEditorData, GetProfileEditorErrors, GetProfileEditorResponses, GetPushSubscriptionStatusData, GetPushSubscriptionStatusErrors, GetPushSubscriptionStatusResponses, ImportUsersData, ImportUsersErrors, ImportUsersResponses, InviteUserData, InviteUserErrors, InviteUserResponses, IssueMemberIdData, IssueMemberIdErrors, IssueMemberIdResponses, LeaveGroupConversationData, LeaveGroupConversationErrors, LeaveGroupConversationResponses, ListConversationsData, ListConversationsErrors, ListConversationsResponses, ListLatestPostsData, ListLatestPostsErrors, ListLatestPostsResponses, ListLocationsData, ListLocationsErrors, ListLocationsResponses, ListManagedEventsData, ListManagedEventsErrors, ListManagedEventsResponses, ListMembersData, ListMembersErrors, ListMembersResponses, ListNewsFeedData, ListNewsFeedErrors, ListNewsFeedResponses, ListOwnDraftsData, ListOwnDraftsErrors, ListOwnDraftsResponses, ListUpcomingEventsData, ListUpcomingEventsErrors, ListUpcomingEventsResponses, ListUsersData, ListUsersErrors, ListUsersResponses, MarkConversationReadData, MarkConversationReadErrors, MarkConversationReadResponses, MarkPostReadData, MarkPostReadErrors, MarkPostReadResponses, RecallPostData, RecallPostErrors, RecallPostResponses, RegisterPushSubscriptionData, RegisterPushSubscriptionErrors, RegisterPushSubscriptionResponses, RemovePushSubscriptionData, RemovePushSubscriptionErrors, RemovePushSubscriptionResponses, RenameGroupConversationData, RenameGroupConversationErrors, RenameGroupConversationResponses, ResendInvitationData, ResendInvitationErrors, ResendInvitationResponses, SaveDraftData, SaveDraftErrors, SaveDraftResponses, SearchMessageRecipientsData, SearchMessageRecipientsErrors, SearchMessageRecipientsResponses, SendMessageData, SendMessageErrors, SendMessageResponses, SendTestPushNotificationData, SendTestPushNotificationErrors, SendTestPushNotificationResponses, StartConversationData, StartConversationErrors, StartConversationResponses, UpdateEventData, UpdateEventErrors, UpdateEventResponses, UpdateLocalePreferenceData, UpdateLocalePreferenceErrors, UpdateLocalePreferenceResponses, UpdateLocationData, UpdateLocationErrors, UpdateLocationResponses, UpdateProfileVoicesData, UpdateProfileVoicesErrors, UpdateProfileVoicesResponses, VerifyMemberIdData, VerifyMemberIdErrors, VerifyMemberIdResponses } from './types.gen';
+import type { ActivateAccountData, ActivateAccountErrors, ActivateAccountResponses, ActivateUserData, ActivateUserErrors, ActivateUserResponses, AddGroupMemberData, AddGroupMemberErrors, AddGroupMemberResponses, AddGroupMembersData, AddGroupMembersErrors, AddGroupMembersResponses, ArchiveGroupData, ArchiveGroupErrors, ArchiveGroupResponses, ArchiveLocationData, ArchiveLocationErrors, ArchiveLocationResponses, AssignPositionHolderData, AssignPositionHolderErrors, AssignPositionHolderResponses, ChangeEventStatusData, ChangeEventStatusErrors, ChangeEventStatusResponses, ChangeSingerVoiceData, ChangeSingerVoiceErrors, ChangeSingerVoiceResponses, ChangeUserRolesData, ChangeUserRolesErrors, ChangeUserRolesResponses, CreateEventData, CreateEventErrors, CreateEventResponses, CreateGroupData, CreateGroupErrors, CreateGroupResponses, CreateLocationData, CreateLocationErrors, CreateLocationResponses, CreatePositionData, CreatePositionErrors, CreatePositionResponses, CreatePostData, CreatePostErrors, CreatePostResponses, DeactivateUserData, DeactivateUserErrors, DeactivateUserResponses, DeleteEventData, DeleteEventErrors, DeleteEventResponses, DiscardDraftData, DiscardDraftErrors, DiscardDraftResponses, EditPublishedPostData, EditPublishedPostErrors, EditPublishedPostResponses, EndGroupMembershipData, EndGroupMembershipErrors, EndGroupMembershipResponses, EndPositionHoldingData, EndPositionHoldingErrors, EndPositionHoldingResponses, EraseUserData, EraseUserErrors, EraseUserResponses, FindExistingUserEmailsData, FindExistingUserEmailsErrors, FindExistingUserEmailsResponses, GetChoirPlacementData, GetChoirPlacementErrors, GetChoirPlacementResponses, GetConversationData, GetConversationErrors, GetConversationResponses, GetConversationUnreadData, GetConversationUnreadErrors, GetConversationUnreadResponses, GetCurrentActorData, GetCurrentActorErrors, GetCurrentActorResponses, GetCurrentCapabilitiesData, GetCurrentCapabilitiesErrors, GetCurrentCapabilitiesResponses, GetEditablePostData, GetEditablePostErrors, GetEditablePostResponses, GetEventEditorData, GetEventEditorErrors, GetEventEditorResponses, GetEventFormOptionsData, GetEventFormOptionsErrors, GetEventFormOptionsResponses, GetEventPageData, GetEventPageErrors, GetEventPageResponses, GetGroupDetailData, GetGroupDetailErrors, GetGroupDetailResponses, GetGroupsOverviewData, GetGroupsOverviewErrors, GetGroupsOverviewResponses, GetMemberIdSessionData, GetMemberIdSessionErrors, GetMemberIdSessionResponses, GetMemberProfileData, GetMemberProfileErrors, GetMemberProfileResponses, GetOwnProfileData, GetOwnProfileErrors, GetOwnProfileResponses, GetPostData, GetPostErrors, GetPostResponses, GetPostUnreadData, GetPostUnreadErrors, GetPostUnreadResponses, GetProfileEditorData, GetProfileEditorErrors, GetProfileEditorResponses, GetPushSubscriptionStatusData, GetPushSubscriptionStatusErrors, GetPushSubscriptionStatusResponses, ImportUsersData, ImportUsersErrors, ImportUsersResponses, InviteUserData, InviteUserErrors, InviteUserResponses, IssueMemberIdData, IssueMemberIdErrors, IssueMemberIdResponses, LeaveGroupConversationData, LeaveGroupConversationErrors, LeaveGroupConversationResponses, ListConversationsData, ListConversationsErrors, ListConversationsResponses, ListLatestPostsData, ListLatestPostsErrors, ListLatestPostsResponses, ListLocationsData, ListLocationsErrors, ListLocationsResponses, ListManagedEventsData, ListManagedEventsErrors, ListManagedEventsResponses, ListMembersData, ListMembersErrors, ListMembersResponses, ListNewsFeedData, ListNewsFeedErrors, ListNewsFeedResponses, ListOwnDraftsData, ListOwnDraftsErrors, ListOwnDraftsResponses, ListPositionCatalogueData, ListPositionCatalogueErrors, ListPositionCatalogueResponses, ListUpcomingEventsData, ListUpcomingEventsErrors, ListUpcomingEventsResponses, ListUsersData, ListUsersErrors, ListUsersResponses, MarkConversationReadData, MarkConversationReadErrors, MarkConversationReadResponses, MarkPostReadData, MarkPostReadErrors, MarkPostReadResponses, RecallPostData, RecallPostErrors, RecallPostResponses, RegisterPushSubscriptionData, RegisterPushSubscriptionErrors, RegisterPushSubscriptionResponses, RemovePushSubscriptionData, RemovePushSubscriptionErrors, RemovePushSubscriptionResponses, RenameGroupConversationData, RenameGroupConversationErrors, RenameGroupConversationResponses, RenameGroupData, RenameGroupErrors, RenameGroupResponses, ResendInvitationData, ResendInvitationErrors, ResendInvitationResponses, SaveDraftData, SaveDraftErrors, SaveDraftResponses, SearchMessageRecipientsData, SearchMessageRecipientsErrors, SearchMessageRecipientsResponses, SendMessageData, SendMessageErrors, SendMessageResponses, SendTestPushNotificationData, SendTestPushNotificationErrors, SendTestPushNotificationResponses, StartConversationData, StartConversationErrors, StartConversationResponses, UpdateEventData, UpdateEventErrors, UpdateEventResponses, UpdateLocalePreferenceData, UpdateLocalePreferenceErrors, UpdateLocalePreferenceResponses, UpdateLocationData, UpdateLocationErrors, UpdateLocationResponses, UpdatePositionData, UpdatePositionErrors, UpdatePositionResponses, UpdateProfileVoicesData, UpdateProfileVoicesErrors, UpdateProfileVoicesResponses, VerifyMemberIdData, VerifyMemberIdErrors, VerifyMemberIdResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -489,6 +489,139 @@ export const resendInvitation = <ThrowOnError extends boolean = false>(options: 
  */
 export const changeUserRoles = <ThrowOnError extends boolean = false>(options: Options<ChangeUserRolesData, ThrowOnError>): RequestResult<ChangeUserRolesResponses, ChangeUserRolesErrors, ThrowOnError> => (options.client ?? client).post<ChangeUserRolesResponses, ChangeUserRolesErrors, ThrowOnError>({
     url: '/api/v1/users/{userId}/roles',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Every Choir with its Sections in score order, archived ones included. Admins only.
+ */
+export const getChoirPlacement = <ThrowOnError extends boolean = false>(options?: Options<GetChoirPlacementData, ThrowOnError>): RequestResult<GetChoirPlacementResponses, GetChoirPlacementErrors, ThrowOnError> => (options?.client ?? client).get<GetChoirPlacementResponses, GetChoirPlacementErrors, ThrowOnError>({ url: '/api/v1/choirs', ...options });
+
+/**
+ * Every group but the Choirs and their Sections, archived ones included. Admins only.
+ */
+export const getGroupsOverview = <ThrowOnError extends boolean = false>(options?: Options<GetGroupsOverviewData, ThrowOnError>): RequestResult<GetGroupsOverviewResponses, GetGroupsOverviewErrors, ThrowOnError> => (options?.client ?? client).get<GetGroupsOverviewResponses, GetGroupsOverviewErrors, ThrowOnError>({ url: '/api/v1/groups', ...options });
+
+/**
+ * Creates a CSK-wide group or one of a Choir's groups. Choirs and Sections are not created here.
+ */
+export const createGroup = <ThrowOnError extends boolean = false>(options: Options<CreateGroupData, ThrowOnError>): RequestResult<CreateGroupResponses, CreateGroupErrors, ThrowOnError> => (options.client ?? client).post<CreateGroupResponses, CreateGroupErrors, ThrowOnError>({
+    url: '/api/v1/groups',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Every Position with its GroupTypes and limit to groups, and the groups a limit can name. Admins only.
+ */
+export const listPositionCatalogue = <ThrowOnError extends boolean = false>(options?: Options<ListPositionCatalogueData, ThrowOnError>): RequestResult<ListPositionCatalogueResponses, ListPositionCatalogueErrors, ThrowOnError> => (options?.client ?? client).get<ListPositionCatalogueResponses, ListPositionCatalogueErrors, ThrowOnError>({ url: '/api/v1/positions', ...options });
+
+/**
+ * Adds a Position to the catalogue.
+ */
+export const createPosition = <ThrowOnError extends boolean = false>(options: Options<CreatePositionData, ThrowOnError>): RequestResult<CreatePositionResponses, CreatePositionErrors, ThrowOnError> => (options.client ?? client).post<CreatePositionResponses, CreatePositionErrors, ThrowOnError>({
+    url: '/api/v1/positions',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * One group with its members, Positions and history, and who can join it. Admins only.
+ */
+export const getGroupDetail = <ThrowOnError extends boolean = false>(options: Options<GetGroupDetailData, ThrowOnError>): RequestResult<GetGroupDetailResponses, GetGroupDetailErrors, ThrowOnError> => (options.client ?? client).get<GetGroupDetailResponses, GetGroupDetailErrors, ThrowOnError>({ url: '/api/v1/groups/{groupId}', ...options });
+
+/**
+ * Renames a group.
+ */
+export const renameGroup = <ThrowOnError extends boolean = false>(options: Options<RenameGroupData, ThrowOnError>): RequestResult<RenameGroupResponses, RenameGroupErrors, ThrowOnError> => (options.client ?? client).post<RenameGroupResponses, RenameGroupErrors, ThrowOnError>({
+    url: '/api/v1/groups/{groupId}/name',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Archives a group, ending its Memberships and Position holdings.
+ */
+export const archiveGroup = <ThrowOnError extends boolean = false>(options: Options<ArchiveGroupData, ThrowOnError>): RequestResult<ArchiveGroupResponses, ArchiveGroupErrors, ThrowOnError> => (options.client ?? client).post<ArchiveGroupResponses, ArchiveGroupErrors, ThrowOnError>({ url: '/api/v1/groups/{groupId}/archive', ...options });
+
+/**
+ * Adds a member; in a Section, `voice` places them as a singer, which makes them a member of the Choir.
+ */
+export const addGroupMember = <ThrowOnError extends boolean = false>(options: Options<AddGroupMemberData, ThrowOnError>): RequestResult<AddGroupMemberResponses, AddGroupMemberErrors, ThrowOnError> => (options.client ?? client).post<AddGroupMemberResponses, AddGroupMemberErrors, ThrowOnError>({
+    url: '/api/v1/groups/{groupId}/members',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Ends a Membership and the member's Position holdings in the group.
+ */
+export const endGroupMembership = <ThrowOnError extends boolean = false>(options: Options<EndGroupMembershipData, ThrowOnError>): RequestResult<EndGroupMembershipResponses, EndGroupMembershipErrors, ThrowOnError> => (options.client ?? client).post<EndGroupMembershipResponses, EndGroupMembershipErrors, ThrowOnError>({
+    url: '/api/v1/groups/{groupId}/members/{userId}/end',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Changes a singer's Voice in the group's Choir, which may move them to another Section.
+ */
+export const changeSingerVoice = <ThrowOnError extends boolean = false>(options: Options<ChangeSingerVoiceData, ThrowOnError>): RequestResult<ChangeSingerVoiceResponses, ChangeSingerVoiceErrors, ThrowOnError> => (options.client ?? client).post<ChangeSingerVoiceResponses, ChangeSingerVoiceErrors, ThrowOnError>({
+    url: '/api/v1/groups/{groupId}/members/{userId}/voice',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Gives a Position to a current member, ending any current holder's holding the same day.
+ */
+export const assignPositionHolder = <ThrowOnError extends boolean = false>(options: Options<AssignPositionHolderData, ThrowOnError>): RequestResult<AssignPositionHolderResponses, AssignPositionHolderErrors, ThrowOnError> => (options.client ?? client).post<AssignPositionHolderResponses, AssignPositionHolderErrors, ThrowOnError>({
+    url: '/api/v1/groups/{groupId}/positions/{positionId}/holder',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Ends a member's holding of a Position.
+ */
+export const endPositionHolding = <ThrowOnError extends boolean = false>(options: Options<EndPositionHoldingData, ThrowOnError>): RequestResult<EndPositionHoldingResponses, EndPositionHoldingErrors, ThrowOnError> => (options.client ?? client).post<EndPositionHoldingResponses, EndPositionHoldingErrors, ThrowOnError>({
+    url: '/api/v1/groups/{groupId}/positions/{positionId}/end',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Renames a Position and replaces its GroupTypes and limit to groups, as one change.
+ */
+export const updatePosition = <ThrowOnError extends boolean = false>(options: Options<UpdatePositionData, ThrowOnError>): RequestResult<UpdatePositionResponses, UpdatePositionErrors, ThrowOnError> => (options.client ?? client).put<UpdatePositionResponses, UpdatePositionErrors, ThrowOnError>({
+    url: '/api/v1/positions/{positionId}',
     ...options,
     headers: {
         'Content-Type': 'application/json',

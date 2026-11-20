@@ -9,9 +9,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/sha
 import { Field, FieldDescription, FieldLegend, FieldSet } from "@/shared/ui/base/field"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/base/table"
 import type { GroupType } from "../../model"
+import { createPositionAction, updatePositionAction } from "../commands"
 import { GroupCommandDialog } from "../group-command-dialog"
 import { NAME_MAX_LENGTH } from "../limits"
-import { createPositionAction, updatePositionAction } from "./actions"
 import type { CataloguePosition, LimitGroup, PositionCatalogueData } from "./query"
 
 const GROUP_TYPES: GroupType[] = [
