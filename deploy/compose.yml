@@ -1,13 +1,34 @@
-# The deployed CSK Hub stack: PostgreSQL, Redis, a one-shot migration job and the app, all from
-# one release image. Configuration comes from stack.env (see stack.env.example and README.md).
+# The CSK Hub stack: PostgreSQL, Redis, a one-shot migration job, the standalone API, the web server
+# and a reverse proxy that serves both under one origin. migrate, api and web run one release image.
+# Configuration comes from stack.env (see stack.env.example and README.md); for a local stack,
+# deploy/local-stack.sh writes it and adds compose.local.yml.
 #
-# migrate applies pending migrations and exits; app starts only after it exits successfully, so
-# a failed migration leaves the previous release stopped rather than running on a schema it
-# does not expect.
+# Start order: db and redis become healthy; migrate applies pending migrations as the schema owner,
+# grants the runtime role data access and exits; api starts only after migrate succeeded; web starts
+# once the API is healthy; proxy last. Only the proxy publishes a port.
 
 x-release-image: &release-image ${CSK_HUB_IMAGE:?Set CSK_HUB_IMAGE to the published image, ideally pinned by digest}
 
-x-database-url: &database-url postgresql://csk_hub:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}@db:5432/csk_hub?sslmode=disable
+# The schema owner: only migrate connects with it.
+x-owner-url: &owner-url postgresql://csk_hub:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}@db:5432/csk_hub?sslmode=disable
+# The data-only role the API and web server connect as. migrate creates it and sets its password.
+x-runtime-url: &runtime-url postgresql://csk_hub_app:${POSTGRES_APP_PASSWORD:?Set POSTGRES_APP_PASSWORD}@db:5432/csk_hub?sslmode=disable
+
+x-app-environment: &app-environment
+  POSTGRES_URL: *runtime-url
+  REDIS_URL: redis://redis:6379
+  REDIS_KEY_PREFIX: ${REDIS_KEY_PREFIX:-csk-hub}
+  BETTER_AUTH_URL: ${BETTER_AUTH_URL:?Set BETTER_AUTH_URL to the public origin}
+  BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?Set BETTER_AUTH_SECRET}
+  EMAIL_MODE: ${EMAIL_MODE:-smtp}
+  SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
+  SMTP_PORT: ${SMTP_PORT:-587}
+  SMTP_USER: ${SMTP_USER:-}
+  SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+  SMTP_FROM: ${SMTP_FROM:-}
+  NEXT_PUBLIC_VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:?Set VAPID_PUBLIC_KEY}
+  VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:?Set VAPID_PRIVATE_KEY}
+  CONTACT_EMAIL: ${CONTACT_EMAIL:-webmaster@choir.chs.chalmers.se}
 
 services:
   db:
@@ -42,38 +63,55 @@ services:
     command: ["bun", "cli.js", "migrate"]
     restart: "no"
     environment:
-      POSTGRES_URL: *database-url
+      POSTGRES_URL: *owner-url
+      POSTGRES_RUNTIME_URL: *runtime-url
     depends_on:
       db:
         condition: service_healthy
 
-  app:
+  # The standalone Hono API on Bun: /api/v1, Better Auth under /api/auth and Member ID.
+  api:
     image: *release-image
+    command: ["bun", "api.js"]
     restart: unless-stopped
-    environment:
-      POSTGRES_URL: *database-url
-      REDIS_URL: redis://redis:6379
-      REDIS_KEY_PREFIX: ${REDIS_KEY_PREFIX:-csk-hub}
-      BETTER_AUTH_URL: ${BETTER_AUTH_URL:?Set BETTER_AUTH_URL to the public origin}
-      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?Set BETTER_AUTH_SECRET}
-      EMAIL_MODE: ${EMAIL_MODE:-smtp}
-      SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
-      SMTP_PORT: ${SMTP_PORT:-587}
-      SMTP_USER: ${SMTP_USER:-}
-      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
-      SMTP_FROM: ${SMTP_FROM:-}
-      NEXT_PUBLIC_VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:?Set VAPID_PUBLIC_KEY}
-      VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:?Set VAPID_PRIVATE_KEY}
-      CONTACT_EMAIL: ${CONTACT_EMAIL:-webmaster@choir.chs.chalmers.se}
-    ports:
-      - "${APP_PORT:-3000}:3000"
+    environment: *app-environment
     depends_on:
       migrate:
         condition: service_completed_successfully
       redis:
         condition: service_healthy
 
+  # The Next.js web server. It reads data through the API by service name and still serves
+  # /api/realtime until real-time delivery moves to the API.
+  web:
+    image: *release-image
+    restart: unless-stopped
+    environment:
+      <<: *app-environment
+      API_INTERNAL_URL: http://api:3000
+    depends_on:
+      api:
+        condition: service_healthy
+
+  # One origin for browsers. SITE_ADDRESS is the address Caddy serves: https://localhost:8443
+  # locally (Caddy's own certificate), or plain http behind GUD's TLS-terminating proxy.
+  proxy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:-http://:8443}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+    ports:
+      - "${APP_PORT:-8443}:8443"
+    depends_on:
+      web:
+        condition: service_healthy
+
 volumes:
   # Persistent, but not a backup: see "Backups" in README.md.
   postgres_data:
   redis_data:
+  # Caddy's local certificate authority, kept so a browser that trusts it keeps trusting it.
+  caddy_data:

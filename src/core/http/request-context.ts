@@ -35,6 +35,12 @@ export type ApiDependencies = Readonly<{
    * request's own headers: Better Auth checks the session again and rejects with its own error.
    */
   authApi: AuthApi
+  /**
+   * The origin browsers use, e.g. `https://hub.example`. When set, unsafe requests must carry it
+   * as `Origin`, so other Hub servers can reach the API by service name. When unset, the Origin
+   * must match the request's own host.
+   */
+  publicOrigin?: string
 }>
 
 /** The Better Auth operations the API's features may call. */

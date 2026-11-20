@@ -107,4 +107,16 @@ describe("API assembly", () => {
     expect(response.status).toBe(404)
     expect(await response.json()).toEqual({ code: "NOT_FOUND" })
   })
+
+  test("behind the proxy, accepts writes only from the configured public origin", async () => {
+    // The web server reaches the API by service name and forwards the browser's public Origin.
+    const api = createApi({ ...offline, publicOrigin: "https://hub.example" })
+    function write(origin: string) {
+      return api.request("http://api:3000/api/v1/does-not-exist", { method: "POST", headers: { origin } })
+    }
+
+    expect((await write("https://hub.example")).status).toBe(404)
+    expect((await write("http://api:3000")).status).toBe(403)
+    expect((await write("https://hub.example.evil")).status).toBe(403)
+  })
 })

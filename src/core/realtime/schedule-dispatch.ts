@@ -1,7 +1,7 @@
 import "server-only"
 
-import { after } from "next/server"
 import { env } from "@/core/config/env"
+import { logger } from "@/core/logging"
 import { deliverPendingActivity } from "./deliver-pending"
 import type { ActivityDeliveryPolicy } from "./delivery-access"
 import { DispatchWakeup } from "./dispatch-wakeup"
@@ -26,10 +26,19 @@ function runDispatch(policy: ActivityDeliveryPolicy): Promise<void> {
   return promise
 }
 
+/**
+ * Keeps post-response work alive in the host. Next.js passes `after()` so a request awaits the
+ * shared loop; a long-running process such as the standalone API just lets it run.
+ */
+export type KeepAlive = (work: () => Promise<void>) => void
+
+function inBackground(work: () => Promise<void>) {
+  work().catch(() => logger.error("realtime.dispatch.failed"))
+}
+
 /** Call after a relevant write commits. Requests share one bounded loop per policy and wake it for new work. */
-export function scheduleActivityDispatch(policy: ActivityDeliveryPolicy) {
+export function scheduleActivityDispatch(policy: ActivityDeliveryPolicy, keepAlive: KeepAlive = inBackground) {
   if (!env.REDIS_URL) return
   running.get(policy)?.wakeup.wake()
-  // Each request keeps the shared work alive through its own after() callback.
-  after(() => runDispatch(policy))
+  keepAlive(() => runDispatch(policy))
 }

@@ -1,7 +1,7 @@
 import "server-only"
 
 import { and, asc, desc, eq, gt, inArray, lte, sql } from "drizzle-orm"
-import { db as applicationDb, type Database } from "@/core/db"
+import type { Database } from "@/core/db"
 import { event, eventTarget } from "@/core/db/schema/events"
 import { listGroupNames } from "@/features/org-structure"
 import type { VoiceFamily } from "@/features/voice/model"
@@ -24,8 +24,8 @@ export type EventListRow = Awaited<ReturnType<typeof listManagedEvents>>[number]
 export async function listManagedEvents(
   filters: EventListFilters,
   now: Date,
-  database: Database = applicationDb,
-  resolve?: EventAccessResolver
+  database: Database,
+  resolve: EventAccessResolver
 ) {
   return database.transaction(async (db) => {
     const { access, facts } = await getEventManagementScope(db, resolve)

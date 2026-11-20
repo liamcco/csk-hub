@@ -11,5 +11,6 @@ coverage
 .env*
 !.env.example
 deploy/stack.env
+deploy/local.env
 *.log
 .DS_Store

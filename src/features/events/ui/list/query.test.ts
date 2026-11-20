@@ -10,7 +10,7 @@ mock.module("@/core/db", () => ({ db: database?.db }))
 const access = database
   ? createAuthorization({ database: database.db, readSession: async () => ({ user: { id: "admin" } }) })
   : undefined
-mock.module("@/core/authz", () => ({ forCurrentRequest: access?.forCurrentRequest }))
+const resolve = access?.forCurrentRequest as NonNullable<typeof access>["forCurrentRequest"]
 
 const { listManagedEvents } = await import("./query")
 
@@ -40,7 +40,7 @@ describe.skipIf(!database)("the admin Events list", () => {
     )
     await t.archiveGroup(organiser)
 
-    const rows = await listManagedEvents({ when: "upcoming" }, new Date("2026-01-01T00:00:00Z"))
+    const rows = await listManagedEvents({ when: "upcoming" }, new Date("2026-01-01T00:00:00Z"), t.db, resolve)
     const row = rows.find((candidate) => candidate.id === id)
 
     expect(row?.organiserGroup).toStartWith("Board ")
@@ -54,7 +54,7 @@ describe.skipIf(!database)("the admin Events list", () => {
 
   test("leaves the Organiser group empty when the Event has none", async () => {
     const { id } = expectSuccess(await createEvent(t.db, { ...eventInput(), createdBy: null }))
-    const rows = await listManagedEvents({ when: "upcoming" }, new Date("2026-01-01T00:00:00Z"))
+    const rows = await listManagedEvents({ when: "upcoming" }, new Date("2026-01-01T00:00:00Z"), t.db, resolve)
     expect(rows.find((candidate) => candidate.id === id)).toMatchObject({ organiserGroup: null, targets: [] })
   })
 })

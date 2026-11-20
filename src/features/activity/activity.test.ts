@@ -86,7 +86,6 @@ if (!process.env.CSK_ACTIVITY_TEST) {
       listUsersWithActiveSubscriptions
     }))
     const afterResponse: Array<() => Promise<void>> = []
-    mock.module("next/server", () => ({ after: (callback: () => Promise<void>) => afterResponse.push(callback) }))
     const { env } = await import("@/core/config/env")
     const { queueActivity } = await import("@/core/realtime/outbox")
     const { activityStreamKey } = await import("@/core/realtime/broker")
@@ -94,6 +93,11 @@ if (!process.env.CSK_ACTIVITY_TEST) {
     const { createGroupConversation, leaveGroupConversation } = await import("@/features/messaging/group-conversations")
     const { markConversationRead } = await import("@/features/messaging/ui/conversation/read")
     const { createReadToken } = await import("@/features/messaging/ui/conversation/read-token")
+    // The mocked database and authority, passed explicitly as the HTTP API passes its own.
+    const messaging = {
+      database: (await import("@/core/db")).db,
+      authorize: (await import("@/core/authz/request")).requirePermission
+    } as unknown as import("@/features/messaging/model/context").MessagingContext
     const { dispatchActivity, nextActivityDelay, pruneActivity } = await import("@/core/realtime/dispatch")
     const { deliverPendingActivity } = await import("@/core/realtime/deliver-pending")
     const { conversationActivityPolicy, scheduleActivityDispatch } = await import("@/features/messaging/activity")
@@ -141,11 +145,14 @@ if (!process.env.CSK_ACTIVITY_TEST) {
       const recipient = await singer()
       const idempotencyKey = crypto.randomUUID()
       const sent = await identity.run(sender, () =>
-        startDirectConversation({
-          recipientId: recipient.userId,
-          text: "Private Message",
-          idempotencyKey
-        })
+        startDirectConversation(
+          {
+            recipientId: recipient.userId,
+            text: "Private Message",
+            idempotencyKey
+          },
+          messaging
+        )
       )
       fixtureConversations.push(sent.conversationId)
       return { sender, recipient, sent, idempotencyKey }
@@ -228,11 +235,14 @@ if (!process.env.CSK_ACTIVITY_TEST) {
       test("first Direct Message and exact retry create one recipient notification", async () => {
         const { sender, recipient, idempotencyKey, sent } = await direct()
         const retry = await identity.run(sender, () =>
-          sendMessage({
-            conversationId: sent.conversationId,
-            text: "Private Message",
-            idempotencyKey
-          })
+          sendMessage(
+            {
+              conversationId: sent.conversationId,
+              text: "Private Message",
+              idempotencyKey
+            },
+            messaging
+          )
         )
         expect(retry.created).toBe(false)
         const rows = await testDatabase.db.select().from(activityDelivery)
@@ -294,10 +304,10 @@ if (!process.env.CSK_ACTIVITY_TEST) {
       test("only rendered signed history cancels a Conversation notification", async () => {
         const { recipient, sent } = await direct()
         await expect(
-          identity.run(recipient, () => markConversationRead(sent.conversationId, 1, "forged"))
+          identity.run(recipient, () => markConversationRead(sent.conversationId, 1, "forged", messaging))
         ).rejects.toMatchObject({ kind: "read-position-invalid" })
         const token = createReadToken(sent.conversationId, recipient.userId, sent.sequence)
-        await identity.run(recipient, () => markConversationRead(sent.conversationId, sent.sequence, token))
+        await identity.run(recipient, () => markConversationRead(sent.conversationId, sent.sequence, token, messaging))
         await makePushDue()
         await dispatchActivity(conversationActivityPolicy)
         expect(push).not.toHaveBeenCalled()
@@ -360,21 +370,27 @@ if (!process.env.CSK_ACTIVITY_TEST) {
         const sender = await singer()
         const recipient = await singer()
         const group = await identity.run(sender, () =>
-          createGroupConversation({
-            name: "Planning",
-            memberIds: [recipient.userId],
-            idempotencyKey: crypto.randomUUID()
-          })
+          createGroupConversation(
+            {
+              name: "Planning",
+              memberIds: [recipient.userId],
+              idempotencyKey: crypto.randomUUID()
+            },
+            messaging
+          )
         )
         fixtureConversations.push(group.conversationId)
         await identity.run(sender, () =>
-          sendMessage({
-            conversationId: group.conversationId,
-            text: "Future activity",
-            idempotencyKey: crypto.randomUUID()
-          })
+          sendMessage(
+            {
+              conversationId: group.conversationId,
+              text: "Future activity",
+              idempotencyKey: crypto.randomUUID()
+            },
+            messaging
+          )
         )
-        await identity.run(recipient, () => leaveGroupConversation(group.conversationId))
+        await identity.run(recipient, () => leaveGroupConversation(group.conversationId, messaging))
         await makePushDue()
         await dispatchActivity(conversationActivityPolicy)
         expect(push).not.toHaveBeenCalled()
@@ -575,7 +591,9 @@ if (!process.env.CSK_ACTIVITY_TEST) {
         const { recipient } = await direct()
         const delivery = await messageDelivery(recipient.userId)
         if (!delivery.pushAfter) throw new Error("Expected a push deadline")
-        scheduleActivityDispatch()
+        scheduleActivityDispatch((work) => {
+          afterResponse.push(work)
+        })
         expect((await storedDelivery(delivery.id)).publishedAt).toBeNull()
         const callback = afterResponse.pop()
         if (!callback) throw new Error("Expected an after-response callback")

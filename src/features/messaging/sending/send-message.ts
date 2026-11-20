@@ -3,7 +3,7 @@ import "server-only"
 import { eq } from "drizzle-orm"
 import { conversation } from "@/core/db/schema/messaging"
 import { requireActiveGroupMember } from "../group-conversations"
-import { type MessagingContext, messagingContext } from "../model/context"
+import type { MessagingContext } from "../model/context"
 import { validateMessageBody } from "../model/message-body"
 import { MessagingAccessError } from "../model/messaging-error"
 import { appendMessage } from "./append-message"
@@ -11,8 +11,8 @@ import { resolveActiveDirectCounterpart } from "./direct-recipient"
 
 type SendMessageInput = { conversationId: string; text: unknown; idempotencyKey: string }
 
-export async function sendMessage(input: SendMessageInput, context?: MessagingContext) {
-  const { database, authorize } = await messagingContext(context)
+export async function sendMessage(input: SendMessageInput, context: MessagingContext) {
+  const { database, authorize } = context
   const body = validateMessageBody(input.text)
 
   if (!body.success) throw new MessagingAccessError(body.error)

@@ -5,7 +5,7 @@ import { and, eq, inArray, sql } from "drizzle-orm"
 import { user } from "@/core/db/schema/auth"
 import { conversation, conversationReadState, groupConversation, groupMembership } from "@/core/db/schema/messaging"
 import { queueConversationActivity } from "../activity"
-import { type MessagingContext, messagingContext } from "../model/context"
+import type { MessagingContext } from "../model/context"
 import { groupMemberIds, normalizeGroupName } from "../model/group-conversation"
 import { MessagingAccessError } from "../model/messaging-error"
 import type { MessageTransaction } from "../sending"
@@ -29,9 +29,9 @@ async function requireActiveUsers(tx: MessageTransaction, ids: string[]) {
 
 export async function createGroupConversation(
   input: { name: unknown; memberIds: string[]; idempotencyKey: string },
-  context?: MessagingContext
+  context: MessagingContext
 ) {
-  const { database, authorize } = await messagingContext(context)
+  const { database, authorize } = context
   const name = normalizeGroupName(input.name)
   if (!input.idempotencyKey.trim()) throw new MessagingAccessError("idempotency-key-required")
   return database.transaction(async (tx) => {
@@ -78,9 +78,9 @@ export async function createGroupConversation(
 
 export async function addGroupMembers(
   input: { conversationId: string; memberIds: string[] },
-  context?: MessagingContext
+  context: MessagingContext
 ) {
-  const { database, authorize } = await messagingContext(context)
+  const { database, authorize } = context
   const ids = groupMemberIds(input.memberIds)
   return database.transaction(async (tx) => {
     const { userId } = await authorize({ action: "app.access" }, tx)
@@ -118,9 +118,9 @@ export async function addGroupMembers(
 
 export async function renameGroupConversation(
   input: { conversationId: string; name: unknown },
-  context?: MessagingContext
+  context: MessagingContext
 ) {
-  const { database, authorize } = await messagingContext(context)
+  const { database, authorize } = context
   const name = normalizeGroupName(input.name)
   return database.transaction(async (tx) => {
     const { userId } = await authorize({ action: "app.access" }, tx)
@@ -135,8 +135,8 @@ export async function renameGroupConversation(
   })
 }
 
-export async function leaveGroupConversation(conversationId: string, context?: MessagingContext) {
-  const { database, authorize } = await messagingContext(context)
+export async function leaveGroupConversation(conversationId: string, context: MessagingContext) {
+  const { database, authorize } = context
   return database.transaction(async (tx) => {
     const { userId } = await authorize({ action: "app.access" }, tx)
     const row = await lockGroupConversation(tx, conversationId)

@@ -12,14 +12,17 @@ export function createApiDependencies({
   auth,
   database,
   secret,
-  scheduleDelivery = () => {}
+  scheduleDelivery = () => {},
+  publicOrigin
 }: {
   auth: Auth
   database: AuthorizationDatabase
   secret: string
   scheduleDelivery?: () => void
+  publicOrigin?: string
 }) {
   return {
+    publicOrigin,
     database,
     secret,
     scheduleDelivery,

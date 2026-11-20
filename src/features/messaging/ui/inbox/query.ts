@@ -11,11 +11,11 @@ import {
   message
 } from "@/core/db/schema/messaging"
 import { groupHistoryVisibility } from "../../group-conversations/access"
-import { type MessagingContext, messagingContext } from "../../model/context"
+import type { MessagingContext } from "../../model/context"
 import { toInboxConversations } from "./view-model"
 
-export async function listDirectConversations(context?: MessagingContext) {
-  const { database, authorize } = await messagingContext(context)
+export async function listDirectConversations(context: MessagingContext) {
+  const { database, authorize } = context
   const { userId } = await authorize({ action: "app.access" })
   const otherMember = alias(user, "other_member")
 
@@ -65,8 +65,8 @@ export async function listDirectConversations(context?: MessagingContext) {
   return toInboxConversations(rows)
 }
 
-export async function listConversations(context?: MessagingContext) {
-  const resolved = await messagingContext(context)
+export async function listConversations(context: MessagingContext) {
+  const resolved = context
   const [direct, groups] = await Promise.all([listDirectConversations(resolved), listGroupConversations(resolved)])
   return [...direct, ...groups].sort((a, b) => b.sentAt.getTime() - a.sentAt.getTime())
 }

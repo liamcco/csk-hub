@@ -2,7 +2,7 @@ import "server-only"
 
 import { and, eq, sql } from "drizzle-orm"
 import { conversation, conversationReadState, directConversation } from "@/core/db/schema/messaging"
-import { type MessagingContext, messagingContext } from "../model/context"
+import type { MessagingContext } from "../model/context"
 import { validateMessageBody } from "../model/message-body"
 import { MessagingAccessError } from "../model/messaging-error"
 import { appendMessage } from "./append-message"
@@ -11,8 +11,8 @@ import { requireActiveDirectRecipient } from "./direct-recipient"
 type StartDirectConversationInput = { recipientId: string; text: unknown; idempotencyKey: string }
 
 /** Creates a direct conversation when needed, then appends its first message. */
-export async function startDirectConversation(input: StartDirectConversationInput, context?: MessagingContext) {
-  const { database, authorize } = await messagingContext(context)
+export async function startDirectConversation(input: StartDirectConversationInput, context: MessagingContext) {
+  const { database, authorize } = context
   const body = validateMessageBody(input.text)
 
   if (!body.success) throw new MessagingAccessError(body.error)

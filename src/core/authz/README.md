@@ -23,13 +23,14 @@ for Locations and Admin routes. See the adoption guide for the explicit policy l
 | `app-policies.ts`, `post-policies.ts`, `group-policies.ts`, `event-policies.ts`, `member-policies.ts`, `member-id-policies.ts`, `admin-policies.ts` | The permission rules for each subject |
 | `policy-registry.ts` | Static registration and pure policy evaluation |
 | `authorization.ts` | Fresh actor resolution, operation snapshots and denial errors |
-| `index.ts` | Production wiring and the application entrypoint |
+| `index.ts` | Denial errors and caller-facing types; safe for the API to import |
+| `request.ts` | Next.js wiring: authorization bound to the Next.js request session |
 | `policies.test.ts` | Examples of grants, denials and policy exceptions |
 
 ## Calling the module
 
 ```ts
-import { can, requirePermission } from "@/core/authz"
+import { can, requirePermission } from "@/core/authz/request"
 
 const mayCreate = await can({ action: "post.create" })
 const mayEdit = await can({ action: "post.update", context: { post } })
@@ -70,7 +71,7 @@ Messaging uses `app.access` for fresh active identity; Conversation access remai
 methods are synchronous evaluations using that snapshot and the supplied facts:
 
 ```ts
-import { forCurrentRequest } from "@/core/authz"
+import { forCurrentRequest } from "@/core/authz/request"
 
 await db.transaction(async (tx) => {
   const access = await forCurrentRequest(tx)
@@ -167,9 +168,10 @@ through `bun run typecheck`.
 
 `createAuthorization({ database, readSession })`, imported directly from
 `@/core/authz/authorization`, is the internal server composition seam for those tests and for
-`index.ts`. The application entrypoint `@/core/authz` exposes `can`, `requirePermission`,
-`forCurrentRequest`, denial errors and caller-facing types; it does not re-export the factory.
-Production wiring supplies the application database and `getFreshRequestSession`. Never use
+`request.ts`. `@/core/authz` exposes denial errors and caller-facing types only, so the
+standalone API never loads Next.js. `@/core/authz/request` exposes `can`, `requirePermission` and
+`forCurrentRequest` for Next.js callers, wired to the application database and
+`getFreshRequestSession`. The API resolves authority per request instead (`@/core/http`). Never use
 the factory to accept browser-supplied identity.
 
 Event viewing contexts require trusted resource facts, dated audience Memberships and a server

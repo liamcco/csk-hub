@@ -1,16 +1,16 @@
 import "server-only"
 
 import { eq } from "drizzle-orm"
-import { forCurrentRequest } from "@/core/authz"
-import { type Database, db } from "@/core/db"
+import type { RequestAuthorization } from "@/core/authz"
+import type { Database } from "@/core/db"
 import { event } from "@/core/db/schema/events"
 import { getGroupAuthorizationFacts, lockGroupAuthorizationFacts } from "@/features/org-structure"
 
-type EventAccess = Awaited<ReturnType<typeof forCurrentRequest>>
+type EventAccess = RequestAuthorization
 
 /**
  * Resolves the acting User for one operation on the given connection. The HTTP API passes the
- * request's own resolution; the default reads the Next.js request session.
+ * request's own resolution.
  */
 export type EventAccessResolver = (connection: Database) => Promise<EventAccess>
 type GroupFacts = Awaited<ReturnType<typeof getGroupAuthorizationFacts>>
@@ -19,7 +19,7 @@ type EventAction = "event.read" | "event.update" | "event.changeStatus" | "event
 /** Resolve fresh identity and trusted organisational facts for one protected read operation. */
 export async function getEventManagementScope(
   database: Parameters<typeof lockGroupAuthorizationFacts>[0],
-  resolve: EventAccessResolver = forCurrentRequest
+  resolve: EventAccessResolver
 ) {
   const access = await resolve(database)
   const actor = access.requirePermission({ action: "app.access" })
@@ -51,8 +51,8 @@ export async function withEventPermission<T>(
   eventId: string | null,
   proposed: { organiserGroupId: string | null } | undefined,
   work: (database: Database, actorId: string) => Promise<T>,
-  database: Database = db,
-  resolve: EventAccessResolver = forCurrentRequest
+  database: Database,
+  resolve: EventAccessResolver
 ): Promise<T> {
   return database.transaction(async (tx) => {
     const access = await resolve(tx)
@@ -107,10 +107,7 @@ export function managedEventGroupIds(access: EventAccess, facts: GroupFacts) {
 }
 
 /** Presentation hints only; command and read entrypoints establish authority independently. */
-export async function getEventManagementCapabilities(
-  database: Database = db,
-  resolve: EventAccessResolver = forCurrentRequest
-) {
+export async function getEventManagementCapabilities(database: Database, resolve: EventAccessResolver) {
   return database.transaction(async (tx) => {
     const { access, facts } = await getEventManagementScope(tx, resolve)
     return {

@@ -2,7 +2,7 @@ import "server-only"
 
 import { type AnyColumn, asc, eq, inArray, isNull, or } from "drizzle-orm"
 import { AuthorizationDeniedError } from "@/core/authz"
-import { type Database, db } from "@/core/db"
+import type { Database } from "@/core/db"
 import { user } from "@/core/db/schema/auth"
 import { event, eventDetail, eventTarget, gig, location, rehearsal, socialEvent } from "@/core/db/schema/events"
 import { listActiveGroups } from "@/features/org-structure"
@@ -62,8 +62,8 @@ const GROUP_TYPE_ORDER: Partial<Record<GroupType, number>> = { Choir: 0, Section
  */
 export async function getEventFormOptions(
   kept: { locationIds?: string[]; groupIds?: string[]; userIds?: string[] } = {},
-  database: Database = db,
-  resolve?: EventAccessResolver
+  database: Database,
+  resolve: EventAccessResolver
 ) {
   return database.transaction(async (database) => {
     const { access, facts } = await getEventManagementScope(database, resolve)
@@ -123,7 +123,7 @@ export const EMPTY_EVENT_FORM: Omit<EventFormValues, "type" | "participationMode
 export type EventEditor = NonNullable<Awaited<ReturnType<typeof getEventEditor>>>
 
 /** Everything the admin page of one Event shows and offers, or null when there is no such Event. */
-export async function getEventEditor(eventId: string, database: Database = db, resolve?: EventAccessResolver) {
+export async function getEventEditor(eventId: string, database: Database, resolve: EventAccessResolver) {
   return withEventPermission(
     "event.read",
     eventId,

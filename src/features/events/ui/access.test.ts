@@ -16,12 +16,8 @@ const access = database
       readSession: async () => (viewer ? { user: { id: viewer } } : null)
     })
   : undefined
-mock.module("@/core/authz", () => ({
-  AUTHORIZATION_DENIED,
-  AuthorizationDeniedError,
-  requirePermission: access?.requirePermission,
-  forCurrentRequest: access?.forCurrentRequest
-}))
+const resolve = access?.forCurrentRequest as NonNullable<typeof access>["forCurrentRequest"]
+const authorize = access?.requirePermission as NonNullable<typeof access>["requirePermission"]
 mock.module("@/core/db", () => ({ db: database?.db }))
 mock.module("next/cache", () => ({ revalidatePath: mock() }))
 mock.module("next/navigation", () => ({
@@ -54,7 +50,14 @@ async function runCommand(
 ) {
   await (access as NonNullable<typeof access>).requirePermission({ action: "app.access" })
   try {
-    const result = (await withEventPermission(action, eventId, proposed, work)) as { success: boolean; error?: string }
+    const result = (await withEventPermission(
+      action,
+      eventId,
+      proposed,
+      work,
+      (database as NonNullable<typeof database>).db,
+      resolve
+    )) as { success: boolean; error?: string }
     return result.success ? ({ status: "success" } as const) : ({ status: "error", error: result.error } as const)
   } catch (error) {
     if ((error as { code?: string }).code === AUTHORIZATION_DENIED)
@@ -137,9 +140,11 @@ describe.skipIf(!database)("Event delegation at protected entrypoints", () => {
 
   test("anonymous reads and every direct action fail without route guards", async () => {
     viewer = null
-    await expect(listManagedEvents({ when: "upcoming" }, new Date())).rejects.toBeInstanceOf(AuthorizationDeniedError)
-    await expect(getEventFormOptions()).rejects.toBeInstanceOf(AuthorizationDeniedError)
-    expect(await getEventEditor(crypto.randomUUID())).toBeNull()
+    await expect(listManagedEvents({ when: "upcoming" }, new Date(), t.db, resolve)).rejects.toBeInstanceOf(
+      AuthorizationDeniedError
+    )
+    await expect(getEventFormOptions({}, t.db, resolve)).rejects.toBeInstanceOf(AuthorizationDeniedError)
+    expect(await getEventEditor(crypto.randomUUID(), t.db, resolve)).toBeNull()
     for (const action of [
       createEventAction,
       (state: typeof idle, data: FormData) => updateEventAction(crypto.randomUUID(), state, data),
@@ -174,16 +179,16 @@ describe.skipIf(!database)("Event delegation at protected entrypoints", () => {
     )
     const unowned = expectSuccess(await createEvent(t.db, { ...eventInput(), createdBy: holder }))
     viewer = holder
-    const rows = await listManagedEvents({ when: "upcoming" }, new Date("2020-01-01"))
+    const rows = await listManagedEvents({ when: "upcoming" }, new Date("2020-01-01"), t.db, resolve)
     expect(rows.map(({ id }) => id)).toEqual([owned.id])
-    expect(await getEventEditor(owned.id)).toMatchObject({ id: owned.id })
+    expect(await getEventEditor(owned.id, t.db, resolve)).toMatchObject({ id: owned.id })
     for (const id of [foreign.id, choirEvent.id, unowned.id]) {
-      expect(await getEventEditor(id)).toBeNull()
+      expect(await getEventEditor(id, t.db, resolve)).toBeNull()
       expect(await updateEventAction(id, idle, form({ organiserGroupId: organiser }))).toEqual(denied)
       expect(await deleteEventAction(idle, form({ eventId: id }))).toEqual(denied)
       expect(await changeEventStatusAction(idle, form({ eventId: id, status: "Published" }))).toEqual(denied)
     }
-    const options = await getEventFormOptions()
+    const options = await getEventFormOptions({}, t.db, resolve)
     expect(options.organiserGroups.map(({ id }) => id)).toEqual([organiser])
     expect(options.users.length).toBeGreaterThan(0)
     expect(options.users.every((entry) => !("email" in entry))).toBe(true)
@@ -211,7 +216,7 @@ describe.skipIf(!database)("Event delegation at protected entrypoints", () => {
     })
     await expect(deleteEventAction(idle, form({ eventId: owned.id }))).rejects.toThrow("redirect:/events/manage")
     for (const call of [
-      () => listLocations(),
+      () => listLocations(t.db, authorize),
       () => createLocationAction(idle, form()),
       () => updateLocationAction(idle, form()),
       () => archiveLocationAction(idle, form())
@@ -219,7 +224,7 @@ describe.skipIf(!database)("Event delegation at protected entrypoints", () => {
       await expect(call()).rejects.toBeInstanceOf(AuthorizationDeniedError)
     }
     viewer = stranger
-    expect(await listManagedEvents({ when: "upcoming" }, new Date("2020-01-01"))).toEqual([])
+    expect(await listManagedEvents({ when: "upcoming" }, new Date("2020-01-01"), t.db, resolve)).toEqual([])
   })
 
   test("Event authorization locks serialize with departure, Position termination, archival and organiser reassignment", async () => {
@@ -230,28 +235,35 @@ describe.skipIf(!database)("Event delegation at protected entrypoints", () => {
       await createEvent(t.db, { ...eventInput({ organiserGroupId: organiser }), createdBy: holder })
     )
     viewer = holder
-    await withEventPermission("event.update", stored.id, undefined, async () => {
-      for (const operation of [
-        (tx: Parameters<Parameters<typeof t.db.transaction>[0]>[0]) =>
-          endPositionHolding(tx, { userId: holder, groupId: organiser, positionId, endDate: "2026-11-16" }),
-        (tx: Parameters<Parameters<typeof t.db.transaction>[0]>[0]) =>
-          endMembership(tx, { userId: holder, groupId: organiser, endDate: "2026-11-16" }),
-        (tx: Parameters<Parameters<typeof t.db.transaction>[0]>[0]) => archiveGroup(tx, organiser),
-        (tx: Parameters<Parameters<typeof t.db.transaction>[0]>[0]) =>
-          tx.update(event).set({ organiserGroupId: null }).where(eq(event.id, stored.id))
-      ]) {
-        await expect(
-          t.db.transaction(async (tx) => {
-            await tx.execute(sql`SET LOCAL lock_timeout = '100ms'`)
-            return operation(tx)
-          })
-        ).rejects.toMatchObject({ cause: { code: "55P03" } })
-      }
-    })
+    await withEventPermission(
+      "event.update",
+      stored.id,
+      undefined,
+      async () => {
+        for (const operation of [
+          (tx: Parameters<Parameters<typeof t.db.transaction>[0]>[0]) =>
+            endPositionHolding(tx, { userId: holder, groupId: organiser, positionId, endDate: "2026-11-16" }),
+          (tx: Parameters<Parameters<typeof t.db.transaction>[0]>[0]) =>
+            endMembership(tx, { userId: holder, groupId: organiser, endDate: "2026-11-16" }),
+          (tx: Parameters<Parameters<typeof t.db.transaction>[0]>[0]) => archiveGroup(tx, organiser),
+          (tx: Parameters<Parameters<typeof t.db.transaction>[0]>[0]) =>
+            tx.update(event).set({ organiserGroupId: null }).where(eq(event.id, stored.id))
+        ]) {
+          await expect(
+            t.db.transaction(async (tx) => {
+              await tx.execute(sql`SET LOCAL lock_timeout = '100ms'`)
+              return operation(tx)
+            })
+          ).rejects.toMatchObject({ cause: { code: "55P03" } })
+        }
+      },
+      t.db,
+      resolve
+    )
     expect(
       await endPositionHolding(t.db, { userId: holder, groupId: organiser, positionId, endDate: "2026-11-16" })
     ).toMatchObject({ success: true })
-    expect(await getEventEditor(stored.id)).toBeNull()
+    expect(await getEventEditor(stored.id, t.db, resolve)).toBeNull()
   })
 
   test("departure, handover, archival and User deactivation remove delegated authority", async () => {
@@ -262,21 +274,21 @@ describe.skipIf(!database)("Event delegation at protected entrypoints", () => {
       await createEvent(t.db, { ...eventInput({ organiserGroupId: organiser }), createdBy: holder })
     )
     viewer = holder
-    expect(await getEventEditor(stored.id)).toMatchObject({ id: stored.id })
+    expect(await getEventEditor(stored.id, t.db, resolve)).toMatchObject({ id: stored.id })
     await t.db.update(positionHolder).set({ endDate: "2026-11-16" }).where(eq(positionHolder.userId, holder))
-    expect(await getEventEditor(stored.id)).toBeNull()
+    expect(await getEventEditor(stored.id, t.db, resolve)).toBeNull()
     expect(await updateEventAction(stored.id, idle, form({ organiserGroupId: organiser }))).toEqual(denied)
     await t.db.update(positionHolder).set({ endDate: null }).where(eq(positionHolder.userId, holder))
     await t.db.update(groupMember).set({ endDate: "2026-11-16" }).where(eq(groupMember.userId, holder))
-    expect(await getEventEditor(stored.id)).toBeNull()
+    expect(await getEventEditor(stored.id, t.db, resolve)).toBeNull()
     await t.db.update(groupMember).set({ endDate: null }).where(eq(groupMember.userId, holder))
     await t.archiveGroup(organiser)
-    expect(await getEventEditor(stored.id)).toBeNull()
+    expect(await getEventEditor(stored.id, t.db, resolve)).toBeNull()
     const admin = await t.user()
     await t.db.update(user).set({ role: "admin" }).where(eq(user.id, admin))
     viewer = admin
-    expect(await getEventEditor(stored.id)).toMatchObject({ id: stored.id })
-    expect(await getEventFormOptions()).toMatchObject({
+    expect(await getEventEditor(stored.id, t.db, resolve)).toMatchObject({ id: stored.id })
+    expect(await getEventFormOptions({}, t.db, resolve)).toMatchObject({
       users: expect.arrayContaining([expect.objectContaining({ email: expect.any(String) })])
     })
     await t.db.update(user).set({ banned: true }).where(eq(user.id, admin))

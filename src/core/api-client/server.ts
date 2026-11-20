@@ -28,7 +28,8 @@ export async function getServerApiClient() {
   const origin = new URL(apiOrigin()).origin
   const cookie = incoming.get("cookie")
   return createClient({
-    baseUrl: origin,
+    // By service name inside the stack; the public Origin still identifies Hub to the CSRF guard.
+    baseUrl: env.API_INTERNAL_URL ? new URL(env.API_INTERNAL_URL).origin : origin,
     cache: "no-store",
     headers: { origin, ...(cookie ? { cookie } : {}) }
   })

@@ -7,8 +7,11 @@ scripts that publish and deploy it. The decision behind this layout is
 | File | Purpose |
 | --- | --- |
 | `Dockerfile` | The release image. Build context is the repository root. |
-| `compose.yml` | The deployed stack: `db`, `redis`, `migrate` and `app`. |
-| `compose.dev.yml` | Local development PostgreSQL and Redis only. |
+| `compose.yml` | The stack: `db`, `redis`, `migrate`, `api`, `web` and `proxy`. |
+| `Caddyfile` | The proxy's routes: API paths to `api`, everything else to `web`. |
+| `local-stack.sh` | Start, validate, stop and reset the stack locally from this checkout. |
+| `validate-stack.ts` | The checks `local-stack.sh validate` runs through the proxy. |
+| `compose.dev.yml` | Local development PostgreSQL and Redis only, for `bun dev`. |
 | `stack.env.example` | The stack's configuration; copy to `stack.env` or enter it in Portainer. |
 | `publish-image.sh` | Build, check and publish an image from a clean checkout of one commit. |
 | `deploy-image.sh` | Deploy one published image. |
@@ -16,8 +19,12 @@ scripts that publish and deploy it. The decision behind this layout is
 ## The release image
 
 One Bun image runs everything; there is no Node.js in it. It contains the Next.js standalone
-server (`server.js`), the migration SQL (`drizzle/`) and the maintenance CLI (`cli.js`), so each
-release is one artifact. After the cutover to the standalone API, the same image runs the API.
+server (`server.js`), the standalone API (`api.js`), the migration SQL (`drizzle/`) and the
+maintenance CLI (`cli.js`), so each release is one artifact.
+
+`api.js` is `src/api/server.ts` bundled: Hono on Bun with its own database and Redis
+connections. It contains no Next.js; `src/api/standalone.test.ts` builds it the same way and
+fails if any Next.js module is in its graph.
 
 Next.js runs on Bun without Node. Verified on the local stack: the production build, sign-in,
 password reset, the admin and org-structure pages and the maintenance commands. One difference
@@ -32,31 +39,74 @@ key pair therefore means a new image.
 
 ## The stack
 
-`compose.yml` runs PostgreSQL and Redis on the stack's private network (neither publishes a port)
-and the app on `APP_PORT`. On every start:
+`compose.yml` runs everything on the stack's private network. Only `proxy` publishes a port
+(`APP_PORT`); services reach each other by service name (`db`, `redis`, `api:3000`, `web:3000`).
+
+| Service | Runs | Connects as |
+| --- | --- | --- |
+| `db`, `redis` | PostgreSQL 17, Redis 7 | |
+| `migrate` | `bun cli.js migrate`, then exits | `csk_hub`, the schema owner |
+| `api` | `bun api.js`: `/api/v1`, Better Auth (`/api/auth`), Member ID (`/api/member-id`) | `csk_hub_app`, data only |
+| `web` | `bun server.js`: the Next.js pages and, until real-time moves to the API, `/api/realtime` | `csk_hub_app`, data only |
+| `proxy` | Caddy: one origin for browsers and the iPhone companion | |
+
+On every start:
 
 1. `db` and `redis` become healthy.
-2. `migrate` runs `bun cli.js migrate` with the new image: it applies pending schema and data
-   migrations and exits. Nothing else happens on deploy; in particular, no default data is
-   written.
-3. `app` starts only if `migrate` exited successfully. A failed migration leaves the app stopped,
-   and `docker compose logs migrate` says why. Pending migrations apply in one transaction, so
-   a failed run changes nothing: redeploying the previous image brings the app back.
+2. `migrate` applies pending schema and data migrations as the schema owner. It then creates or
+   updates the runtime role `csk_hub_app` (password `POSTGRES_APP_PASSWORD`) and grants it row
+   access to every application table: it cannot create, alter or drop anything, or read the
+   migration ledger. Nothing else happens on deploy; in particular, no default data is written.
+3. `api` starts only if `migrate` exited successfully. A failed migration leaves it stopped, and
+   `docker compose logs migrate` says why. Pending migrations apply in one transaction, so a
+   failed run changes nothing: redeploying the previous image brings the stack back.
+4. `web` starts once `api` is healthy, then `proxy`.
+
+The proxy routes by path: `/api` and `/api/*` go to `api`, which answers unknown API paths with
+`404 {"code":"NOT_FOUND"}`; `/api/realtime/*` goes to `web` until the following delivery ticket
+moves real-time to the API; everything else goes to `web`. Nothing is compressed or buffered, so
+server-sent events stream as they are written.
+
+The web server renders pages from the API at `API_INTERNAL_URL` (`http://api:3000`), forwarding
+the caller's cookie and the public origin as `Origin`. The API accepts unsafe requests only with
+that public origin (`BETTER_AUTH_URL`), however it is reached.
 
 The database is reached as `db:5432` with `sslmode=disable`: the connection never leaves the
 private network. Everything else in `src/core/db/tls.ts` is unchanged.
 
-### Try it locally
+### Run it locally
+
+Needs Docker and Bun. From the repository root:
 
 ```bash
-docker build -f deploy/Dockerfile -t csk-hub:local --build-arg NEXT_PUBLIC_VAPID_PUBLIC_KEY=<key> .
-cp deploy/stack.env.example deploy/stack.env   # fill it in; EMAIL_MODE=log needs no SMTP
-DEPLOY_TARGET=compose deploy/deploy-image.sh csk-hub:local
+deploy/local-stack.sh up         # build csk-hub:local from the working tree and start the stack
+deploy/local-stack.sh validate   # check it through the proxy
+deploy/local-stack.sh logs       # follow the services' logs
+deploy/local-stack.sh down       # stop it, keeping its data
+deploy/local-stack.sh reset      # stop it and delete its database, Redis and certificate data
 ```
 
-Set `BETTER_AUTH_URL=http://localhost:<APP_PORT>` for a local run. Stop it with
-`docker compose -p csk-hub-stack -f deploy/compose.yml --env-file deploy/stack.env down`
-(add `-v` to delete its volumes).
+The Hub is at <https://localhost:8443>. The first `up` writes `deploy/local.env` (ignored by git)
+with fresh secrets and VAPID keys; delete it with `reset` to start over. Caddy serves localhost
+with a certificate from its own authority, which browsers warn about until it is trusted:
+`docker compose -p csk-hub-local cp proxy:/data/caddy/pki/authorities/local/root.crt .` exports
+it.
+
+Email is printed to the logs (`EMAIL_MODE=log`). To sign in, create an Admin and open the link
+from the printed invitation:
+
+```bash
+docker compose -p csk-hub-local exec api bun cli.js admin bootstrap --email you@example.org --name "You"
+```
+
+`validate` checks, through the proxy: unknown API paths get the API's error and web paths reach
+the web server; Better Auth activation and sign-in for a freshly invited Admin; Member ID issue
+and verify; a protected write that needs Hub's `Origin`; and a protected page that the web server
+renders from the API by service name.
+
+`up` is also how to apply new migrations: it rebuilds the image and `migrate` runs before the new
+`api` starts. The stack's project name is `csk-hub-local`, separate from the development database
+in `compose.dev.yml`, so both can run at once.
 
 ## Releasing
 
@@ -84,9 +134,9 @@ added yet; pushing to `master` runs CI only.
 
 ## Maintenance commands
 
-The image ships the maintenance CLI. Run it in the app container's console in Portainer
-(or `docker compose exec app ...` locally); it uses that container's database and email
-configuration, and none of its commands takes a target.
+The image ships the maintenance CLI. Run it in the api container's console in Portainer
+(or `docker compose exec api ...` locally); it uses that container's data-only database role and
+email configuration, and none of its commands takes a target.
 
 ```bash
 bun cli.js org bootstrap                                              # once, in a new environment

@@ -26,7 +26,9 @@ if (!process.env.CSK_DISPATCH_TEST) {
   const sleep = mock(async (_delay: number, _value?: unknown, _options?: { signal: AbortSignal }) => {})
   mock.module("node:timers/promises", () => ({ setTimeout: sleep }))
   const callbacks: Array<() => Promise<void>> = []
-  mock.module("next/server", () => ({ after: (callback: () => Promise<void>) => callbacks.push(callback) }))
+  const after = (callback: () => Promise<void>) => {
+    callbacks.push(callback)
+  }
   const { deliverPendingActivity } = await import("./deliver-pending")
   const { DispatchWakeup } = await import("./dispatch-wakeup")
   const { scheduleActivityDispatch } = await import("./schedule-dispatch")
@@ -41,7 +43,7 @@ if (!process.env.CSK_DISPATCH_TEST) {
 
   describe("after-response delivery", () => {
     test("scheduling does no delivery until the response callback runs", async () => {
-      scheduleActivityDispatch(policy)
+      scheduleActivityDispatch(policy, after)
       expect(dispatch).not.toHaveBeenCalled()
       expect(callbacks).toHaveLength(1)
       await callbacks[0]()
@@ -62,10 +64,10 @@ if (!process.env.CSK_DISPATCH_TEST) {
         active--
         return { processed: 1 }
       })
-      scheduleActivityDispatch(policy)
+      scheduleActivityDispatch(policy, after)
       const first = callbacks[0]()
       await started.promise
-      scheduleActivityDispatch(policy)
+      scheduleActivityDispatch(policy, after)
       const second = callbacks[1]()
       release.resolve()
       await Promise.all([first, second])
@@ -79,10 +81,10 @@ if (!process.env.CSK_DISPATCH_TEST) {
         waiting.resolve()
         await new Promise<void>((resolve) => options?.signal.addEventListener("abort", () => resolve(), { once: true }))
       })
-      scheduleActivityDispatch(policy)
+      scheduleActivityDispatch(policy, after)
       const first = callbacks[0]()
       await waiting.promise
-      scheduleActivityDispatch(policy)
+      scheduleActivityDispatch(policy, after)
       const second = callbacks[1]()
       await Promise.all([first, second])
       expect(dispatch).toHaveBeenCalledTimes(2)
@@ -109,11 +111,11 @@ if (!process.env.CSK_DISPATCH_TEST) {
         return { processed: 1 }
       })
       try {
-        scheduleActivityDispatch(policy)
+        scheduleActivityDispatch(policy, after)
         const first = callbacks[0]()
         await started.promise
         stop.abort()
-        scheduleActivityDispatch(policy)
+        scheduleActivityDispatch(policy, after)
         const second = callbacks[1]()
         release.resolve()
         await Promise.all([first, second])
@@ -126,7 +128,7 @@ if (!process.env.CSK_DISPATCH_TEST) {
 
     test("disabled realtime schedules no work", () => {
       env.REDIS_URL = ""
-      scheduleActivityDispatch(policy)
+      scheduleActivityDispatch(policy, after)
       expect(callbacks).toHaveLength(0)
     })
 

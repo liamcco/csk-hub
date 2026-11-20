@@ -15,7 +15,7 @@ const access = database
       readSession: async () => (viewer ? { user: { id: viewer } } : null)
     })
   : undefined
-mock.module("@/core/authz", () => ({ AuthorizationDeniedError, forCurrentRequest: access?.forCurrentRequest }))
+const resolve = access?.forCurrentRequest as NonNullable<typeof access>["forCurrentRequest"]
 mock.module("@/core/db", () => ({ db: database?.db }))
 const { getCurrentEventPage, listCurrentUpcomingEvents } = await import("./query")
 
@@ -42,20 +42,22 @@ describe.skipIf(!database)("protected Event calendar", () => {
     )
     expectSuccess(await changeEventStatus(t.db, stored.id, "Published"))
     const before = new Date("2026-09-30")
-    expect(await getCurrentEventPage(stored.id, before)).toMatchObject({ id: stored.id })
-    expect((await listCurrentUpcomingEvents(before)).events.map(({ id }) => id)).toContain(stored.id)
+    expect(await getCurrentEventPage(stored.id, before, t.db, resolve)).toMatchObject({ id: stored.id })
+    expect((await listCurrentUpcomingEvents(before, t.db, resolve)).events.map(({ id }) => id)).toContain(stored.id)
     expect((await endMembership(t.db, { userId: viewer, groupId, endDate: "2026-10-02" })).success).toBe(true)
-    expect(await getCurrentEventPage(stored.id, before)).toBeNull()
-    expect((await listCurrentUpcomingEvents(before)).events).toEqual([])
-    expect(await getCurrentEventPage(stored.id, new Date("2026-10-01T16:00Z"))).toMatchObject({ id: stored.id })
-    expect((await listCurrentUpcomingEvents(new Date("2026-10-02T18:00Z"))).events.map(({ id }) => id)).toContain(
-      stored.id
-    )
-    expect(await getCurrentEventPage(stored.id, new Date("2026-10-04"))).toMatchObject({ id: stored.id })
+    expect(await getCurrentEventPage(stored.id, before, t.db, resolve)).toBeNull()
+    expect((await listCurrentUpcomingEvents(before, t.db, resolve)).events).toEqual([])
+    expect(await getCurrentEventPage(stored.id, new Date("2026-10-01T16:00Z"), t.db, resolve)).toMatchObject({
+      id: stored.id
+    })
+    expect(
+      (await listCurrentUpcomingEvents(new Date("2026-10-02T18:00Z"), t.db, resolve)).events.map(({ id }) => id)
+    ).toContain(stored.id)
+    expect(await getCurrentEventPage(stored.id, new Date("2026-10-04"), t.db, resolve)).toMatchObject({ id: stored.id })
     await t.db.update(user).set({ banned: true }).where(eq(user.id, viewer))
-    await expect(getCurrentEventPage(stored.id, before)).rejects.toBeInstanceOf(AuthorizationDeniedError)
-    await expect(listCurrentUpcomingEvents(before)).rejects.toBeInstanceOf(AuthorizationDeniedError)
+    await expect(getCurrentEventPage(stored.id, before, t.db, resolve)).rejects.toBeInstanceOf(AuthorizationDeniedError)
+    await expect(listCurrentUpcomingEvents(before, t.db, resolve)).rejects.toBeInstanceOf(AuthorizationDeniedError)
     viewer = null
-    await expect(getCurrentEventPage(stored.id, before)).rejects.toBeInstanceOf(AuthorizationDeniedError)
+    await expect(getCurrentEventPage(stored.id, before, t.db, resolve)).rejects.toBeInstanceOf(AuthorizationDeniedError)
   })
 })

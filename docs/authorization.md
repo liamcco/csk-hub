@@ -42,7 +42,7 @@ still go through its commands. Document validation, lifecycle predicates and Con
 history remain feature-owned.
 
 ```ts
-import { can, requirePermission } from "@/core/authz"
+import { can, requirePermission } from "@/core/authz/request"
 
 const mayEdit = await can({ action: "post.update", context: { post } }) // UI hint only
 
