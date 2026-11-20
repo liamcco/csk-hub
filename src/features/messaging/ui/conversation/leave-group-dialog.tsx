@@ -1,5 +1,6 @@
 "use client"
 
+import { useRouter } from "next/navigation"
 import { useActionState, useEffect, useState } from "react"
 import { useTranslations } from "@/core/i18n/translations"
 import {
@@ -13,18 +14,21 @@ import {
   AlertDialogTrigger
 } from "@/shared/ui/base/alert-dialog"
 import { Button } from "@/shared/ui/base/button"
+import { groupConversationCommand } from "../api-commands"
 import type { MessageCommandState } from "../composer/message-command-state"
-import { groupConversationAction } from "./group-actions"
 
 const initialState: MessageCommandState = { status: "idle" }
 export function LeaveGroupDialog({ conversationId }: { conversationId: string }) {
   const t = useTranslations("Messages")
   const common = useTranslations("Common")
+  const router = useRouter()
   const [open, setOpen] = useState(false)
-  const [state, action, pending] = useActionState(groupConversationAction, initialState)
+  const [state, action, pending] = useActionState(groupConversationCommand, initialState)
   useEffect(() => {
-    if (state.status === "success") setOpen(false)
-  }, [state])
+    if (state.status !== "success") return
+    setOpen(false)
+    router.refresh()
+  }, [state, router])
   return (
     <AlertDialog
       open={open}

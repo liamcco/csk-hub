@@ -1,8 +1,6 @@
 import "server-only"
 
 import { and, asc, desc, eq, isNull, lt } from "drizzle-orm"
-import { requirePermission } from "@/core/authz"
-import { db } from "@/core/db"
 import { user } from "@/core/db/schema/auth"
 import {
   conversation,
@@ -12,6 +10,7 @@ import {
   message
 } from "@/core/db/schema/messaging"
 import { groupHistoryVisibility } from "../../group-conversations/access"
+import { type MessagingContext, messagingContext } from "../../model/context"
 import { canReceiveDirectMessages, getDirectCounterpartId } from "../../model/direct-conversation"
 import { MessagingAccessError } from "../../model/messaging-error"
 import { createReadToken } from "./read-token"
@@ -19,9 +18,13 @@ import { createReadToken } from "./read-token"
 const MESSAGE_PAGE_SIZE = 50
 
 /** Returns a direct conversation timeline window in chronological display order. */
-async function getDirectConversationPage(conversationId: string, beforeSequence?: number) {
-  const { userId } = await requirePermission({ action: "app.access" })
-  const [pair] = await db
+async function getDirectConversationPage(
+  { database, authorize }: MessagingContext,
+  conversationId: string,
+  beforeSequence?: number
+) {
+  const { userId } = await authorize({ action: "app.access" })
+  const [pair] = await database
     .select({ firstMemberId: directConversation.firstMemberId, secondMemberId: directConversation.secondMemberId })
     .from(directConversation)
     .where(eq(directConversation.conversationId, conversationId))
@@ -33,10 +36,14 @@ async function getDirectConversationPage(conversationId: string, beforeSequence?
   if (!otherMemberId) throw new MessagingAccessError("conversation-view-forbidden")
 
   const [otherMember] = otherMemberId
-    ? await db.select({ name: user.name, banned: user.banned }).from(user).where(eq(user.id, otherMemberId)).limit(1)
+    ? await database
+        .select({ name: user.name, banned: user.banned })
+        .from(user)
+        .where(eq(user.id, otherMemberId))
+        .limit(1)
     : []
 
-  const rows = await db
+  const rows = await database
     .select({
       id: message.id,
       sequence: message.sequence,
@@ -78,9 +85,13 @@ async function getDirectConversationPage(conversationId: string, beforeSequence?
 }
 
 /** Keep the viewer's departure cutoff stable while loading their timeline window. */
-async function getGroupConversationPage(conversationId: string, beforeSequence?: number) {
-  return db.transaction(async (tx) => {
-    const { userId } = await requirePermission({ action: "app.access" }, tx)
+async function getGroupConversationPage(
+  { database, authorize }: MessagingContext,
+  conversationId: string,
+  beforeSequence?: number
+) {
+  return database.transaction(async (tx) => {
+    const { userId } = await authorize({ action: "app.access" }, tx)
     const [membership] = await tx
       .select({
         name: groupConversation.name,
@@ -143,14 +154,16 @@ async function getGroupConversationPage(conversationId: string, beforeSequence?:
   })
 }
 
-export async function getConversationPage(conversationId: string, beforeSequence?: number) {
-  const [target] = await db
+export async function getConversationPage(conversationId: string, beforeSequence?: number, context?: MessagingContext) {
+  const resolved = await messagingContext(context)
+  const { database } = resolved
+  const [target] = await database
     .select({ kind: conversation.kind })
     .from(conversation)
     .where(eq(conversation.id, conversationId))
     .limit(1)
   if (!target) throw new MessagingAccessError("conversation-not-found")
   return target.kind === "group"
-    ? getGroupConversationPage(conversationId, beforeSequence)
-    : getDirectConversationPage(conversationId, beforeSequence)
+    ? getGroupConversationPage(resolved, conversationId, beforeSequence)
+    : getDirectConversationPage(resolved, conversationId, beforeSequence)
 }

@@ -11,8 +11,9 @@ import type { Database } from "@/core/db"
 const placeholders = {
   POSTGRES_URL: "postgresql://contract-export@localhost/unused",
   BETTER_AUTH_SECRET: "contract-export",
-  NEXT_PUBLIC_VAPID_PUBLIC_KEY: "contract-export",
-  VAPID_PRIVATE_KEY: "contract-export"
+  // Web Push checks the key shapes when loaded: a 65-byte public and a 32-byte private key.
+  NEXT_PUBLIC_VAPID_PUBLIC_KEY: `B${"A".repeat(86)}`,
+  VAPID_PRIVATE_KEY: "AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE"
 }
 for (const [name, value] of Object.entries(placeholders)) process.env[name] ??= value
 

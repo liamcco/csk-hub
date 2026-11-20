@@ -1,21 +1,21 @@
 import "server-only"
 
 import { and, asc, eq, ilike, isNull, ne, or } from "drizzle-orm"
-import { requirePermission } from "@/core/authz"
-import { db } from "@/core/db"
 import { user } from "@/core/db/schema/auth"
+import { type MessagingContext, messagingContext } from "../../model/context"
 
 const MEMBER_SEARCH_LIMIT = 20
 
-export async function searchMembers(query: string) {
-  const { userId } = await requirePermission({ action: "app.access" })
+export async function searchMembers(query: string, context?: MessagingContext) {
+  const { database, authorize } = await messagingContext(context)
+  const { userId } = await authorize({ action: "app.access" })
   const search = query.trim()
 
   if (!search) return []
 
   const pattern = `%${search.replaceAll("\\", "\\\\").replaceAll("%", "\\%").replaceAll("_", "\\_")}%`
 
-  return db
+  return database
     .select({ id: user.id, name: user.name, username: user.username })
     .from(user)
     .where(

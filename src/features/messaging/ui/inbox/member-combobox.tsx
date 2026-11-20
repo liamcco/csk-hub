@@ -12,7 +12,7 @@ import {
   ComboboxItem,
   ComboboxList
 } from "@/shared/ui/base/combobox"
-import { searchMembersAction } from "./actions"
+import { searchRecipients } from "../api-commands"
 
 type Member = { id: string; name: string; username: string | null }
 
@@ -34,7 +34,7 @@ export function MemberCombobox({
 
   const searchMembers = useCallback((query: string, request: number) => {
     startTransition(() => {
-      return searchMembersAction(query)
+      return searchRecipients(query)
         .then((result) => {
           if (latestRequest.current === request) {
             setMembers(result)

@@ -1,10 +1,9 @@
 import "server-only"
 
 import { eq } from "drizzle-orm"
-import { requirePermission } from "@/core/authz"
-import { db } from "@/core/db"
 import { conversation } from "@/core/db/schema/messaging"
 import { requireActiveGroupMember } from "../group-conversations"
+import { type MessagingContext, messagingContext } from "../model/context"
 import { validateMessageBody } from "../model/message-body"
 import { MessagingAccessError } from "../model/messaging-error"
 import { appendMessage } from "./append-message"
@@ -12,14 +11,15 @@ import { resolveActiveDirectCounterpart } from "./direct-recipient"
 
 type SendMessageInput = { conversationId: string; text: unknown; idempotencyKey: string }
 
-export async function sendMessage(input: SendMessageInput) {
+export async function sendMessage(input: SendMessageInput, context?: MessagingContext) {
+  const { database, authorize } = await messagingContext(context)
   const body = validateMessageBody(input.text)
 
   if (!body.success) throw new MessagingAccessError(body.error)
   if (!input.idempotencyKey.trim()) throw new MessagingAccessError("idempotency-key-required")
 
-  return db.transaction(async (tx) => {
-    const { userId } = await requirePermission({ action: "app.access" }, tx)
+  return database.transaction(async (tx) => {
+    const { userId } = await authorize({ action: "app.access" }, tx)
     const [target] = await tx
       .select({ kind: conversation.kind })
       .from(conversation)

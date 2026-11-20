@@ -5,15 +5,11 @@ import { conversationPath } from "@/core/navigation/navigation-utils"
 import { Card, CardContent } from "@/shared/ui/base/card"
 import { Skeleton } from "@/shared/ui/base/skeleton"
 import { formatMessageSentAt } from "../message-timestamp"
-import { listConversations } from "./query"
+import { readInbox } from "../screen-reads"
 import { StartConversationDialog } from "./start-conversation-dialog"
 
 export async function MessagesScreen() {
-  const [conversations, t, format] = await Promise.all([
-    listConversations(),
-    getTranslations("Messages"),
-    getFormatter()
-  ])
+  const [conversations, t, format] = await Promise.all([readInbox(), getTranslations("Messages"), getFormatter()])
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-8 sm:px-6">

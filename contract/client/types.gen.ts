@@ -270,6 +270,89 @@ export type PostReadResult = {
     changed: boolean;
 };
 
+export type Inbox = {
+    items: Array<{
+        kind: 'direct' | 'group';
+        id: string;
+        /**
+         * The other member, or the Group Conversation's name; null after Erasure.
+         */
+        otherMemberName: string | null;
+        preview: string | null;
+        sentAt: string;
+        unreadCount: number;
+        /**
+         * False after departure or when the other member is inactive.
+         */
+        canSend: boolean;
+    }>;
+};
+
+export type ConversationUnread = {
+    count: number;
+};
+
+export type MessageRecipients = {
+    items: Array<{
+        id: string;
+        name: string;
+        username: string | null;
+    }>;
+};
+
+export type ConversationPage = {
+    kind: 'direct' | 'group';
+    conversationId: string;
+    otherMemberName: string | null;
+    /**
+     * Direct only: the active member's id.
+     */
+    otherMemberProfileId: string | null;
+    canSend: boolean;
+    members: Array<{
+        id: string;
+        name: string;
+    }>;
+    messages: Array<{
+        id: string;
+        sequence: number;
+        text: string;
+        sentAt: string;
+        authorUserId: string | null;
+        authorName: string | null;
+        isOwnMessage: boolean;
+    }>;
+    hasOlder: boolean;
+    nextBeforeSequence: number | null;
+    newestSequence: number;
+    /**
+     * Proves the caller saw `newestSequence`; required to mark it read.
+     */
+    readToken: string | null;
+};
+
+export type MessagingError = {
+    /**
+     * Stable Messaging failure code. Clients must tolerate unknown codes.
+     */
+    code: 'GROUP_NAME_INVALID' | 'GROUP_MEMBERS_TOO_MANY' | 'BLANK_MESSAGE' | 'MESSAGE_TOO_LONG' | 'SIGN_IN_REQUIRED' | 'RECIPIENT_REQUIRED' | 'RECIPIENT_INACTIVE' | 'IDEMPOTENCY_KEY_REQUIRED' | 'IDEMPOTENCY_KEY_REUSED' | 'SELF_RECIPIENT' | 'CONVERSATION_SEND_FORBIDDEN' | 'GROUP_MANAGEMENT_FORBIDDEN' | 'CONVERSATION_RECIPIENT_INACTIVE' | 'CONVERSATION_UNAVAILABLE' | 'CONVERSATION_VIEW_FORBIDDEN' | 'CONVERSATION_NOT_FOUND' | 'READ_POSITION_INVALID';
+};
+
+export type ConversationRef = {
+    conversationId: string;
+};
+
+export type SentMessage = {
+    conversationId: string;
+    id: string;
+    sequence: number;
+    created: boolean;
+};
+
+export type ConversationReadResult = {
+    changed: boolean;
+};
+
 export type MemberIdSession = {
     member: MemberIdMember;
     /**
@@ -957,6 +1040,385 @@ export type MarkPostReadResponses = {
 };
 
 export type MarkPostReadResponse = MarkPostReadResponses[keyof MarkPostReadResponses];
+
+export type ListConversationsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/conversations';
+};
+
+export type ListConversationsErrors = {
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+};
+
+export type ListConversationsError = ListConversationsErrors[keyof ListConversationsErrors];
+
+export type ListConversationsResponses = {
+    /**
+     * The inbox.
+     */
+    200: Inbox;
+};
+
+export type ListConversationsResponse = ListConversationsResponses[keyof ListConversationsResponses];
+
+export type StartConversationData = {
+    body: {
+        memberIds: Array<string>;
+        /**
+         * The first Message; required for a Direct Conversation.
+         */
+        text?: string;
+        /**
+         * Required for a Group Conversation.
+         */
+        name?: string;
+        idempotencyKey: string;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/v1/conversations';
+};
+
+export type StartConversationErrors = {
+    /**
+     * Messaging codes: `GROUP_NAME_INVALID`, `GROUP_MEMBERS_TOO_MANY`, `BLANK_MESSAGE`, `MESSAGE_TOO_LONG`, `RECIPIENT_REQUIRED`, `IDEMPOTENCY_KEY_REQUIRED`, `SELF_RECIPIENT`, `READ_POSITION_INVALID`.
+     */
+    400: MessagingError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * Messaging codes: `CONVERSATION_SEND_FORBIDDEN`, `GROUP_MANAGEMENT_FORBIDDEN`, `CONVERSATION_VIEW_FORBIDDEN`.
+     */
+    403: MessagingError;
+    /**
+     * Messaging codes: `CONVERSATION_UNAVAILABLE`, `CONVERSATION_NOT_FOUND`.
+     */
+    404: MessagingError;
+    /**
+     * Messaging codes: `RECIPIENT_INACTIVE`, `IDEMPOTENCY_KEY_REUSED`, `CONVERSATION_RECIPIENT_INACTIVE`.
+     */
+    409: MessagingError;
+};
+
+export type StartConversationError = StartConversationErrors[keyof StartConversationErrors];
+
+export type StartConversationResponses = {
+    /**
+     * The Conversation.
+     */
+    200: ConversationRef;
+};
+
+export type StartConversationResponse = StartConversationResponses[keyof StartConversationResponses];
+
+export type GetConversationUnreadData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/conversations/unread';
+};
+
+export type GetConversationUnreadErrors = {
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+};
+
+export type GetConversationUnreadError = GetConversationUnreadErrors[keyof GetConversationUnreadErrors];
+
+export type GetConversationUnreadResponses = {
+    /**
+     * The unread count.
+     */
+    200: ConversationUnread;
+};
+
+export type GetConversationUnreadResponse = GetConversationUnreadResponses[keyof GetConversationUnreadResponses];
+
+export type SearchMessageRecipientsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        query?: string;
+    };
+    url: '/api/v1/conversations/recipients';
+};
+
+export type SearchMessageRecipientsErrors = {
+    /**
+     * The request failed validation.
+     */
+    400: ValidationError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+};
+
+export type SearchMessageRecipientsError = SearchMessageRecipientsErrors[keyof SearchMessageRecipientsErrors];
+
+export type SearchMessageRecipientsResponses = {
+    /**
+     * Up to 20 members.
+     */
+    200: MessageRecipients;
+};
+
+export type SearchMessageRecipientsResponse = SearchMessageRecipientsResponses[keyof SearchMessageRecipientsResponses];
+
+export type GetConversationData = {
+    body?: never;
+    path: {
+        conversationId: string;
+    };
+    query?: {
+        before?: number;
+    };
+    url: '/api/v1/conversations/{conversationId}';
+};
+
+export type GetConversationErrors = {
+    /**
+     * The request failed validation.
+     */
+    400: ValidationError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * Messaging codes: `CONVERSATION_SEND_FORBIDDEN`, `GROUP_MANAGEMENT_FORBIDDEN`, `CONVERSATION_VIEW_FORBIDDEN`.
+     */
+    403: MessagingError;
+    /**
+     * Messaging codes: `CONVERSATION_UNAVAILABLE`, `CONVERSATION_NOT_FOUND`.
+     */
+    404: MessagingError;
+};
+
+export type GetConversationError = GetConversationErrors[keyof GetConversationErrors];
+
+export type GetConversationResponses = {
+    /**
+     * The Conversation page.
+     */
+    200: ConversationPage;
+};
+
+export type GetConversationResponse = GetConversationResponses[keyof GetConversationResponses];
+
+export type SendMessageData = {
+    body: {
+        text: string;
+        idempotencyKey: string;
+    };
+    path: {
+        conversationId: string;
+    };
+    query?: never;
+    url: '/api/v1/conversations/{conversationId}/messages';
+};
+
+export type SendMessageErrors = {
+    /**
+     * Messaging codes: `GROUP_NAME_INVALID`, `GROUP_MEMBERS_TOO_MANY`, `BLANK_MESSAGE`, `MESSAGE_TOO_LONG`, `RECIPIENT_REQUIRED`, `IDEMPOTENCY_KEY_REQUIRED`, `SELF_RECIPIENT`, `READ_POSITION_INVALID`.
+     */
+    400: MessagingError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * Messaging codes: `CONVERSATION_SEND_FORBIDDEN`, `GROUP_MANAGEMENT_FORBIDDEN`, `CONVERSATION_VIEW_FORBIDDEN`.
+     */
+    403: MessagingError;
+    /**
+     * Messaging codes: `CONVERSATION_UNAVAILABLE`, `CONVERSATION_NOT_FOUND`.
+     */
+    404: MessagingError;
+    /**
+     * Messaging codes: `RECIPIENT_INACTIVE`, `IDEMPOTENCY_KEY_REUSED`, `CONVERSATION_RECIPIENT_INACTIVE`.
+     */
+    409: MessagingError;
+};
+
+export type SendMessageError = SendMessageErrors[keyof SendMessageErrors];
+
+export type SendMessageResponses = {
+    /**
+     * The Message; `created` is false for a retry.
+     */
+    200: SentMessage;
+};
+
+export type SendMessageResponse = SendMessageResponses[keyof SendMessageResponses];
+
+export type MarkConversationReadData = {
+    body: {
+        sequence: number;
+        token: string;
+    };
+    path: {
+        conversationId: string;
+    };
+    query?: never;
+    url: '/api/v1/conversations/{conversationId}/read';
+};
+
+export type MarkConversationReadErrors = {
+    /**
+     * Messaging codes: `GROUP_NAME_INVALID`, `GROUP_MEMBERS_TOO_MANY`, `BLANK_MESSAGE`, `MESSAGE_TOO_LONG`, `RECIPIENT_REQUIRED`, `IDEMPOTENCY_KEY_REQUIRED`, `SELF_RECIPIENT`, `READ_POSITION_INVALID`.
+     */
+    400: MessagingError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * Messaging codes: `CONVERSATION_SEND_FORBIDDEN`, `GROUP_MANAGEMENT_FORBIDDEN`, `CONVERSATION_VIEW_FORBIDDEN`.
+     */
+    403: MessagingError;
+};
+
+export type MarkConversationReadError = MarkConversationReadErrors[keyof MarkConversationReadErrors];
+
+export type MarkConversationReadResponses = {
+    /**
+     * Whether the cursor moved.
+     */
+    200: ConversationReadResult;
+};
+
+export type MarkConversationReadResponse = MarkConversationReadResponses[keyof MarkConversationReadResponses];
+
+export type AddGroupMembersData = {
+    body: {
+        memberIds: Array<string>;
+    };
+    path: {
+        conversationId: string;
+    };
+    query?: never;
+    url: '/api/v1/conversations/{conversationId}/members';
+};
+
+export type AddGroupMembersErrors = {
+    /**
+     * Messaging codes: `GROUP_NAME_INVALID`, `GROUP_MEMBERS_TOO_MANY`, `BLANK_MESSAGE`, `MESSAGE_TOO_LONG`, `RECIPIENT_REQUIRED`, `IDEMPOTENCY_KEY_REQUIRED`, `SELF_RECIPIENT`, `READ_POSITION_INVALID`.
+     */
+    400: MessagingError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * Messaging codes: `CONVERSATION_SEND_FORBIDDEN`, `GROUP_MANAGEMENT_FORBIDDEN`, `CONVERSATION_VIEW_FORBIDDEN`.
+     */
+    403: MessagingError;
+    /**
+     * Messaging codes: `CONVERSATION_UNAVAILABLE`, `CONVERSATION_NOT_FOUND`.
+     */
+    404: MessagingError;
+    /**
+     * Messaging codes: `RECIPIENT_INACTIVE`, `IDEMPOTENCY_KEY_REUSED`, `CONVERSATION_RECIPIENT_INACTIVE`.
+     */
+    409: MessagingError;
+};
+
+export type AddGroupMembersError = AddGroupMembersErrors[keyof AddGroupMembersErrors];
+
+export type AddGroupMembersResponses = {
+    /**
+     * The Conversation.
+     */
+    200: ConversationRef;
+};
+
+export type AddGroupMembersResponse = AddGroupMembersResponses[keyof AddGroupMembersResponses];
+
+export type RenameGroupConversationData = {
+    body: {
+        name: string;
+    };
+    path: {
+        conversationId: string;
+    };
+    query?: never;
+    url: '/api/v1/conversations/{conversationId}/name';
+};
+
+export type RenameGroupConversationErrors = {
+    /**
+     * Messaging codes: `GROUP_NAME_INVALID`, `GROUP_MEMBERS_TOO_MANY`, `BLANK_MESSAGE`, `MESSAGE_TOO_LONG`, `RECIPIENT_REQUIRED`, `IDEMPOTENCY_KEY_REQUIRED`, `SELF_RECIPIENT`, `READ_POSITION_INVALID`.
+     */
+    400: MessagingError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * Messaging codes: `CONVERSATION_SEND_FORBIDDEN`, `GROUP_MANAGEMENT_FORBIDDEN`, `CONVERSATION_VIEW_FORBIDDEN`.
+     */
+    403: MessagingError;
+    /**
+     * Messaging codes: `CONVERSATION_UNAVAILABLE`, `CONVERSATION_NOT_FOUND`.
+     */
+    404: MessagingError;
+};
+
+export type RenameGroupConversationError = RenameGroupConversationErrors[keyof RenameGroupConversationErrors];
+
+export type RenameGroupConversationResponses = {
+    /**
+     * The Conversation.
+     */
+    200: ConversationRef;
+};
+
+export type RenameGroupConversationResponse = RenameGroupConversationResponses[keyof RenameGroupConversationResponses];
+
+export type LeaveGroupConversationData = {
+    body?: never;
+    path: {
+        conversationId: string;
+    };
+    query?: never;
+    url: '/api/v1/conversations/{conversationId}/leave';
+};
+
+export type LeaveGroupConversationErrors = {
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * Messaging codes: `CONVERSATION_SEND_FORBIDDEN`, `GROUP_MANAGEMENT_FORBIDDEN`, `CONVERSATION_VIEW_FORBIDDEN`.
+     */
+    403: MessagingError;
+    /**
+     * Messaging codes: `CONVERSATION_UNAVAILABLE`, `CONVERSATION_NOT_FOUND`.
+     */
+    404: MessagingError;
+};
+
+export type LeaveGroupConversationError = LeaveGroupConversationErrors[keyof LeaveGroupConversationErrors];
+
+export type LeaveGroupConversationResponses = {
+    /**
+     * The Conversation.
+     */
+    200: ConversationRef;
+};
+
+export type LeaveGroupConversationResponse = LeaveGroupConversationResponses[keyof LeaveGroupConversationResponses];
 
 export type GetMemberIdSessionData = {
     body?: never;

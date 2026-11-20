@@ -33,7 +33,7 @@ behind `scheduleActivityDispatch()` (see "Delivery boundary").
 | 2 | App shell: navigation capabilities, admin page gates | `getCurrentCapabilities` | `capabilities.test.ts` | primary navigation, quick-access bar, every `/admin` page gate | `shell.e2e.ts` | done |
 | 3 | News feed, Posts, Drafts, recall, unread | `listNewsFeed`, `listLatestPosts`, `listOwnDrafts`, `getPostUnread`, `getPost`, `getEditablePost`, `createPost`, `saveDraft`, `editPublishedPost`, `recallPost`, `discardDraft`, `markPostRead` | `posts.test.ts` | `/news`, `/news/new`, `/news/[id]`, `/news/[id]/edit`, News badge and expiry | `posts.e2e.ts` | done |
 | 4 | Home (greeting, latest News; upcoming Events with slice 6) | `getCurrentCapabilities`, `listLatestPosts` | via slices 2–3 | `/` greeting and News card | — | partial |
-| 5 | Direct and Group Conversations, Messages, unread | | | | | todo |
+| 5 | Direct and Group Conversations, Messages, unread | `listConversations`, `getConversationUnread`, `searchMessageRecipients`, `getConversation`, `startConversation`, `sendMessage`, `markConversationRead`, `addGroupMembers`, `renameGroupConversation`, `leaveGroupConversation` | `messaging.test.ts` | `/messages`, `/messages/[id]`, start dialog, composer, Group controls, Messages badge | `messaging.e2e.ts` | done |
 | 6 | Events and Locations | | | | | todo |
 | 7 | Account settings: locale, push subscriptions | | | | | todo |
 | 8 | User administration | | | | | todo |
@@ -67,4 +67,11 @@ keep their own path: `push: false` outbox rows plus direct Web Push.
 
 ## Gaps
 
-- None yet.
+- Real-time delivery (`/api/realtime/events`, `/api/realtime/ack`, `ActivityConnection`) stays on
+  its Next.js route handlers; moving it onto Hono and a supervised worker is ticket #6.
+- `src/proxy.ts` still reads the Better Auth session and locale preference for routing; it goes
+  away with the Next.js host.
+- Group departure, Direct Conversations with an inactive member and Message retries are verified
+  over HTTP (`messaging.test.ts`); the browser journey covers starting, replying and reading.
+- Messaging services accept a `MessagingContext`; callers without one (older unit tests and the
+  activity integration suite) fall back to the application database and the Next.js session.

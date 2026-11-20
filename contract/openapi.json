@@ -943,6 +943,293 @@
           "changed"
         ]
       },
+      "Inbox": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "direct",
+                    "group"
+                  ]
+                },
+                "id": {
+                  "type": "string"
+                },
+                "otherMemberName": {
+                  "type": "string",
+                  "nullable": true,
+                  "description": "The other member, or the Group Conversation's name; null after Erasure."
+                },
+                "preview": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "sentAt": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "unreadCount": {
+                  "type": "integer"
+                },
+                "canSend": {
+                  "type": "boolean",
+                  "description": "False after departure or when the other member is inactive."
+                }
+              },
+              "required": [
+                "kind",
+                "id",
+                "otherMemberName",
+                "preview",
+                "sentAt",
+                "unreadCount",
+                "canSend"
+              ]
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "ConversationUnread": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "count"
+        ]
+      },
+      "MessageRecipients": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "username": {
+                  "type": "string",
+                  "nullable": true
+                }
+              },
+              "required": [
+                "id",
+                "name",
+                "username"
+              ]
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "ConversationPage": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "direct",
+              "group"
+            ]
+          },
+          "conversationId": {
+            "type": "string"
+          },
+          "otherMemberName": {
+            "type": "string",
+            "nullable": true
+          },
+          "otherMemberProfileId": {
+            "type": "string",
+            "nullable": true,
+            "description": "Direct only: the active member's id."
+          },
+          "canSend": {
+            "type": "boolean"
+          },
+          "members": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "name"
+              ]
+            }
+          },
+          "messages": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "sequence": {
+                  "type": "integer"
+                },
+                "text": {
+                  "type": "string"
+                },
+                "sentAt": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "authorUserId": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "authorName": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "isOwnMessage": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "id",
+                "sequence",
+                "text",
+                "sentAt",
+                "authorUserId",
+                "authorName",
+                "isOwnMessage"
+              ]
+            }
+          },
+          "hasOlder": {
+            "type": "boolean"
+          },
+          "nextBeforeSequence": {
+            "type": "integer",
+            "nullable": true
+          },
+          "newestSequence": {
+            "type": "integer"
+          },
+          "readToken": {
+            "type": "string",
+            "nullable": true,
+            "description": "Proves the caller saw `newestSequence`; required to mark it read."
+          }
+        },
+        "required": [
+          "kind",
+          "conversationId",
+          "otherMemberName",
+          "otherMemberProfileId",
+          "canSend",
+          "members",
+          "messages",
+          "hasOlder",
+          "nextBeforeSequence",
+          "newestSequence",
+          "readToken"
+        ]
+      },
+      "MessagingError": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "GROUP_NAME_INVALID",
+              "GROUP_MEMBERS_TOO_MANY",
+              "BLANK_MESSAGE",
+              "MESSAGE_TOO_LONG",
+              "SIGN_IN_REQUIRED",
+              "RECIPIENT_REQUIRED",
+              "RECIPIENT_INACTIVE",
+              "IDEMPOTENCY_KEY_REQUIRED",
+              "IDEMPOTENCY_KEY_REUSED",
+              "SELF_RECIPIENT",
+              "CONVERSATION_SEND_FORBIDDEN",
+              "GROUP_MANAGEMENT_FORBIDDEN",
+              "CONVERSATION_RECIPIENT_INACTIVE",
+              "CONVERSATION_UNAVAILABLE",
+              "CONVERSATION_VIEW_FORBIDDEN",
+              "CONVERSATION_NOT_FOUND",
+              "READ_POSITION_INVALID"
+            ],
+            "description": "Stable Messaging failure code. Clients must tolerate unknown codes."
+          }
+        },
+        "required": [
+          "code"
+        ]
+      },
+      "ConversationRef": {
+        "type": "object",
+        "properties": {
+          "conversationId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "conversationId"
+        ]
+      },
+      "SentMessage": {
+        "type": "object",
+        "properties": {
+          "conversationId": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "sequence": {
+            "type": "integer"
+          },
+          "created": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "conversationId",
+          "id",
+          "sequence",
+          "created"
+        ]
+      },
+      "ConversationReadResult": {
+        "type": "object",
+        "properties": {
+          "changed": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "changed"
+        ]
+      },
       "MemberIdSession": {
         "type": "object",
         "properties": {
@@ -2173,6 +2460,745 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/conversations": {
+      "get": {
+        "operationId": "listConversations",
+        "summary": "The caller's Direct and Group Conversations, most recent first.",
+        "description": "A departed member keeps the history retained for them, read-only.",
+        "tags": [
+          "messaging"
+        ],
+        "responses": {
+          "200": {
+            "description": "The inbox.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Inbox"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No active signed-in User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "startConversation",
+        "summary": "Starts a Direct Conversation with a first Message (one member) or a named Group Conversation.",
+        "description": "Retrying with the same `idempotencyKey` returns the original Conversation instead of creating another.",
+        "tags": [
+          "messaging"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "memberIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "minItems": 1
+                  },
+                  "text": {
+                    "type": "string",
+                    "description": "The first Message; required for a Direct Conversation."
+                  },
+                  "name": {
+                    "type": "string",
+                    "description": "Required for a Group Conversation."
+                  },
+                  "idempotencyKey": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "memberIds",
+                  "idempotencyKey"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The Conversation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationRef"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Messaging codes: `GROUP_NAME_INVALID`, `GROUP_MEMBERS_TOO_MANY`, `BLANK_MESSAGE`, `MESSAGE_TOO_LONG`, `RECIPIENT_REQUIRED`, `IDEMPOTENCY_KEY_REQUIRED`, `SELF_RECIPIENT`, `READ_POSITION_INVALID`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessagingError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No active signed-in User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Messaging codes: `CONVERSATION_SEND_FORBIDDEN`, `GROUP_MANAGEMENT_FORBIDDEN`, `CONVERSATION_VIEW_FORBIDDEN`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessagingError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Messaging codes: `CONVERSATION_UNAVAILABLE`, `CONVERSATION_NOT_FOUND`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessagingError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Messaging codes: `RECIPIENT_INACTIVE`, `IDEMPOTENCY_KEY_REUSED`, `CONVERSATION_RECIPIENT_INACTIVE`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessagingError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/conversations/unread": {
+      "get": {
+        "operationId": "getConversationUnread",
+        "summary": "How many of the caller's Conversations hold an unread Message.",
+        "tags": [
+          "messaging"
+        ],
+        "responses": {
+          "200": {
+            "description": "The unread count.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationUnread"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No active signed-in User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/conversations/recipients": {
+      "get": {
+        "operationId": "searchMessageRecipients",
+        "summary": "Other active members to start a Conversation with, by name or username.",
+        "tags": [
+          "messaging"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 200,
+              "default": ""
+            },
+            "required": false,
+            "name": "query",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Up to 20 members.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageRecipients"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request failed validation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No active signed-in User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/conversations/{conversationId}": {
+      "get": {
+        "operationId": "getConversation",
+        "summary": "A window of up to 50 Messages, oldest first, ending before `before` when given.",
+        "tags": [
+          "messaging"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "conversationId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "integer"
+            },
+            "required": false,
+            "name": "before",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The Conversation page.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationPage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request failed validation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No active signed-in User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Messaging codes: `CONVERSATION_SEND_FORBIDDEN`, `GROUP_MANAGEMENT_FORBIDDEN`, `CONVERSATION_VIEW_FORBIDDEN`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessagingError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Messaging codes: `CONVERSATION_UNAVAILABLE`, `CONVERSATION_NOT_FOUND`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessagingError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/conversations/{conversationId}/messages": {
+      "post": {
+        "operationId": "sendMessage",
+        "summary": "Appends a Message. Retrying with the same `idempotencyKey` returns the original Message.",
+        "description": "Reusing a key for different text is `IDEMPOTENCY_KEY_REUSED`.",
+        "tags": [
+          "messaging"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "conversationId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "text": {
+                    "type": "string"
+                  },
+                  "idempotencyKey": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "text",
+                  "idempotencyKey"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The Message; `created` is false for a retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SentMessage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Messaging codes: `GROUP_NAME_INVALID`, `GROUP_MEMBERS_TOO_MANY`, `BLANK_MESSAGE`, `MESSAGE_TOO_LONG`, `RECIPIENT_REQUIRED`, `IDEMPOTENCY_KEY_REQUIRED`, `SELF_RECIPIENT`, `READ_POSITION_INVALID`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessagingError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No active signed-in User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Messaging codes: `CONVERSATION_SEND_FORBIDDEN`, `GROUP_MANAGEMENT_FORBIDDEN`, `CONVERSATION_VIEW_FORBIDDEN`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessagingError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Messaging codes: `CONVERSATION_UNAVAILABLE`, `CONVERSATION_NOT_FOUND`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessagingError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Messaging codes: `RECIPIENT_INACTIVE`, `IDEMPOTENCY_KEY_REUSED`, `CONVERSATION_RECIPIENT_INACTIVE`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessagingError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/conversations/{conversationId}/read": {
+      "post": {
+        "operationId": "markConversationRead",
+        "summary": "Advances the caller's read cursor to a Message they were shown.",
+        "tags": [
+          "messaging"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "conversationId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "sequence": {
+                    "type": "integer"
+                  },
+                  "token": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "sequence",
+                  "token"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Whether the cursor moved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationReadResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Messaging codes: `GROUP_NAME_INVALID`, `GROUP_MEMBERS_TOO_MANY`, `BLANK_MESSAGE`, `MESSAGE_TOO_LONG`, `RECIPIENT_REQUIRED`, `IDEMPOTENCY_KEY_REQUIRED`, `SELF_RECIPIENT`, `READ_POSITION_INVALID`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessagingError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No active signed-in User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Messaging codes: `CONVERSATION_SEND_FORBIDDEN`, `GROUP_MANAGEMENT_FORBIDDEN`, `CONVERSATION_VIEW_FORBIDDEN`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessagingError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/conversations/{conversationId}/members": {
+      "post": {
+        "operationId": "addGroupMembers",
+        "summary": "Adds members to a Group Conversation the caller belongs to.",
+        "tags": [
+          "messaging"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "conversationId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "memberIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "minItems": 1
+                  }
+                },
+                "required": [
+                  "memberIds"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The Conversation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationRef"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Messaging codes: `GROUP_NAME_INVALID`, `GROUP_MEMBERS_TOO_MANY`, `BLANK_MESSAGE`, `MESSAGE_TOO_LONG`, `RECIPIENT_REQUIRED`, `IDEMPOTENCY_KEY_REQUIRED`, `SELF_RECIPIENT`, `READ_POSITION_INVALID`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessagingError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No active signed-in User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Messaging codes: `CONVERSATION_SEND_FORBIDDEN`, `GROUP_MANAGEMENT_FORBIDDEN`, `CONVERSATION_VIEW_FORBIDDEN`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessagingError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Messaging codes: `CONVERSATION_UNAVAILABLE`, `CONVERSATION_NOT_FOUND`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessagingError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Messaging codes: `RECIPIENT_INACTIVE`, `IDEMPOTENCY_KEY_REUSED`, `CONVERSATION_RECIPIENT_INACTIVE`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessagingError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/conversations/{conversationId}/name": {
+      "put": {
+        "operationId": "renameGroupConversation",
+        "summary": "Renames a Group Conversation the caller belongs to.",
+        "tags": [
+          "messaging"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "conversationId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "name"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The Conversation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationRef"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Messaging codes: `GROUP_NAME_INVALID`, `GROUP_MEMBERS_TOO_MANY`, `BLANK_MESSAGE`, `MESSAGE_TOO_LONG`, `RECIPIENT_REQUIRED`, `IDEMPOTENCY_KEY_REQUIRED`, `SELF_RECIPIENT`, `READ_POSITION_INVALID`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessagingError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No active signed-in User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Messaging codes: `CONVERSATION_SEND_FORBIDDEN`, `GROUP_MANAGEMENT_FORBIDDEN`, `CONVERSATION_VIEW_FORBIDDEN`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessagingError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Messaging codes: `CONVERSATION_UNAVAILABLE`, `CONVERSATION_NOT_FOUND`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessagingError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/conversations/{conversationId}/leave": {
+      "post": {
+        "operationId": "leaveGroupConversation",
+        "summary": "Leaves a Group Conversation. History up to departure stays visible, read-only.",
+        "tags": [
+          "messaging"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "conversationId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The Conversation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationRef"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No active signed-in User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Messaging codes: `CONVERSATION_SEND_FORBIDDEN`, `GROUP_MANAGEMENT_FORBIDDEN`, `CONVERSATION_VIEW_FORBIDDEN`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessagingError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Messaging codes: `CONVERSATION_UNAVAILABLE`, `CONVERSATION_NOT_FOUND`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessagingError"
                 }
               }
             }

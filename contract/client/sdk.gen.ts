@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { CreatePostData, CreatePostErrors, CreatePostResponses, DiscardDraftData, DiscardDraftErrors, DiscardDraftResponses, EditPublishedPostData, EditPublishedPostErrors, EditPublishedPostResponses, GetCurrentActorData, GetCurrentActorErrors, GetCurrentActorResponses, GetCurrentCapabilitiesData, GetCurrentCapabilitiesErrors, GetCurrentCapabilitiesResponses, GetEditablePostData, GetEditablePostErrors, GetEditablePostResponses, GetMemberIdSessionData, GetMemberIdSessionErrors, GetMemberIdSessionResponses, GetMemberProfileData, GetMemberProfileErrors, GetMemberProfileResponses, GetOwnProfileData, GetOwnProfileErrors, GetOwnProfileResponses, GetPostData, GetPostErrors, GetPostResponses, GetPostUnreadData, GetPostUnreadErrors, GetPostUnreadResponses, GetProfileEditorData, GetProfileEditorErrors, GetProfileEditorResponses, IssueMemberIdData, IssueMemberIdErrors, IssueMemberIdResponses, ListLatestPostsData, ListLatestPostsErrors, ListLatestPostsResponses, ListMembersData, ListMembersErrors, ListMembersResponses, ListNewsFeedData, ListNewsFeedErrors, ListNewsFeedResponses, ListOwnDraftsData, ListOwnDraftsErrors, ListOwnDraftsResponses, MarkPostReadData, MarkPostReadErrors, MarkPostReadResponses, RecallPostData, RecallPostErrors, RecallPostResponses, SaveDraftData, SaveDraftErrors, SaveDraftResponses, UpdateProfileVoicesData, UpdateProfileVoicesErrors, UpdateProfileVoicesResponses, VerifyMemberIdData, VerifyMemberIdErrors, VerifyMemberIdResponses } from './types.gen';
+import type { AddGroupMembersData, AddGroupMembersErrors, AddGroupMembersResponses, CreatePostData, CreatePostErrors, CreatePostResponses, DiscardDraftData, DiscardDraftErrors, DiscardDraftResponses, EditPublishedPostData, EditPublishedPostErrors, EditPublishedPostResponses, GetConversationData, GetConversationErrors, GetConversationResponses, GetConversationUnreadData, GetConversationUnreadErrors, GetConversationUnreadResponses, GetCurrentActorData, GetCurrentActorErrors, GetCurrentActorResponses, GetCurrentCapabilitiesData, GetCurrentCapabilitiesErrors, GetCurrentCapabilitiesResponses, GetEditablePostData, GetEditablePostErrors, GetEditablePostResponses, GetMemberIdSessionData, GetMemberIdSessionErrors, GetMemberIdSessionResponses, GetMemberProfileData, GetMemberProfileErrors, GetMemberProfileResponses, GetOwnProfileData, GetOwnProfileErrors, GetOwnProfileResponses, GetPostData, GetPostErrors, GetPostResponses, GetPostUnreadData, GetPostUnreadErrors, GetPostUnreadResponses, GetProfileEditorData, GetProfileEditorErrors, GetProfileEditorResponses, IssueMemberIdData, IssueMemberIdErrors, IssueMemberIdResponses, LeaveGroupConversationData, LeaveGroupConversationErrors, LeaveGroupConversationResponses, ListConversationsData, ListConversationsErrors, ListConversationsResponses, ListLatestPostsData, ListLatestPostsErrors, ListLatestPostsResponses, ListMembersData, ListMembersErrors, ListMembersResponses, ListNewsFeedData, ListNewsFeedErrors, ListNewsFeedResponses, ListOwnDraftsData, ListOwnDraftsErrors, ListOwnDraftsResponses, MarkConversationReadData, MarkConversationReadErrors, MarkConversationReadResponses, MarkPostReadData, MarkPostReadErrors, MarkPostReadResponses, RecallPostData, RecallPostErrors, RecallPostResponses, RenameGroupConversationData, RenameGroupConversationErrors, RenameGroupConversationResponses, SaveDraftData, SaveDraftErrors, SaveDraftResponses, SearchMessageRecipientsData, SearchMessageRecipientsErrors, SearchMessageRecipientsResponses, SendMessageData, SendMessageErrors, SendMessageResponses, StartConversationData, StartConversationErrors, StartConversationResponses, UpdateProfileVoicesData, UpdateProfileVoicesErrors, UpdateProfileVoicesResponses, VerifyMemberIdData, VerifyMemberIdErrors, VerifyMemberIdResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -146,6 +146,97 @@ export const discardDraft = <ThrowOnError extends boolean = false>(options: Opti
  * Records that the caller opened a published Post. Idempotent.
  */
 export const markPostRead = <ThrowOnError extends boolean = false>(options: Options<MarkPostReadData, ThrowOnError>): RequestResult<MarkPostReadResponses, MarkPostReadErrors, ThrowOnError> => (options.client ?? client).post<MarkPostReadResponses, MarkPostReadErrors, ThrowOnError>({ url: '/api/v1/posts/{postId}/read', ...options });
+
+/**
+ * The caller's Direct and Group Conversations, most recent first.
+ *
+ * A departed member keeps the history retained for them, read-only.
+ */
+export const listConversations = <ThrowOnError extends boolean = false>(options?: Options<ListConversationsData, ThrowOnError>): RequestResult<ListConversationsResponses, ListConversationsErrors, ThrowOnError> => (options?.client ?? client).get<ListConversationsResponses, ListConversationsErrors, ThrowOnError>({ url: '/api/v1/conversations', ...options });
+
+/**
+ * Starts a Direct Conversation with a first Message (one member) or a named Group Conversation.
+ *
+ * Retrying with the same `idempotencyKey` returns the original Conversation instead of creating another.
+ */
+export const startConversation = <ThrowOnError extends boolean = false>(options: Options<StartConversationData, ThrowOnError>): RequestResult<StartConversationResponses, StartConversationErrors, ThrowOnError> => (options.client ?? client).post<StartConversationResponses, StartConversationErrors, ThrowOnError>({
+    url: '/api/v1/conversations',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * How many of the caller's Conversations hold an unread Message.
+ */
+export const getConversationUnread = <ThrowOnError extends boolean = false>(options?: Options<GetConversationUnreadData, ThrowOnError>): RequestResult<GetConversationUnreadResponses, GetConversationUnreadErrors, ThrowOnError> => (options?.client ?? client).get<GetConversationUnreadResponses, GetConversationUnreadErrors, ThrowOnError>({ url: '/api/v1/conversations/unread', ...options });
+
+/**
+ * Other active members to start a Conversation with, by name or username.
+ */
+export const searchMessageRecipients = <ThrowOnError extends boolean = false>(options?: Options<SearchMessageRecipientsData, ThrowOnError>): RequestResult<SearchMessageRecipientsResponses, SearchMessageRecipientsErrors, ThrowOnError> => (options?.client ?? client).get<SearchMessageRecipientsResponses, SearchMessageRecipientsErrors, ThrowOnError>({ url: '/api/v1/conversations/recipients', ...options });
+
+/**
+ * A window of up to 50 Messages, oldest first, ending before `before` when given.
+ */
+export const getConversation = <ThrowOnError extends boolean = false>(options: Options<GetConversationData, ThrowOnError>): RequestResult<GetConversationResponses, GetConversationErrors, ThrowOnError> => (options.client ?? client).get<GetConversationResponses, GetConversationErrors, ThrowOnError>({ url: '/api/v1/conversations/{conversationId}', ...options });
+
+/**
+ * Appends a Message. Retrying with the same `idempotencyKey` returns the original Message.
+ *
+ * Reusing a key for different text is `IDEMPOTENCY_KEY_REUSED`.
+ */
+export const sendMessage = <ThrowOnError extends boolean = false>(options: Options<SendMessageData, ThrowOnError>): RequestResult<SendMessageResponses, SendMessageErrors, ThrowOnError> => (options.client ?? client).post<SendMessageResponses, SendMessageErrors, ThrowOnError>({
+    url: '/api/v1/conversations/{conversationId}/messages',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Advances the caller's read cursor to a Message they were shown.
+ */
+export const markConversationRead = <ThrowOnError extends boolean = false>(options: Options<MarkConversationReadData, ThrowOnError>): RequestResult<MarkConversationReadResponses, MarkConversationReadErrors, ThrowOnError> => (options.client ?? client).post<MarkConversationReadResponses, MarkConversationReadErrors, ThrowOnError>({
+    url: '/api/v1/conversations/{conversationId}/read',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Adds members to a Group Conversation the caller belongs to.
+ */
+export const addGroupMembers = <ThrowOnError extends boolean = false>(options: Options<AddGroupMembersData, ThrowOnError>): RequestResult<AddGroupMembersResponses, AddGroupMembersErrors, ThrowOnError> => (options.client ?? client).post<AddGroupMembersResponses, AddGroupMembersErrors, ThrowOnError>({
+    url: '/api/v1/conversations/{conversationId}/members',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Renames a Group Conversation the caller belongs to.
+ */
+export const renameGroupConversation = <ThrowOnError extends boolean = false>(options: Options<RenameGroupConversationData, ThrowOnError>): RequestResult<RenameGroupConversationResponses, RenameGroupConversationErrors, ThrowOnError> => (options.client ?? client).put<RenameGroupConversationResponses, RenameGroupConversationErrors, ThrowOnError>({
+    url: '/api/v1/conversations/{conversationId}/name',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Leaves a Group Conversation. History up to departure stays visible, read-only.
+ */
+export const leaveGroupConversation = <ThrowOnError extends boolean = false>(options: Options<LeaveGroupConversationData, ThrowOnError>): RequestResult<LeaveGroupConversationResponses, LeaveGroupConversationErrors, ThrowOnError> => (options.client ?? client).post<LeaveGroupConversationResponses, LeaveGroupConversationErrors, ThrowOnError>({ url: '/api/v1/conversations/{conversationId}/leave', ...options });
 
 /**
  * The signed-in User's own Member ID profile and whether they may verify others.

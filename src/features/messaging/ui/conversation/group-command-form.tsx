@@ -1,13 +1,14 @@
 "use client"
 
+import { useRouter } from "next/navigation"
 import { useActionState, useEffect, useRef, useState } from "react"
 import { useTranslations } from "@/core/i18n/translations"
 import { Button } from "@/shared/ui/base/button"
 import { Input } from "@/shared/ui/base/input"
 import { MAX_GROUP_NAME_LENGTH } from "../../model/group-conversation"
+import { groupConversationCommand } from "../api-commands"
 import type { MessageCommandState } from "../composer/message-command-state"
 import { MemberSelection } from "../member-selection"
-import { groupConversationAction } from "./group-actions"
 
 type Member = { id: string; name: string }
 const initialState: MessageCommandState = { status: "idle" }
@@ -29,11 +30,12 @@ export function GroupCommandForm({
 }) {
   const t = useTranslations("Messages")
   const common = useTranslations("Common")
+  const router = useRouter()
   const nameInput = useRef<HTMLInputElement>(null)
   const [editing, setEditing] = useState(false)
   const [draftName, setDraftName] = useState(name ?? "")
   const [selected, setSelected] = useState<Member[]>([])
-  const [state, action, pending] = useActionState(groupConversationAction, initialState)
+  const [state, action, pending] = useActionState(groupConversationCommand, initialState)
   const selectsMembers = operation === "add"
   const canRename = editing && draftName.trim().length > 0 && draftName.trim() !== (name ?? "").trim()
   useEffect(() => {
@@ -41,7 +43,8 @@ export function GroupCommandForm({
     setSelected([])
     setEditing(false)
     setDraftName(name ?? "")
-  }, [state, name])
+    router.refresh()
+  }, [state, name, router])
   useEffect(() => {
     if (editing) nameInput.current?.focus()
   }, [editing])
