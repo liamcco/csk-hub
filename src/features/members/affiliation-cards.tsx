@@ -1,9 +1,9 @@
+import type { MemberProfile } from "@contract/client"
 import { getFormatter, getTranslations } from "@/core/i18n/server"
 import { Badge } from "@/shared/ui/base/badge"
 import { Card, CardContent, CardHeader } from "@/shared/ui/base/card"
-import type { ProfileAffiliations } from "./affiliations"
 
-type Group = ProfileAffiliations["groups"][number]
+type Group = MemberProfile["groups"][number]
 
 function Positions({ positions }: { positions: Group["positions"] }) {
   return positions.length ? (
@@ -46,7 +46,7 @@ export function MemberGroupsCard({ groups, showContext = false }: { groups: Grou
 }
 
 /** Keeps Choir tenure, Section Voice and the singer's assignment distinct. */
-export async function ChoirCard({ choir }: { choir: ProfileAffiliations["choirs"][number] }) {
+export async function ChoirCard({ choir }: { choir: MemberProfile["choirs"][number] }) {
   const [t, format] = await Promise.all([getTranslations("MemberProfiles"), getFormatter()])
   return (
     <Card className="border-t-4 border-primary/40">

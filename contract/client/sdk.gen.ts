@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { GetCurrentActorData, GetCurrentActorErrors, GetCurrentActorResponses, GetMemberIdSessionData, GetMemberIdSessionErrors, GetMemberIdSessionResponses, IssueMemberIdData, IssueMemberIdErrors, IssueMemberIdResponses, VerifyMemberIdData, VerifyMemberIdErrors, VerifyMemberIdResponses } from './types.gen';
+import type { GetCurrentActorData, GetCurrentActorErrors, GetCurrentActorResponses, GetMemberIdSessionData, GetMemberIdSessionErrors, GetMemberIdSessionResponses, GetMemberProfileData, GetMemberProfileErrors, GetMemberProfileResponses, GetOwnProfileData, GetOwnProfileErrors, GetOwnProfileResponses, GetProfileEditorData, GetProfileEditorErrors, GetProfileEditorResponses, IssueMemberIdData, IssueMemberIdErrors, IssueMemberIdResponses, ListMembersData, ListMembersErrors, ListMembersResponses, UpdateProfileVoicesData, UpdateProfileVoicesErrors, UpdateProfileVoicesResponses, VerifyMemberIdData, VerifyMemberIdErrors, VerifyMemberIdResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -22,6 +22,40 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
  * The signed-in, active User behind this request, freshly resolved.
  */
 export const getCurrentActor = <ThrowOnError extends boolean = false>(options?: Options<GetCurrentActorData, ThrowOnError>): RequestResult<GetCurrentActorResponses, GetCurrentActorErrors, ThrowOnError> => (options?.client ?? client).get<GetCurrentActorResponses, GetCurrentActorErrors, ThrowOnError>({ url: '/api/v1/me', ...options });
+
+/**
+ * Other active members, searched by name or username.
+ *
+ * Numbered pages of 24, ordered by name, because the directory shows page numbers and a member count.
+ */
+export const listMembers = <ThrowOnError extends boolean = false>(options?: Options<ListMembersData, ThrowOnError>): RequestResult<ListMembersResponses, ListMembersErrors, ThrowOnError> => (options?.client ?? client).get<ListMembersResponses, ListMembersErrors, ThrowOnError>({ url: '/api/v1/members', ...options });
+
+/**
+ * An active member's profile with the caller's permissions on it.
+ */
+export const getMemberProfile = <ThrowOnError extends boolean = false>(options: Options<GetMemberProfileData, ThrowOnError>): RequestResult<GetMemberProfileResponses, GetMemberProfileErrors, ThrowOnError> => (options.client ?? client).get<GetMemberProfileResponses, GetMemberProfileErrors, ThrowOnError>({ url: '/api/v1/members/{memberId}', ...options });
+
+/**
+ * The caller's own profile.
+ */
+export const getOwnProfile = <ThrowOnError extends boolean = false>(options?: Options<GetOwnProfileData, ThrowOnError>): RequestResult<GetOwnProfileResponses, GetOwnProfileErrors, ThrowOnError> => (options?.client ?? client).get<GetOwnProfileResponses, GetOwnProfileErrors, ThrowOnError>({ url: '/api/v1/profile', ...options });
+
+/**
+ * The caller's editable voices.
+ */
+export const getProfileEditor = <ThrowOnError extends boolean = false>(options?: Options<GetProfileEditorData, ThrowOnError>): RequestResult<GetProfileEditorResponses, GetProfileEditorErrors, ThrowOnError> => (options?.client ?? client).get<GetProfileEditorResponses, GetProfileEditorErrors, ThrowOnError>({ url: '/api/v1/profile/voices', ...options });
+
+/**
+ * Replaces the voices the caller can sing.
+ */
+export const updateProfileVoices = <ThrowOnError extends boolean = false>(options: Options<UpdateProfileVoicesData, ThrowOnError>): RequestResult<UpdateProfileVoicesResponses, UpdateProfileVoicesErrors, ThrowOnError> => (options.client ?? client).put<UpdateProfileVoicesResponses, UpdateProfileVoicesErrors, ThrowOnError>({
+    url: '/api/v1/profile/voices',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
 
 /**
  * The signed-in User's own Member ID profile and whether they may verify others.

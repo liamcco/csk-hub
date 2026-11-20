@@ -1,11 +1,23 @@
 import { type ApiDependencies, apiError, createRouter, handleApiError } from "@/core/http"
 import { memberIdRouter } from "@/features/member-id"
+import { membersRouter } from "@/features/members/http"
 import { currentActorRouter } from "./current-actor"
 
 const openApiInfo = {
   title: "CSK Hub API",
   version: "1.0.0",
   description: "Authentication endpoints under /api/auth belong to Better Auth and are used through its client."
+}
+
+const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"])
+
+function isSameOrigin(origin: string | undefined, url: string) {
+  if (!origin) return false
+  try {
+    return new URL(origin).host === new URL(url).host
+  } catch {
+    return false
+  }
 }
 
 /**
@@ -33,7 +45,16 @@ export function createApi(dependencies: ApiDependencies) {
     c.header("Cache-Control", "private, no-store")
   })
 
-  const v1 = createRouter().route("/", currentActorRouter)
+  api.use("/api/v1/*", async (c, next) => {
+    // Session cookies authenticate these requests, so state changes must come from Hub itself:
+    // browsers send Origin on unsafe requests, and Hub's own servers and apps set it.
+    if (!SAFE_METHODS.has(c.req.method) && !isSameOrigin(c.req.header("origin"), c.req.url)) {
+      return apiError(c, 403, "FORBIDDEN")
+    }
+    await next()
+  })
+
+  const v1 = createRouter().route("/", currentActorRouter).route("/", membersRouter)
   api.route("/api/v1", v1)
   // Released before /api/v1; its paths and representations stay frozen for installed clients.
   api.route("/api/member-id", memberIdRouter)

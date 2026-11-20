@@ -47,6 +47,562 @@
           "code"
         ]
       },
+      "MemberDirectory": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "The trimmed search that was applied."
+          },
+          "page": {
+            "type": "integer",
+            "description": "The page served, clamped to the last page."
+          },
+          "totalPages": {
+            "type": "integer"
+          },
+          "total": {
+            "type": "integer"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DirectoryMember"
+            }
+          }
+        },
+        "required": [
+          "query",
+          "page",
+          "totalPages",
+          "total",
+          "items"
+        ]
+      },
+      "DirectoryMember": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "username": {
+            "type": "string",
+            "nullable": true
+          },
+          "image": {
+            "type": "string",
+            "nullable": true
+          },
+          "choirs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "section": {
+                  "type": "string",
+                  "nullable": true
+                }
+              },
+              "required": [
+                "id",
+                "name",
+                "section"
+              ]
+            }
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "username",
+          "image",
+          "choirs"
+        ]
+      },
+      "ValidationError": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "VALIDATION_FAILED"
+            ]
+          },
+          "issues": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "path": {
+                  "type": "array",
+                  "items": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "number"
+                      }
+                    ]
+                  }
+                },
+                "code": {
+                  "type": "string",
+                  "description": "Zod issue code or a validation message ID."
+                }
+              },
+              "required": [
+                "path",
+                "code"
+              ]
+            }
+          }
+        },
+        "required": [
+          "code",
+          "issues"
+        ]
+      },
+      "MemberProfileView": {
+        "type": "object",
+        "properties": {
+          "profile": {
+            "$ref": "#/components/schemas/MemberProfile"
+          },
+          "permissions": {
+            "type": "object",
+            "properties": {
+              "editProfile": {
+                "type": "boolean"
+              },
+              "message": {
+                "type": "boolean",
+                "description": "Whether the caller may message this member."
+              }
+            },
+            "required": [
+              "editProfile",
+              "message"
+            ],
+            "description": "UI hints for the current User; every operation re-checks authority."
+          },
+          "messageConversationId": {
+            "type": "string",
+            "nullable": true,
+            "description": "The existing Direct Conversation with this member, if any."
+          }
+        },
+        "required": [
+          "profile",
+          "permissions",
+          "messageConversationId"
+        ]
+      },
+      "MemberProfile": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "username": {
+            "type": "string",
+            "nullable": true
+          },
+          "image": {
+            "type": "string",
+            "nullable": true
+          },
+          "email": {
+            "type": "string",
+            "nullable": true,
+            "description": "Only the profile's owner sees an email."
+          },
+          "isOwn": {
+            "type": "boolean"
+          },
+          "capabilities": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "S1",
+                "S2",
+                "A1",
+                "A2",
+                "T1",
+                "T2",
+                "B1",
+                "B2"
+              ]
+            },
+            "description": "Self-reported voices the member can sing."
+          },
+          "choirs": {
+            "type": "array",
+            "items": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/MemberGroup"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "section": {
+                      "type": "object",
+                      "nullable": true,
+                      "properties": {
+                        "groupId": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "Choir",
+                            "Section",
+                            "Board",
+                            "GigGroup",
+                            "Gigmästeri",
+                            "Sexmästeri",
+                            "Roddgrupp",
+                            "Festgrupp",
+                            "Rephelg",
+                            "Konsertmästeri",
+                            "Rekryteringskommitté",
+                            "Turnékommitté",
+                            "Valberedning",
+                            "Webmästeri",
+                            "Föräldramötet",
+                            "Arkivarie",
+                            "Utantillkommitté",
+                            "Övrig"
+                          ]
+                        },
+                        "choirId": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "choirName": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "active": {
+                          "type": "boolean"
+                        },
+                        "startDate": {
+                          "type": "string",
+                          "format": "date"
+                        },
+                        "voice": {
+                          "type": "string",
+                          "nullable": true,
+                          "enum": [
+                            "S1",
+                            "S2",
+                            "A1",
+                            "A2",
+                            "T1",
+                            "T2",
+                            "B1",
+                            "B2",
+                            null
+                          ]
+                        },
+                        "sectionVoice": {
+                          "type": "string",
+                          "nullable": true,
+                          "enum": [
+                            "S",
+                            "A",
+                            "T",
+                            "B",
+                            "S1",
+                            "S2",
+                            "A1",
+                            "A2",
+                            "T1",
+                            "T2",
+                            "B1",
+                            "B2",
+                            null
+                          ]
+                        },
+                        "positions": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "groupId": {
+                                "type": "string"
+                              },
+                              "positionId": {
+                                "type": "string"
+                              },
+                              "name": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "groupId",
+                              "positionId",
+                              "name"
+                            ]
+                          }
+                        }
+                      },
+                      "required": [
+                        "groupId",
+                        "name",
+                        "type",
+                        "choirId",
+                        "choirName",
+                        "active",
+                        "startDate",
+                        "voice",
+                        "sectionVoice",
+                        "positions"
+                      ]
+                    },
+                    "groups": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/MemberGroup"
+                      }
+                    }
+                  },
+                  "required": [
+                    "section",
+                    "groups"
+                  ]
+                }
+              ]
+            }
+          },
+          "groups": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MemberGroup"
+            }
+          },
+          "otherGroups": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MemberGroup"
+            },
+            "description": "Active Groups of an archived Choir, shown with their Choir's name."
+          },
+          "positions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "groups": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "choirName": {
+                        "type": "string",
+                        "nullable": true
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "name",
+                      "choirName"
+                    ]
+                  }
+                }
+              },
+              "required": [
+                "id",
+                "name",
+                "groups"
+              ]
+            }
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "username",
+          "image",
+          "email",
+          "isOwn",
+          "capabilities",
+          "choirs",
+          "groups",
+          "otherGroups",
+          "positions"
+        ]
+      },
+      "MemberGroup": {
+        "type": "object",
+        "properties": {
+          "groupId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "Choir",
+              "Section",
+              "Board",
+              "GigGroup",
+              "Gigmästeri",
+              "Sexmästeri",
+              "Roddgrupp",
+              "Festgrupp",
+              "Rephelg",
+              "Konsertmästeri",
+              "Rekryteringskommitté",
+              "Turnékommitté",
+              "Valberedning",
+              "Webmästeri",
+              "Föräldramötet",
+              "Arkivarie",
+              "Utantillkommitté",
+              "Övrig"
+            ]
+          },
+          "choirId": {
+            "type": "string",
+            "nullable": true
+          },
+          "choirName": {
+            "type": "string",
+            "nullable": true
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "startDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "voice": {
+            "type": "string",
+            "nullable": true,
+            "enum": [
+              "S1",
+              "S2",
+              "A1",
+              "A2",
+              "T1",
+              "T2",
+              "B1",
+              "B2",
+              null
+            ]
+          },
+          "sectionVoice": {
+            "type": "string",
+            "nullable": true,
+            "enum": [
+              "S",
+              "A",
+              "T",
+              "B",
+              "S1",
+              "S2",
+              "A1",
+              "A2",
+              "T1",
+              "T2",
+              "B1",
+              "B2",
+              null
+            ]
+          },
+          "positions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "groupId": {
+                  "type": "string"
+                },
+                "positionId": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "groupId",
+                "positionId",
+                "name"
+              ]
+            }
+          }
+        },
+        "required": [
+          "groupId",
+          "name",
+          "type",
+          "choirId",
+          "choirName",
+          "active",
+          "startDate",
+          "voice",
+          "sectionVoice",
+          "positions"
+        ]
+      },
+      "ProfileVoices": {
+        "type": "object",
+        "properties": {
+          "voices": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "S1",
+                "S2",
+                "A1",
+                "A2",
+                "T1",
+                "T2",
+                "B1",
+                "B2"
+              ]
+            }
+          }
+        },
+        "required": [
+          "voices"
+        ]
+      },
       "MemberIdSession": {
         "type": "object",
         "properties": {
@@ -209,6 +765,281 @@
           },
           "401": {
             "description": "No active signed-in User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/members": {
+      "get": {
+        "operationId": "listMembers",
+        "summary": "Other active members, searched by name or username.",
+        "description": "Numbered pages of 24, ordered by name, because the directory shows page numbers and a member count.",
+        "tags": [
+          "members"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "required": false,
+            "name": "query",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer"
+            },
+            "required": false,
+            "name": "page",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "One directory page.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberDirectory"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request failed validation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No active signed-in User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/members/{memberId}": {
+      "get": {
+        "operationId": "getMemberProfile",
+        "summary": "An active member's profile with the caller's permissions on it.",
+        "tags": [
+          "members"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "memberId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The profile.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberProfileView"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No active signed-in User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The resource does not exist or is not visible to the current User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/profile": {
+      "get": {
+        "operationId": "getOwnProfile",
+        "summary": "The caller's own profile.",
+        "tags": [
+          "members"
+        ],
+        "responses": {
+          "200": {
+            "description": "The profile.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberProfileView"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No active signed-in User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The resource does not exist or is not visible to the current User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/profile/voices": {
+      "get": {
+        "operationId": "getProfileEditor",
+        "summary": "The caller's editable voices.",
+        "tags": [
+          "members"
+        ],
+        "responses": {
+          "200": {
+            "description": "The caller's voices.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileVoices"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No active signed-in User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The current User may not perform this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "operationId": "updateProfileVoices",
+        "summary": "Replaces the voices the caller can sing.",
+        "tags": [
+          "members"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "voices": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "S1",
+                        "S2",
+                        "A1",
+                        "A2",
+                        "T1",
+                        "T2",
+                        "B1",
+                        "B2"
+                      ]
+                    },
+                    "maxItems": 8
+                  }
+                },
+                "required": [
+                  "voices"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The saved voices.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileVoices"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request failed validation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No active signed-in User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The current User may not perform this operation.",
             "content": {
               "application/json": {
                 "schema": {

@@ -1,6 +1,6 @@
 import "server-only"
-import { requirePermission } from "@/core/authz"
 
+import type { AuthorizationActor, PermissionRequest } from "@/core/authz"
 import { listVoiceCapabilities, setVoiceCapabilities } from "@/features/voice"
 import { isVoiceDivision, VOICE_DIVISIONS } from "@/features/voice/model"
 import { InactiveViewerError, type MemberDatabase, requireActiveViewer } from "../service"
@@ -13,12 +13,14 @@ export async function getOwnVoiceCapabilities(database: MemberDatabase, userId: 
 
 export type ProfileEditorActor = { userId: string }
 
+type Authorize = (request: PermissionRequest, connection: MemberDatabase) => Promise<AuthorizationActor>
+
 /** The actor comes from authentication, never from the submitted profile form. */
 export async function saveOwnVoiceCapabilities(
   database: MemberDatabase,
   actor: ProfileEditorActor,
   input: unknown,
-  authorize = requirePermission
+  authorize: Authorize
 ): Promise<EditProfileState> {
   if (!Array.isArray(input) || input.length > VOICE_DIVISIONS.length || !input.every(isVoiceDivision)) {
     return { status: "error", error: "invalid-voices" }

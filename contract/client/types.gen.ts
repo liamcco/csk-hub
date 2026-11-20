@@ -20,6 +20,131 @@ export type ApiError = {
     code: 'UNAUTHENTICATED' | 'FORBIDDEN' | 'NOT_FOUND' | 'VALIDATION_FAILED' | 'INTERNAL';
 };
 
+export type MemberDirectory = {
+    /**
+     * The trimmed search that was applied.
+     */
+    query: string;
+    /**
+     * The page served, clamped to the last page.
+     */
+    page: number;
+    totalPages: number;
+    total: number;
+    items: Array<DirectoryMember>;
+};
+
+export type DirectoryMember = {
+    id: string;
+    name: string;
+    username: string | null;
+    image: string | null;
+    choirs: Array<{
+        id: string;
+        name: string;
+        section: string | null;
+    }>;
+};
+
+export type ValidationError = {
+    code: 'VALIDATION_FAILED';
+    issues: Array<{
+        path: Array<string | number>;
+        /**
+         * Zod issue code or a validation message ID.
+         */
+        code: string;
+    }>;
+};
+
+export type MemberProfileView = {
+    profile: MemberProfile;
+    /**
+     * UI hints for the current User; every operation re-checks authority.
+     */
+    permissions: {
+        editProfile: boolean;
+        /**
+         * Whether the caller may message this member.
+         */
+        message: boolean;
+    };
+    /**
+     * The existing Direct Conversation with this member, if any.
+     */
+    messageConversationId: string | null;
+};
+
+export type MemberProfile = {
+    id: string;
+    name: string;
+    username: string | null;
+    image: string | null;
+    /**
+     * Only the profile's owner sees an email.
+     */
+    email: string | null;
+    isOwn: boolean;
+    /**
+     * Self-reported voices the member can sing.
+     */
+    capabilities: Array<'S1' | 'S2' | 'A1' | 'A2' | 'T1' | 'T2' | 'B1' | 'B2'>;
+    choirs: Array<MemberGroup & {
+        section: {
+            groupId: string;
+            name: string;
+            type: 'Choir' | 'Section' | 'Board' | 'GigGroup' | 'Gigmästeri' | 'Sexmästeri' | 'Roddgrupp' | 'Festgrupp' | 'Rephelg' | 'Konsertmästeri' | 'Rekryteringskommitté' | 'Turnékommitté' | 'Valberedning' | 'Webmästeri' | 'Föräldramötet' | 'Arkivarie' | 'Utantillkommitté' | 'Övrig';
+            choirId: string | null;
+            choirName: string | null;
+            active: boolean;
+            startDate: string;
+            voice: 'S1' | 'S2' | 'A1' | 'A2' | 'T1' | 'T2' | 'B1' | 'B2' | null;
+            sectionVoice: 'S' | 'A' | 'T' | 'B' | 'S1' | 'S2' | 'A1' | 'A2' | 'T1' | 'T2' | 'B1' | 'B2' | null;
+            positions: Array<{
+                groupId: string;
+                positionId: string;
+                name: string;
+            }>;
+        } | null;
+        groups: Array<MemberGroup>;
+    }>;
+    groups: Array<MemberGroup>;
+    /**
+     * Active Groups of an archived Choir, shown with their Choir's name.
+     */
+    otherGroups: Array<MemberGroup>;
+    positions: Array<{
+        id: string;
+        name: string;
+        groups: Array<{
+            id: string;
+            name: string;
+            choirName: string | null;
+        }>;
+    }>;
+};
+
+export type MemberGroup = {
+    groupId: string;
+    name: string;
+    type: 'Choir' | 'Section' | 'Board' | 'GigGroup' | 'Gigmästeri' | 'Sexmästeri' | 'Roddgrupp' | 'Festgrupp' | 'Rephelg' | 'Konsertmästeri' | 'Rekryteringskommitté' | 'Turnékommitté' | 'Valberedning' | 'Webmästeri' | 'Föräldramötet' | 'Arkivarie' | 'Utantillkommitté' | 'Övrig';
+    choirId: string | null;
+    choirName: string | null;
+    active: boolean;
+    startDate: string;
+    voice: 'S1' | 'S2' | 'A1' | 'A2' | 'T1' | 'T2' | 'B1' | 'B2' | null;
+    sectionVoice: 'S' | 'A' | 'T' | 'B' | 'S1' | 'S2' | 'A1' | 'A2' | 'T1' | 'T2' | 'B1' | 'B2' | null;
+    positions: Array<{
+        groupId: string;
+        positionId: string;
+        name: string;
+    }>;
+};
+
+export type ProfileVoices = {
+    voices: Array<'S1' | 'S2' | 'A1' | 'A2' | 'T1' | 'T2' | 'B1' | 'B2'>;
+};
+
 export type MemberIdSession = {
     member: MemberIdMember;
     /**
@@ -107,6 +232,162 @@ export type GetCurrentActorResponses = {
 };
 
 export type GetCurrentActorResponse = GetCurrentActorResponses[keyof GetCurrentActorResponses];
+
+export type ListMembersData = {
+    body?: never;
+    path?: never;
+    query?: {
+        query?: string;
+        page?: number;
+    };
+    url: '/api/v1/members';
+};
+
+export type ListMembersErrors = {
+    /**
+     * The request failed validation.
+     */
+    400: ValidationError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+};
+
+export type ListMembersError = ListMembersErrors[keyof ListMembersErrors];
+
+export type ListMembersResponses = {
+    /**
+     * One directory page.
+     */
+    200: MemberDirectory;
+};
+
+export type ListMembersResponse = ListMembersResponses[keyof ListMembersResponses];
+
+export type GetMemberProfileData = {
+    body?: never;
+    path: {
+        memberId: string;
+    };
+    query?: never;
+    url: '/api/v1/members/{memberId}';
+};
+
+export type GetMemberProfileErrors = {
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The resource does not exist or is not visible to the current User.
+     */
+    404: ApiError;
+};
+
+export type GetMemberProfileError = GetMemberProfileErrors[keyof GetMemberProfileErrors];
+
+export type GetMemberProfileResponses = {
+    /**
+     * The profile.
+     */
+    200: MemberProfileView;
+};
+
+export type GetMemberProfileResponse = GetMemberProfileResponses[keyof GetMemberProfileResponses];
+
+export type GetOwnProfileData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/profile';
+};
+
+export type GetOwnProfileErrors = {
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The resource does not exist or is not visible to the current User.
+     */
+    404: ApiError;
+};
+
+export type GetOwnProfileError = GetOwnProfileErrors[keyof GetOwnProfileErrors];
+
+export type GetOwnProfileResponses = {
+    /**
+     * The profile.
+     */
+    200: MemberProfileView;
+};
+
+export type GetOwnProfileResponse = GetOwnProfileResponses[keyof GetOwnProfileResponses];
+
+export type GetProfileEditorData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/profile/voices';
+};
+
+export type GetProfileEditorErrors = {
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The current User may not perform this operation.
+     */
+    403: ApiError;
+};
+
+export type GetProfileEditorError = GetProfileEditorErrors[keyof GetProfileEditorErrors];
+
+export type GetProfileEditorResponses = {
+    /**
+     * The caller's voices.
+     */
+    200: ProfileVoices;
+};
+
+export type GetProfileEditorResponse = GetProfileEditorResponses[keyof GetProfileEditorResponses];
+
+export type UpdateProfileVoicesData = {
+    body: {
+        voices: Array<'S1' | 'S2' | 'A1' | 'A2' | 'T1' | 'T2' | 'B1' | 'B2'>;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/v1/profile/voices';
+};
+
+export type UpdateProfileVoicesErrors = {
+    /**
+     * The request failed validation.
+     */
+    400: ValidationError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The current User may not perform this operation.
+     */
+    403: ApiError;
+};
+
+export type UpdateProfileVoicesError = UpdateProfileVoicesErrors[keyof UpdateProfileVoicesErrors];
+
+export type UpdateProfileVoicesResponses = {
+    /**
+     * The saved voices.
+     */
+    200: ProfileVoices;
+};
+
+export type UpdateProfileVoicesResponse = UpdateProfileVoicesResponses[keyof UpdateProfileVoicesResponses];
 
 export type GetMemberIdSessionData = {
     body?: never;
