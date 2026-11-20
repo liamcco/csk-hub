@@ -36,10 +36,17 @@ Done (uncommitted WIP at the first checkpoint, committed as "WIP"):
 - Next.js, next-intl, `server-only`, `@vercel/analytics`, `react-form-nextjs` removed from
   dependencies; `vite build` succeeds.
 
+Half-done (second WIP commit):
+- `e2e/run.ts`, `e2e/fixtures.ts`, `playwright.config.ts`: dev mode (API on 3101 + Vite on 3100,
+  disposable database) works; `e2e/members.e2e.ts` passes (4/4). Other journeys not yet run.
+  `--stack` mode is written but untested and needs `deploy/compose.local.yml` publishing the
+  database on 127.0.0.1:${DB_PORT:-5434} (not written yet).
+- `package.json` scripts: `dev`, `dev:api`, `dev:web`, `build:web`, `build:api`; `"type": "module"`.
+
 Next:
-1. `e2e/run.ts` (dev mode: API + Vite on a disposable database; `--stack` mode against Compose),
-   update `e2e/support.ts`, make journeys pass; add the instant-navigation journeys from the
-   acceptance criteria.
+1. Run the remaining journeys and fix them (`shell.e2e.ts` expects HTTP 403 for `/admin/users`;
+   the SPA now renders the forbidden screen instead); add the instant-navigation journeys from
+   the acceptance criteria.
 2. Fix typecheck, lint, unit tests (tests that mocked `next/navigation` or `authz/request`,
    `core/auth/session.server.ts`, `core/authz/request.ts`, `architecture.test.ts` rules).
 3. Route-level code splitting.

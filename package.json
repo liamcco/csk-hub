@@ -3,21 +3,24 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
+    "dev": "bun run dev:api & bun run dev:web; wait",
+    "build": "bun run build:web && bun run build:api",
     "tst": "bun test --dots",
     "lint": "biome check",
     "typecheck": "tsc --noEmit",
     "format": "biome check --write --linter-enabled=false",
     "auth:generate": "auth generate --config src/core/auth/index.ts --output src/core/db/schema/auth.ts -y",
     "db:generate": "drizzle-kit generate",
-    "db": "bun --conditions=react-server scripts/dev/index.ts",
-    "api:contract": "bun --conditions=react-server scripts/api/export-contract.ts",
+    "db": "bun scripts/dev/index.ts",
+    "api:contract": "bun scripts/api/export-contract.ts",
     "api:generate": "bun run api:contract && bun install --cwd tools/api-client --frozen-lockfile && bun run --cwd tools/api-client generate",
     "e2e": "bun run e2e/run.ts",
-    "pr": "bun tst && bun lint && bun run build",
-    "fallow": "bunx fallow"
+    "pr": "bun tst && bun lint && bun typecheck && bun run build",
+    "fallow": "bunx fallow",
+    "dev:api": "PORT=3001 bun --watch src/api/server.ts",
+    "dev:web": "vite",
+    "build:web": "vite build",
+    "build:api": "bun build src/api/server.ts --target=bun --external=pg-native --outfile=dist/api.js && bun build src/cli/index.ts --target=bun --external=pg-native --outfile=dist/cli.js"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",
@@ -103,5 +106,6 @@
     "typescript": "^7.0.2",
     "vite": "8.3.8",
     "vitest": "^4.1.11"
-  }
+  },
+  "type": "module"
 }
