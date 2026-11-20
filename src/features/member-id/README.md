@@ -6,6 +6,11 @@ Missing photos and accounts without Choir affiliations are allowed.
 
 ## HTTP contract
 
+The endpoints are a Hono router (`routes.ts`) mounted by `src/api` at `/api/member-id`, outside
+`/api/v1`. Their schemas are published in `contract/openapi.json` with the generated client
+(`getMemberIdSession`, `issueMemberId`, `verifyMemberId`), but the representations below predate
+the `/api/v1` conventions and stay frozen, including Unix-millisecond timestamps and these codes.
+
 Use the existing Better Auth `/api/auth` endpoints to sign in and retain cookies. Cookie-bearing
 POST requests require an `Origin` header matching Hub's configured origin. Signup remains disabled.
 All member-ID responses use `Cache-Control: no-store, private`. Error bodies contain a stable `code`;
@@ -48,7 +53,8 @@ may record endpoint requests, but code values travel only in POST bodies.
 
 ## Verification
 
-`bun test src/features/member-id/token.test.ts src/core/authz/policies.test.ts test/authz.test.ts`
-checks expiry boundaries, overlapping codes, tampering, encryption and role/impersonation policies.
-The last file requires disposable local PostgreSQL databases. Also run typecheck and lint. Native
+`bun test src/api/member-id.test.ts src/features/member-id/token.test.ts src/core/authz/policies.test.ts test/authz.test.ts`
+checks the HTTP contract (with the iPhone's request shapes and the generated TypeScript client),
+expiry boundaries, overlapping codes, tampering, encryption and role/impersonation policies.
+The HTTP and authz suites require disposable local PostgreSQL databases. Also run typecheck and lint. Native
 camera verification requires a supported physical iPhone; Simulator cannot exercise the scanner.
