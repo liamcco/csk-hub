@@ -1,11 +1,10 @@
 import { afterAll, describe, expect, test } from "bun:test"
 import { and, eq, isNull } from "drizzle-orm"
-import { Client } from "pg"
 import { user } from "@/core/db/schema/auth"
 import { group, groupMember } from "@/core/db/schema/org-structure"
-import { createTestDatabase } from "../test/database"
-import { insertReferenceData } from "./ops/reference-data"
-import { seedGroups } from "./seed-groups"
+import { bootstrapOrgStructure } from "@/features/org-structure/defaults"
+import { createTestDatabase } from "../../../test/database"
+import { seedGroups } from "./groups"
 
 const database = await createTestDatabase()
 
@@ -20,15 +19,12 @@ describe.skipIf(!database)("seedGroups", () => {
     return id
   }
 
-  test("refuses to run before the reference data exists", async () => {
-    await expect(seedGroups(t.db)).rejects.toThrow("bun run ops reference-data")
+  test("refuses to run before the default org structure exists", async () => {
+    await expect(seedGroups(t.db)).rejects.toThrow("bun run db org-bootstrap")
   })
 
   test("adds the example groups and places every unplaced user in a Choir and a Section, once", async () => {
-    const client = new Client({ connectionString: t.url })
-    await client.connect()
-    await insertReferenceData(client)
-    await client.end()
+    await bootstrapOrgStructure(t.db)
     const users = [await newUser(), await newUser()]
 
     const { created, placed } = await seedGroups(t.db)

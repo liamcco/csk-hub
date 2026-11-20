@@ -1,10 +1,8 @@
-#!/usr/bin/env bun
 import type { JSONContent } from "@tiptap/core"
 import { and, asc, eq, inArray, isNull, or } from "drizzle-orm"
 import { user } from "@/core/db/schema/auth"
 import { post } from "@/core/db/schema/posts"
-import { assertLocalDatabase } from "./ops/guards"
-import { SEED_USERS, type SeedDatabase, seedId } from "./ops/seed-data"
+import { SEED_USERS, type SeedDatabase, seedId } from "./data"
 
 // Fictional Swedish announcements for the shared feed, not actual CSK event information.
 const ANNOUNCEMENTS = [
@@ -215,7 +213,7 @@ export async function seedPosts(database: SeedDatabase) {
       )
       .orderBy(asc(user.id))
     const authors = candidates.filter(({ role }) => role?.split(",").includes("admin"))
-    if (!authors.length) throw new Error("No example Admin exists; run `bun run ops seed-users` first.")
+    if (!authors.length) throw new Error("No example Admin exists; run `bun run db seed-users` first.")
     let created = 0
     for (const [index, [title, introduction, items]] of ANNOUNCEMENTS.entries()) {
       const publishedAt = new Date(
@@ -285,14 +283,4 @@ export async function seedPosts(database: SeedDatabase) {
     }
     return { created }
   })
-}
-
-if (import.meta.main) {
-  assertLocalDatabase("Seeding Posts")
-  const { db } = await import("@/core/db")
-  try {
-    console.log(`Created ${(await seedPosts(db)).created} of 24 example Posts.`)
-  } finally {
-    await db.$client.end()
-  }
 }

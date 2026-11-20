@@ -1,6 +1,6 @@
 import { afterAll, describe, expect, test } from "bun:test"
 import { sql } from "drizzle-orm"
-import { migrate } from "drizzle-orm/node-postgres/migrator"
+import { migrateDatabase } from "@/core/db/migrate"
 import { createTestDatabase } from "../../test/database"
 import { readMigrations, statusOf } from "./migration-status"
 
@@ -10,7 +10,7 @@ describe.skipIf(!database)("migration history upgrade", () => {
   const t = database as NonNullable<typeof database>
   afterAll(() => t.drop())
 
-  const target = { target: "local", url: t?.url, host: "test" } as const
+  const target = { url: t?.url, host: "test" }
 
   test("matches v1 migrations by name even when their timestamps differ", async () => {
     await t.db.execute(sql`update drizzle.__drizzle_migrations set created_at = 0`)
@@ -46,7 +46,7 @@ describe.skipIf(!database)("migration history upgrade", () => {
     `)
     expect(columns).toEqual([])
 
-    await migrate(t.db, { migrationsFolder: "drizzle" })
+    await migrateDatabase(t.db, { migrationsFolder: "drizzle" })
     expect(await statusOf(target)).toEqual(before)
     const { rows } = await t.db.execute<{ name: string }>(
       sql`select name from drizzle.__drizzle_migrations order by name`

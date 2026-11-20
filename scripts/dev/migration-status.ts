@@ -2,45 +2,36 @@ import { fileURLToPath } from "node:url"
 import { readMigrationFiles } from "drizzle-orm/migrator"
 import { Client } from "pg"
 import { secureConnection } from "@/core/db/tls"
-import { type Database, databaseFor, type Target } from "./target"
+import type { LocalDatabase } from "./local-database"
 
 /**
  * Compares the migration files on disk against the ledger a database has actually
  * applied. This is a *ledger* comparison, not a schema diff: it answers "is this database
- * behind the code?" and deliberately does not detect a column altered by hand in the
- * Supabase dashboard.
+ * behind the code?" and deliberately does not detect a column altered by hand.
  */
 
-export type TargetStatus =
-  | { kind: "not-configured" }
+export type MigrationStatus =
   | { kind: "unreachable"; host: string; reason: string }
   | { kind: "ok"; host: string; applied: string[]; pending: string[] }
 
-const MIGRATIONS_FOLDER = fileURLToPath(new URL("../../drizzle", import.meta.url))
+export const MIGRATIONS_FOLDER = fileURLToPath(new URL("../../drizzle", import.meta.url))
 
 /** Read the ordered local migrations using the same parser and SQL hashes as Drizzle. */
 export function readMigrations() {
   return readMigrationFiles({ migrationsFolder: MIGRATIONS_FOLDER })
 }
 
-export async function statusFor(target: Target): Promise<TargetStatus> {
-  const database = databaseFor(target)
-  if (!database) return { kind: "not-configured" }
-
-  return statusOf(database)
-}
-
 /**
- * The ledger status of an already-resolved database; never `not-configured`.
+ * The ledger status of the local database.
  *
  * Connecting and the ledger query are each bounded by `timeout` milliseconds, so a database
  * that stops answering, or a lock held on the ledger, reports `unreachable` rather than
  * hanging. Ending the client while the timed-out query is still active destroys the socket.
  */
 export async function statusOf(
-  database: Database,
+  database: LocalDatabase,
   { timeout = 10_000 }: { timeout?: number } = {}
-): Promise<Exclude<TargetStatus, { kind: "not-configured" }>> {
+): Promise<MigrationStatus> {
   const { host } = database
   const entries = readMigrations()
   const client = new Client({

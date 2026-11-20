@@ -1,11 +1,10 @@
 import { afterAll, describe, expect, test } from "bun:test"
 import { eq, sql } from "drizzle-orm"
-import { Client } from "pg"
 import { event, eventDetail, eventTarget, gig, rehearsal, socialEvent } from "@/core/db/schema/events"
-import { createTestDatabase } from "../test/database"
-import { insertReferenceData } from "./ops/reference-data"
-import { seedEvents } from "./seed-events"
-import { seedGroups } from "./seed-groups"
+import { bootstrapOrgStructure } from "@/features/org-structure/defaults"
+import { createTestDatabase } from "../../../test/database"
+import { seedEvents } from "./events"
+import { seedGroups } from "./groups"
 
 const database = await createTestDatabase()
 
@@ -14,14 +13,11 @@ describe.skipIf(!database)("seedEvents", () => {
   afterAll(() => t.drop())
 
   test("refuses to run before the example groups exist", async () => {
-    await expect(seedEvents(t.db)).rejects.toThrow("bun run ops seed-groups")
+    await expect(seedEvents(t.db)).rejects.toThrow("bun run db seed-groups")
   })
 
   test("writes the scheme's examples, keeping the Events rules, once", async () => {
-    const client = new Client({ connectionString: t.url })
-    await client.connect()
-    await insertReferenceData(client)
-    await client.end()
+    await bootstrapOrgStructure(t.db)
     await seedGroups(t.db)
 
     // A Sunday: the examples start from the next Monday, 19 October.

@@ -1,9 +1,7 @@
-#!/usr/bin/env bun
 import { hashPassword } from "better-auth/crypto"
 import { inArray } from "drizzle-orm"
 import { account, user } from "@/core/db/schema/auth"
-import { assertLocalDatabase } from "./ops/guards"
-import { SEED_PASSWORD, SEED_USERS, type SeedDatabase } from "./ops/seed-data"
+import { SEED_PASSWORD, SEED_USERS, type SeedDatabase } from "./data"
 
 /**
  * Creates 100 named, verified local accounts, with three Admins to author the example Posts.
@@ -45,16 +43,4 @@ export async function seedUsers(database: SeedDatabase) {
     }
     return { created: missing.length }
   })
-}
-
-if (import.meta.main) {
-  assertLocalDatabase("Seeding users")
-  const { db } = await import("@/core/db")
-  try {
-    const { created } = await seedUsers(db)
-    console.log(`Created ${created} of 100 example users. Login: singer-001@example.com … singer-100@example.com.`)
-    console.log(`The first three are Admins. Password: ${SEED_PASSWORD}`)
-  } finally {
-    await db.$client.end()
-  }
 }

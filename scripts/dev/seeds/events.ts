@@ -1,4 +1,3 @@
-#!/usr/bin/env bun
 import { and, asc, eq, isNull, or, type SQL, sql } from "drizzle-orm"
 import type { PgInsertValue } from "drizzle-orm/pg-core"
 import type { db as applicationDb } from "@/core/db"
@@ -14,10 +13,9 @@ import {
   socialEvent
 } from "@/core/db/schema/events"
 import { group } from "@/core/db/schema/org-structure"
-import { assertLocalDatabase } from "./ops/guards"
 
 /**
- * Local example Events from the Events scheme, on top of the example groups (`bun run ops
+ * Local example Events from the Events scheme, on top of the example groups (`bun run db
  * seed-groups`): for each Choir a weekly rehearsal series, a sectional rehearsal, a Draft concert
  * and a Cancelled extra rehearsal; for all of CSK the Alumnikväll gig with Event details, the
  * Höstsittning, a Körmöte for everyone and a room Booking. They are dated from the coming week, so there is always something upcoming.
@@ -318,7 +316,7 @@ async function requireGroup(database: Database, name: string | null, type: (type
     .limit(1)
   if (!row) {
     throw new Error(
-      `No active ${name ?? type} group; run \`bun run ops reference-data\` and \`bun run ops seed-groups\` first.`
+      `No active ${name ?? type} group; run \`bun run db org-bootstrap\` and \`bun run db seed-groups\` first.`
     )
   }
   return row.id
@@ -359,14 +357,4 @@ async function activeUsers(database: Database) {
 async function eventTitled(database: Database, title: string) {
   const [row] = await database.select({ id: event.id }).from(event).where(eq(event.title, title)).limit(1)
   return row?.id
-}
-
-if (import.meta.main) {
-  assertLocalDatabase("Seeding events")
-  const { db } = await import("@/core/db")
-
-  const { created } = await seedEvents(db)
-  await db.$client.end()
-
-  console.log(created.length > 0 ? `Created Events: ${created.join(", ")}` : "Example Events already exist.")
 }

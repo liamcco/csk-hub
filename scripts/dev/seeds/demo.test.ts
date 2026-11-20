@@ -1,7 +1,6 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test"
 import { verifyPassword } from "better-auth/crypto"
 import { eq } from "drizzle-orm"
-import { Client } from "pg"
 import { account, user } from "@/core/db/schema/auth"
 import {
   group,
@@ -14,10 +13,10 @@ import {
 import { post } from "@/core/db/schema/posts"
 import { voiceCapability } from "@/core/db/schema/voice"
 import { postDocument } from "@/features/posts/post-document"
-import { createTestDatabase } from "../test/database"
-import { insertReferenceData } from "./ops/reference-data"
-import { SEED_PASSWORD, SEED_USERS } from "./ops/seed-data"
-import { seedDemo } from "./seed-demo"
+import { createTestDatabase } from "../../../test/database"
+import { runDevCli } from "../test-support"
+import { SEED_PASSWORD, SEED_USERS } from "./data"
+import { seedDemo } from "./demo"
 
 const database = await createTestDatabase()
 
@@ -26,14 +25,8 @@ describe.skipIf(!database)("complete local demo seed", () => {
   const { db, drop, url } = database
   afterAll(drop)
   beforeAll(async () => {
-    const client = new Client({ connectionString: url })
-    try {
-      await client.connect()
-      await insertReferenceData(client)
-    } finally {
-      await client.end()
-    }
     const result = await seedDemo(db)
+    expect(result.org.created).toBe(true)
     expect(result.users.created).toBe(100)
     expect(result.groups.placed).toBe(100)
     expect(result.posts.created).toBe(24)
@@ -184,6 +177,7 @@ describe.skipIf(!database)("complete local demo seed", () => {
       credentials: await db.select().from(account)
     }
     expect(await seedDemo(db)).toEqual({
+      org: { created: false },
       users: { created: 0 },
       groups: { created: [], placed: 0 },
       posts: { created: 0 },
@@ -198,19 +192,12 @@ describe.skipIf(!database)("complete local demo seed", () => {
     expect(await db.select().from(post)).toHaveLength(24)
   })
 
-  test("ops runs the complete demo and every new seed entrypoint refuses a production target", async () => {
-    const repeated = await runScript(["scripts/ops/index.ts", "seed-demo"], url)
+  test("the dev CLI runs the complete demo again without duplicating it", async () => {
+    const repeated = await runDevCli(["seed-demo"], { POSTGRES_URL: url })
+    expect(repeated.stderr).toBe("")
     expect(repeated.code).toBe(0)
     expect(repeated.stdout).toContain("Created 0 users")
-    const production = await runScript(["scripts/ops/index.ts", "seed-demo", "--prod"], url)
-    expect(production.code).toBe(1)
-    expect(production.stdout + production.stderr).toContain("local-only")
-    for (const script of ["seed-demo", "seed-users", "seed-groups", "seed-posts"]) {
-      const refused = await runScript([`scripts/${script}.ts`], "postgresql://seed:seed@example.invalid/csk")
-      expect(refused.code).toBe(1)
-      expect(refused.stderr).toContain("local-only")
-    }
-  })
+  }, 30_000)
 
   test("a conflicting Position preserves its holder and rolls back all new demo data", async () => {
     const [board] = await db.select().from(group).where(eq(group.name, "Styret 26/27"))
@@ -248,18 +235,4 @@ function covers(outer: Period, inner: Period) {
 
 function overlaps(a: Period, b: Period) {
   return a.startDate < (b.endDate ?? "9999-12-31") && b.startDate < (a.endDate ?? "9999-12-31")
-}
-
-async function runScript(args: string[], url: string) {
-  const child = Bun.spawn([process.execPath, "run", ...args], {
-    env: { ...process.env, POSTGRES_URL: url },
-    stdout: "pipe",
-    stderr: "pipe"
-  })
-  const [code, stdout, stderr] = await Promise.all([
-    child.exited,
-    new Response(child.stdout).text(),
-    new Response(child.stderr).text()
-  ])
-  return { code, stdout, stderr }
 }

@@ -1,7 +1,7 @@
 import { and, asc, eq, inArray, isNull } from "drizzle-orm"
 import { user } from "@/core/db/schema/auth"
 import { group, groupMember, groupTypePosition, position, positionHolder } from "@/core/db/schema/org-structure"
-import { SEED_USERS, type SeedDatabase, seedId } from "./seed-data"
+import { SEED_USERS, type SeedDatabase, seedId } from "./data"
 
 type GroupType = typeof group.$inferInsert.type
 type ExampleGroup = { name: string; type: GroupType; choir?: string; archived?: boolean }
@@ -103,7 +103,7 @@ export async function seedGroupActivity(database: SeedDatabase): Promise<string[
   const allowed = await database.select().from(groupTypePosition)
   const positionId = (name: string) => {
     const row = positions.find((row) => row.name === name)
-    if (!row) throw new Error(`Position ${name} is missing; run \`bun run ops reference-data\` first.`)
+    if (!row) throw new Error(`Position ${name} is missing; run \`bun run db org-bootstrap\` first.`)
     return row.id
   }
   const named = (name: string) => {

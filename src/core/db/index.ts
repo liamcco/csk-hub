@@ -1,13 +1,7 @@
-import { defineRelations } from "drizzle-orm"
-import { drizzle } from "drizzle-orm/node-postgres"
 import { env } from "@/core/config/env"
-import * as authSchema from "@/core/db/schema/auth"
-import { secureConnection } from "@/core/db/tls"
+import { createDb } from "./client"
 
-export const db = drizzle({
-  connection: secureConnection(env.POSTGRES_URL),
-  relations: { ...defineRelations(authSchema), ...authSchema.authRelations }
-})
+export const db = createDb(env.POSTGRES_URL)
 
 /** The application database client or an existing transaction. */
 export type Database = typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0]

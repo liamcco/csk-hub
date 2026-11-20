@@ -1,19 +1,17 @@
-#!/usr/bin/env bun
 import { and, asc, count, eq, isNull, notExists, or } from "drizzle-orm"
 import { alias } from "drizzle-orm/pg-core"
 import { user } from "@/core/db/schema/auth"
 import { group, groupMember, section } from "@/core/db/schema/org-structure"
 import { voiceCapability } from "@/core/db/schema/voice"
-import { assertLocalDatabase } from "./ops/guards"
-import { SEED_USERS, type SeedDatabase } from "./ops/seed-data"
-import { seedGroupActivity } from "./ops/seed-group-activity"
+import { SEED_USERS, type SeedDatabase } from "./data"
+import { seedGroupActivity } from "./group-activity"
 
 /**
- * Local example data on top of the reference data (`bun run ops reference-data`): the remaining
+ * Local example data on top of the default org structure (`bun run db org-bootstrap`): the remaining
  * groups of the scheme's "Example placement", balanced singer placements, and demo Membership
- * and Position history. Scripts write directly, keeping the rules without importing features.
+ * and Position history.
  *
- * It writes the tables directly, so scripts never depend on a feature. The rows it writes keep the
+ * It writes the tables directly rather than through the org-structure commands. The rows it writes keep the
  * org-structure rules: a singer joins the Choir and one of its Sections, with a Voice the Section's
  * Voice contains.
  */
@@ -40,7 +38,7 @@ const SEED_START_DATE = "2025-08-25"
 
 /**
  * Safe to run again: existing groups and placed users are left as they are. One transaction, so a
- * refused run, such as one before the reference data exists, leaves nothing behind.
+ * refused run, such as one before the default org structure exists, leaves nothing behind.
  */
 export function seedGroups(database: Database) {
   return database.transaction(async (tx) => seed(tx))
@@ -132,7 +130,7 @@ async function sectionSlots(database: Database) {
     new Set(sections.map(({ choirId }) => choirId)).size !== 3 ||
     sections.some(({ choirId }) => sections.filter((section) => section.choirId === choirId).length !== 4)
   ) {
-    throw new Error("The three Choirs and their twelve Sections are required; run `bun run ops reference-data` first.")
+    throw new Error("The three Choirs and their twelve Sections are required; run `bun run db org-bootstrap` first.")
   }
   const sizes = await database
     .select({ groupId: groupMember.groupId, members: count() })
@@ -149,7 +147,7 @@ async function sectionSlots(database: Database) {
 
 async function requireChoir(database: Database, name: string) {
   const id = await activeGroupId(database, name, null)
-  if (!id) throw new Error(`Choir ${name} is missing; run \`bun run ops reference-data\` first.`)
+  if (!id) throw new Error(`Choir ${name} is missing; run \`bun run db org-bootstrap\` first.`)
   return id
 }
 
@@ -161,17 +159,4 @@ async function activeGroupId(database: Database, name: string, choirId: string |
       and(eq(group.name, name), eq(group.active, true), choirId ? eq(group.choirId, choirId) : isNull(group.choirId))
     )
   return row?.id
-}
-
-if (import.meta.main) {
-  assertLocalDatabase("Seeding groups")
-  const { db } = await import("@/core/db")
-
-  try {
-    const { created, placed } = await seedGroups(db)
-    console.log(created.length > 0 ? `Created groups: ${created.join(", ")}` : "Example groups already exist.")
-    console.log(`Placed ${placed} user(s) in a Section; added missing demo group and Position history.`)
-  } finally {
-    await db.$client.end()
-  }
 }
