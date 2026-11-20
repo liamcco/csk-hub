@@ -1,7 +1,7 @@
 import { Bell, CalendarDays, Music, User, Users } from "lucide-react"
 import Link from "next/link"
 import { Suspense } from "react"
-import { requirePermission } from "@/core/authz"
+import { requireCapability } from "@/core/api-client/capabilities"
 import { getTranslations } from "@/core/i18n/server"
 import { ROUTES } from "@/core/navigation/site"
 import { Card, CardDescription, CardHeader, CardTitle } from "@/shared/ui/base/card"
@@ -45,7 +45,7 @@ function AdminResourcesSkeleton({ resources }: { resources: AdminResource[] }) {
 }
 
 async function AdminResources({ resources }: { resources: AdminResource[] }) {
-  await requirePermission({ action: "admin.access" })
+  await requireCapability("admin")
 
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

@@ -47,6 +47,66 @@
           "code"
         ]
       },
+      "CurrentCapabilities": {
+        "type": "object",
+        "properties": {
+          "user": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "image": {
+                "type": "string",
+                "nullable": true
+              }
+            },
+            "required": [
+              "id",
+              "name",
+              "image"
+            ]
+          },
+          "permissions": {
+            "type": "object",
+            "properties": {
+              "admin": {
+                "type": "boolean",
+                "description": "May open the administration area."
+              },
+              "administerUsers": {
+                "type": "boolean"
+              },
+              "manageOrganisation": {
+                "type": "boolean",
+                "description": "May manage Groups, Memberships and Positions."
+              },
+              "administerEvents": {
+                "type": "boolean",
+                "description": "May administer all Events and Locations."
+              },
+              "broadcastNotifications": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "admin",
+              "administerUsers",
+              "manageOrganisation",
+              "administerEvents",
+              "broadcastNotifications"
+            ],
+            "description": "UI hints for the current User, computed per request. Operations re-check authority."
+          }
+        },
+        "required": [
+          "user",
+          "permissions"
+        ]
+      },
       "MemberDirectory": {
         "type": "object",
         "properties": {
@@ -759,6 +819,37 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/CurrentActor"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No active signed-in User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/capabilities": {
+      "get": {
+        "operationId": "getCurrentCapabilities",
+        "summary": "The signed-in User's name, photo and application-wide capabilities, for the app shell.",
+        "tags": [
+          "session"
+        ],
+        "responses": {
+          "200": {
+            "description": "The current User's capabilities.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CurrentCapabilities"
                 }
               }
             }

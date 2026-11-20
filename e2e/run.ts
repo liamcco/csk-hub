@@ -39,7 +39,8 @@ try {
     alto: await seed("Alto Anna", "alto"),
     tenor: await seed("Tenor Tor", "tenor"),
     admin: await seed("Admin Ada", "admin", "admin"),
-    leaver: await seed("Leaving Lena", "leaver")
+    leaver: await seed("Leaving Lena", "leaver"),
+    deputy: await seed("Deputy Dag", "deputy", "admin")
   }
   const directory = mkdtempSync(join(tmpdir(), "csk-e2e-"))
   const fixturesFile = join(directory, "fixtures.json")

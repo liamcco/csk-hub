@@ -1,7 +1,6 @@
 import Link from "next/link"
 import { Suspense } from "react"
-import { getRequestSession } from "@/core/auth/session.server"
-import { can } from "@/core/authz"
+import { getCapabilities } from "@/core/api-client/capabilities"
 import { app } from "@/core/config/app"
 import { useTranslations } from "@/core/i18n/translations"
 import { type NavigationRouteId, ROUTES } from "@/core/navigation/site"
@@ -111,17 +110,15 @@ export function AppNavigation({ unreadSources }: AppNavigationProps) {
 }
 
 export async function RuntimeAppNavigation({ unreadSources }: AppNavigationProps) {
-  const session = await getRequestSession()
-  const active = session && (await can({ action: "app.access" }))
-  const isAdmin = active && (await can({ action: "admin.access" }))
+  const capabilities = await getCapabilities()
   return (
     <AppNavigationTemplate
       unreadSources={unreadSources}
       config={
-        active && session
+        capabilities
           ? {
-              showAdmin: Boolean(isAdmin),
-              user: { name: session.user.name, image: session.user.image }
+              showAdmin: capabilities.permissions.admin,
+              user: { name: capabilities.user.name, image: capabilities.user.image }
             }
           : null
       }
@@ -139,6 +136,5 @@ export function AppQuickAccessBar() {
 }
 
 async function RuntimeQuickAccessBar() {
-  const session = await getRequestSession()
-  return session ? <QuickAccessBar /> : null
+  return (await getCapabilities()) ? <QuickAccessBar /> : null
 }

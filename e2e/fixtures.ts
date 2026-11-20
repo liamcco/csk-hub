@@ -14,4 +14,6 @@ export type E2EFixtures = {
   admin: E2EUser
   /** A member whose account journeys deactivate. Do not sign in as them elsewhere. */
   leaver: E2EUser
+  /** An Admin whose journeys demote them. Do not sign in as them elsewhere. */
+  deputy: E2EUser
 }

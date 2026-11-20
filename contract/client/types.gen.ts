@@ -20,6 +20,33 @@ export type ApiError = {
     code: 'UNAUTHENTICATED' | 'FORBIDDEN' | 'NOT_FOUND' | 'VALIDATION_FAILED' | 'INTERNAL';
 };
 
+export type CurrentCapabilities = {
+    user: {
+        id: string;
+        name: string;
+        image: string | null;
+    };
+    /**
+     * UI hints for the current User, computed per request. Operations re-check authority.
+     */
+    permissions: {
+        /**
+         * May open the administration area.
+         */
+        admin: boolean;
+        administerUsers: boolean;
+        /**
+         * May manage Groups, Memberships and Positions.
+         */
+        manageOrganisation: boolean;
+        /**
+         * May administer all Events and Locations.
+         */
+        administerEvents: boolean;
+        broadcastNotifications: boolean;
+    };
+};
+
 export type MemberDirectory = {
     /**
      * The trimmed search that was applied.
@@ -232,6 +259,31 @@ export type GetCurrentActorResponses = {
 };
 
 export type GetCurrentActorResponse = GetCurrentActorResponses[keyof GetCurrentActorResponses];
+
+export type GetCurrentCapabilitiesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/me/capabilities';
+};
+
+export type GetCurrentCapabilitiesErrors = {
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+};
+
+export type GetCurrentCapabilitiesError = GetCurrentCapabilitiesErrors[keyof GetCurrentCapabilitiesErrors];
+
+export type GetCurrentCapabilitiesResponses = {
+    /**
+     * The current User's capabilities.
+     */
+    200: CurrentCapabilities;
+};
+
+export type GetCurrentCapabilitiesResponse = GetCurrentCapabilitiesResponses[keyof GetCurrentCapabilitiesResponses];
 
 export type ListMembersData = {
     body?: never;

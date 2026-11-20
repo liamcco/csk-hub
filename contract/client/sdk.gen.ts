@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { GetCurrentActorData, GetCurrentActorErrors, GetCurrentActorResponses, GetMemberIdSessionData, GetMemberIdSessionErrors, GetMemberIdSessionResponses, GetMemberProfileData, GetMemberProfileErrors, GetMemberProfileResponses, GetOwnProfileData, GetOwnProfileErrors, GetOwnProfileResponses, GetProfileEditorData, GetProfileEditorErrors, GetProfileEditorResponses, IssueMemberIdData, IssueMemberIdErrors, IssueMemberIdResponses, ListMembersData, ListMembersErrors, ListMembersResponses, UpdateProfileVoicesData, UpdateProfileVoicesErrors, UpdateProfileVoicesResponses, VerifyMemberIdData, VerifyMemberIdErrors, VerifyMemberIdResponses } from './types.gen';
+import type { GetCurrentActorData, GetCurrentActorErrors, GetCurrentActorResponses, GetCurrentCapabilitiesData, GetCurrentCapabilitiesErrors, GetCurrentCapabilitiesResponses, GetMemberIdSessionData, GetMemberIdSessionErrors, GetMemberIdSessionResponses, GetMemberProfileData, GetMemberProfileErrors, GetMemberProfileResponses, GetOwnProfileData, GetOwnProfileErrors, GetOwnProfileResponses, GetProfileEditorData, GetProfileEditorErrors, GetProfileEditorResponses, IssueMemberIdData, IssueMemberIdErrors, IssueMemberIdResponses, ListMembersData, ListMembersErrors, ListMembersResponses, UpdateProfileVoicesData, UpdateProfileVoicesErrors, UpdateProfileVoicesResponses, VerifyMemberIdData, VerifyMemberIdErrors, VerifyMemberIdResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -22,6 +22,11 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
  * The signed-in, active User behind this request, freshly resolved.
  */
 export const getCurrentActor = <ThrowOnError extends boolean = false>(options?: Options<GetCurrentActorData, ThrowOnError>): RequestResult<GetCurrentActorResponses, GetCurrentActorErrors, ThrowOnError> => (options?.client ?? client).get<GetCurrentActorResponses, GetCurrentActorErrors, ThrowOnError>({ url: '/api/v1/me', ...options });
+
+/**
+ * The signed-in User's name, photo and application-wide capabilities, for the app shell.
+ */
+export const getCurrentCapabilities = <ThrowOnError extends boolean = false>(options?: Options<GetCurrentCapabilitiesData, ThrowOnError>): RequestResult<GetCurrentCapabilitiesResponses, GetCurrentCapabilitiesErrors, ThrowOnError> => (options?.client ?? client).get<GetCurrentCapabilitiesResponses, GetCurrentCapabilitiesErrors, ThrowOnError>({ url: '/api/v1/me/capabilities', ...options });
 
 /**
  * Other active members, searched by name or username.

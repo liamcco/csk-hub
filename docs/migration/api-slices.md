@@ -30,7 +30,7 @@ behind `scheduleActivityDispatch()` (see "Delivery boundary").
 | - | ----- | --- | ---------- | ---------- | ------- | ------ |
 | 0 | Web API client, Origin guard, Playwright harness | `core/api-client`, `src/api/app.ts` | `members.test.ts` (Origin) | — | `e2e/run.ts` | done |
 | 1 | Member directory, profile, profile edit | `listMembers`, `getMemberProfile`, `getOwnProfile`, `getProfileEditor`, `updateProfileVoices` | `members.test.ts` | `/members`, `/members/[id]`, `/me`, `/me/edit` | `members.e2e.ts` | done |
-| 2 | App shell: capabilities, unread badges | | | | | todo |
+| 2 | App shell: navigation capabilities, admin page gates | `getCurrentCapabilities` | `capabilities.test.ts` | primary navigation, quick-access bar, every `/admin` page gate | `shell.e2e.ts` | done |
 | 3 | News feed, Posts, Drafts, recall, unread | | | | | todo |
 | 4 | Home (upcoming Events, latest News) | | | | | todo |
 | 5 | Direct and Group Conversations, Messages, unread | | | | | todo |

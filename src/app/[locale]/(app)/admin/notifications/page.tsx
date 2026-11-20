@@ -1,9 +1,9 @@
 import { Suspense } from "react"
-import { requirePermission } from "@/core/authz"
+import { requireCapability } from "@/core/api-client/capabilities"
 import { NotificationManagementScreen } from "@/features/notification-broadcast"
 
 async function AdminNotifications() {
-  await requirePermission({ action: "admin.access" })
+  await requireCapability("admin")
   return <NotificationManagementScreen />
 }
 
