@@ -225,7 +225,7 @@ accountRouter.openapi(routes.activateAccount, async (c) => {
   const input = activationSchema.safeParse(c.req.valid("json"))
   if (!input.success) return c.json({ code: activationFailure(input.error.issues) }, 400)
   try {
-    await c.var.setInitialPassword(input.data.password)
+    await c.var.authApi.setPassword({ headers: c.req.raw.headers, body: { newPassword: input.data.password } })
   } catch (error) {
     const status = getErrorStatus(error)
     const code = getErrorCode(error)

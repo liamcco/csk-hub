@@ -1,3 +1,4 @@
+import type { Auth } from "@/core/auth/create-auth"
 import type { RequestAuthorization } from "@/core/authz/authorization"
 import type { Database } from "@/core/db"
 
@@ -30,11 +31,17 @@ export type ApiDependencies = Readonly<{
    */
   scheduleDelivery: () => void
   /**
-   * Gives the session's User their first password through Better Auth. Rejects with Better
-   * Auth's error when the session is missing or expired, or the User already has one.
+   * Better Auth's server operations that features run on the caller's behalf, passing the
+   * request's own headers: Better Auth checks the session again and rejects with its own error.
    */
-  setInitialPassword: (headers: Headers, newPassword: string) => Promise<void>
+  authApi: AuthApi
 }>
+
+/** The Better Auth operations the API's features may call. */
+export type AuthApi = Pick<
+  Auth["api"],
+  "setPassword" | "createUser" | "signInMagicLink" | "banUser" | "unbanUser" | "removeUser" | "setRole"
+>
 
 export type ApiEnv = {
   Variables: {
@@ -49,7 +56,7 @@ export type ApiEnv = {
     secret: string
     /** Wakes outbox delivery. Call only after the transaction that queued activity commits. */
     scheduleDelivery: () => void
-    /** Gives this request's signed-in User their first password (account activation). */
-    setInitialPassword: (newPassword: string) => Promise<void>
+    /** Better Auth's server operations; pass `c.req.raw.headers` so they act as the caller. */
+    authApi: AuthApi
   }
 }

@@ -36,7 +36,7 @@ behind `scheduleActivityDispatch()` (see "Delivery boundary").
 | 5 | Direct and Group Conversations, Messages, unread | `listConversations`, `getConversationUnread`, `searchMessageRecipients`, `getConversation`, `startConversation`, `sendMessage`, `markConversationRead`, `addGroupMembers`, `renameGroupConversation`, `leaveGroupConversation` | `messaging.test.ts` | `/messages`, `/messages/[id]`, start dialog, composer, Group controls, Messages badge | `messaging.e2e.ts` | done |
 | 6 | Events and Locations | `listUpcomingEvents`, `getEventPage`, `listManagedEvents`, `getEventFormOptions`, `getEventEditor`, `createEvent`, `updateEvent`, `changeEventStatus`, `deleteEvent`, `listLocations`, `createLocation`, `updateLocation`, `archiveLocation` | `events.test.ts` | `/events`, `/events/[id]`, `/events/manage` (and `/admin/events`), new and edit forms, lifecycle dialogs, Locations | `events.e2e.ts` | done |
 | 7 | Account activation and settings: locale, push subscriptions | `activateAccount`, `updateLocalePreference`, `getPushSubscriptionStatus`, `registerPushSubscription`, `removePushSubscription`, `sendTestPushNotification` | `account.test.ts` | `/activate`, `/me/settings` gate, language, notifications, push revocation on logout | `account.e2e.ts` | done |
-| 8 | User administration | | | | | todo |
+| 8 | User administration | `listUsers`, `inviteUser`, `findExistingUserEmails`, `importUsers`, `activateUser`, `deactivateUser`, `eraseUser`, `resendInvitation`, `changeUserRoles` | `users.test.ts` | `/admin/users`: list, add member, CSV import, row actions | `users.e2e.ts` | done |
 | 9 | Groups, Memberships, Positions | | | | | todo |
 | 10 | Admin broadcasts | | | | | todo |
 
@@ -71,6 +71,10 @@ keep their own path: `push: false` outbox rows plus direct Web Push.
   push permission and magic-link sign-in are not driven by Playwright. Signing out revokes the push
   binding through `removePushSubscription`, which needs an active User; for a deactivated User the
   browser still drops its subscription, as it did when server cleanup failed.
+- Better Auth operations that act for the caller (activation, User administration) go through the
+  `authApi` API dependency with the request's own headers, so Better Auth checks the session again.
+  The last-Admin guard is verified through the command rules, not over HTTP (the test database
+  holds many Admins). CSV parsing and row review stay in the browser; the API takes reviewed rows.
 - The account settings screen reads profile, two-factor and session details from Better Auth's
   session (`/api/auth`), which stays outside `/api/v1`.
 

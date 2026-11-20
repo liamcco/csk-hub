@@ -1,6 +1,7 @@
 "use client"
 
 import { MoreHorizontalIcon } from "lucide-react"
+import { useRouter } from "next/navigation"
 import { useCallback, useEffect, useState, useTransition } from "react"
 import { app } from "@/core/config/app"
 import { useTranslations } from "@/core/i18n/translations"
@@ -25,14 +26,8 @@ import {
 } from "@/shared/ui/base/dropdown-menu"
 import { Input } from "@/shared/ui/base/input"
 import { toast } from "@/shared/ui/base/toast"
-import {
-  activateUser,
-  changeUserRole,
-  deactivateUser,
-  eraseUser,
-  resendInvitation,
-  type UserCommandState
-} from "./actions"
+import type { UserCommandState } from "./command-state"
+import { userCommand } from "./user-commands"
 
 type UserAction = "activate" | "deactivate" | "delete" | "invite" | "role"
 const destructiveMenuItemClassName =
@@ -64,7 +59,7 @@ function getUserActionConfig(t: ReturnType<typeof useTranslations>): Record<User
       submitVariant: "default",
       requiresConfirmation: false,
       submitClassName: activateButtonClassName,
-      command: activateUser,
+      command: userCommand("activate"),
       success: (userName) => ({
         title: t("memberActivated"),
         description: t("memberCanSignIn", { memberName: userName })
@@ -76,7 +71,7 @@ function getUserActionConfig(t: ReturnType<typeof useTranslations>): Record<User
       submitLabel: t("deactivate"),
       submitVariant: "destructive",
       requiresConfirmation: false,
-      command: deactivateUser,
+      command: userCommand("deactivate"),
       success: (userName) => ({
         title: t("memberDeactivated"),
         description: t("memberNoLongerHasAccess", { memberName: userName })
@@ -88,7 +83,7 @@ function getUserActionConfig(t: ReturnType<typeof useTranslations>): Record<User
       submitLabel: t("delete"),
       submitVariant: "destructive",
       requiresConfirmation: true,
-      command: eraseUser,
+      command: userCommand("delete"),
       success: (userName) => ({
         title: t("memberDeleted"),
         description: t("memberPermanentlyDeleted", { memberName: userName })
@@ -100,7 +95,7 @@ function getUserActionConfig(t: ReturnType<typeof useTranslations>): Record<User
       submitLabel: t("sendInvitation"),
       submitVariant: "default",
       requiresConfirmation: false,
-      command: resendInvitation,
+      command: userCommand("invite"),
       success: (userName) => ({
         title: t("invitationSent"),
         description: t("inviteSentDescription", { email: userName })
@@ -112,7 +107,7 @@ function getUserActionConfig(t: ReturnType<typeof useTranslations>): Record<User
       submitLabel: t("saveRoles"),
       submitVariant: "default",
       requiresConfirmation: false,
-      command: changeUserRole,
+      command: userCommand("role"),
       success: (userName) => ({
         title: t("roleUpdated"),
         description: t("roleUpdatedDescription", { memberName: userName })
@@ -137,6 +132,7 @@ export function UserActions({
   const t = useTranslations("Members")
   const common = useTranslations("Common")
   const userActionConfig = getUserActionConfig(t)
+  const router = useRouter()
   const [state, setState] = useState<UserCommandState>({ status: "idle" })
   const [pending, startTransition] = useTransition()
   const [dialogAction, setDialogAction] = useState<UserAction | null>(null)
@@ -160,13 +156,14 @@ export function UserActions({
         title,
         description
       })
+      router.refresh()
       setState({ status: "idle" })
     }
     if (state.status === "error") {
       toast.add({ type: "error", title: t("memberActionFailed"), description: state.error })
       setState({ status: "idle" })
     }
-  }, [closeDialog, userActionConfig, userName, state, t])
+  }, [closeDialog, userActionConfig, userName, state, t, router])
 
   const dialogCopy = userActionConfig[dialogAction ?? "activate"]
 

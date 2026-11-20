@@ -24,9 +24,7 @@ export function createApiDependencies({
     secret,
     scheduleDelivery,
     handleAuth: (request) => auth.handler(request),
-    async setInitialPassword(headers, newPassword) {
-      await auth.api.setPassword({ headers, body: { newPassword } })
-    },
+    authApi: auth.api,
     async resolveRequest(headers) {
       let impersonatedBy: string | null = null
       let sessionId: string | null = null

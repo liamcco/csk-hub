@@ -633,6 +633,70 @@ export type Activation = {
     confirmPassword: string;
 };
 
+export type AdministeredUsers = {
+    items: Array<AdministeredUser>;
+};
+
+export type AdministeredUser = {
+    id: string;
+    name: string;
+    username: string | null;
+    email: string;
+    emailVerified: boolean;
+    /**
+     * False until the User completes activation.
+     */
+    hasPassword: boolean;
+    role: string | null;
+    inactive: boolean | null;
+    createdAt: string;
+};
+
+export type InvitedUser = {
+    id: string;
+    delivery: 'sent' | 'email-failed';
+};
+
+export type InviteError = {
+    code: 'NAME_REQUIRED' | 'EMAIL_REQUIRED' | 'EMAIL_INVALID' | 'EMAIL_EXISTS' | 'UNAVAILABLE';
+};
+
+export type UserImportResult = {
+    created: Array<{
+        row: number;
+        name: string;
+        email: string;
+    }>;
+    emailFailed: Array<{
+        row: number;
+        name: string;
+        email: string;
+    }>;
+    failed: Array<{
+        row: number;
+        error: 'EMAIL_EXISTS' | 'UNAVAILABLE';
+    }>;
+};
+
+export type UserImport = {
+    users: Array<{
+        row: number;
+        name: string;
+        email: string;
+    }>;
+};
+
+export type UserCommandResult = {
+    id: string;
+};
+
+export type UserCommandError = {
+    /**
+     * The rule a User administration command broke. Tolerate unknown codes.
+     */
+    code: 'USER_NOT_FOUND' | 'ALREADY_ACTIVE' | 'ALREADY_INACTIVE' | 'CANNOT_CHANGE_SELF' | 'LAST_ADMIN' | 'DEACTIVATE_FIRST' | 'CONFIRMATION_MISMATCH' | 'ALREADY_ACTIVATED' | 'UNAVAILABLE';
+};
+
 export type MemberIdSession = {
     member: MemberIdMember;
     /**
@@ -2326,6 +2390,368 @@ export type ActivateAccountResponses = {
 };
 
 export type ActivateAccountResponse = ActivateAccountResponses[keyof ActivateAccountResponses];
+
+export type ListUsersData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/users';
+};
+
+export type ListUsersErrors = {
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The current User may not perform this operation.
+     */
+    403: ApiError;
+};
+
+export type ListUsersError = ListUsersErrors[keyof ListUsersErrors];
+
+export type ListUsersResponses = {
+    /**
+     * Users.
+     */
+    200: AdministeredUsers;
+};
+
+export type ListUsersResponse = ListUsersResponses[keyof ListUsersResponses];
+
+export type InviteUserData = {
+    body: {
+        name: string;
+        email: string;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/v1/users';
+};
+
+export type InviteUserErrors = {
+    /**
+     * The name or email is missing or malformed.
+     */
+    400: InviteError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The current User may not perform this operation.
+     */
+    403: ApiError;
+    /**
+     * `EMAIL_EXISTS`: a User already has this email.
+     */
+    409: InviteError;
+    /**
+     * `UNAVAILABLE`: the User could not be created.
+     */
+    500: InviteError;
+};
+
+export type InviteUserError = InviteUserErrors[keyof InviteUserErrors];
+
+export type InviteUserResponses = {
+    /**
+     * Created. `email-failed` means the User exists but the invitation email could not be sent.
+     */
+    201: InvitedUser;
+};
+
+export type InviteUserResponse = InviteUserResponses[keyof InviteUserResponses];
+
+export type FindExistingUserEmailsData = {
+    body: {
+        emails: Array<string>;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/v1/users/emails/existing';
+};
+
+export type FindExistingUserEmailsErrors = {
+    /**
+     * The request failed validation.
+     */
+    400: ValidationError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The current User may not perform this operation.
+     */
+    403: ApiError;
+};
+
+export type FindExistingUserEmailsError = FindExistingUserEmailsErrors[keyof FindExistingUserEmailsErrors];
+
+export type FindExistingUserEmailsResponses = {
+    /**
+     * The taken emails, lower-cased.
+     */
+    200: {
+        emails: Array<string>;
+    };
+};
+
+export type FindExistingUserEmailsResponse = FindExistingUserEmailsResponses[keyof FindExistingUserEmailsResponses];
+
+export type ImportUsersData = {
+    body: UserImport;
+    path?: never;
+    query?: never;
+    url: '/api/v1/users/import';
+};
+
+export type ImportUsersErrors = {
+    /**
+     * The request failed validation.
+     */
+    400: ValidationError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The current User may not perform this operation.
+     */
+    403: ApiError;
+};
+
+export type ImportUsersError = ImportUsersErrors[keyof ImportUsersErrors];
+
+export type ImportUsersResponses = {
+    /**
+     * Each row's outcome.
+     */
+    200: UserImportResult;
+};
+
+export type ImportUsersResponse = ImportUsersResponses[keyof ImportUsersResponses];
+
+export type ActivateUserData = {
+    body?: never;
+    path: {
+        userId: string;
+    };
+    query?: never;
+    url: '/api/v1/users/{userId}/activate';
+};
+
+export type ActivateUserErrors = {
+    /**
+     * The command broke a rule, or the request failed validation.
+     */
+    400: UserCommandError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The current User may not perform this operation.
+     */
+    403: ApiError;
+    /**
+     * `USER_NOT_FOUND`: no such User.
+     */
+    404: UserCommandError;
+    /**
+     * `UNAVAILABLE`: Better Auth could not complete the change.
+     */
+    500: UserCommandError;
+};
+
+export type ActivateUserError = ActivateUserErrors[keyof ActivateUserErrors];
+
+export type ActivateUserResponses = {
+    /**
+     * Done.
+     */
+    200: UserCommandResult;
+};
+
+export type ActivateUserResponse = ActivateUserResponses[keyof ActivateUserResponses];
+
+export type DeactivateUserData = {
+    body?: never;
+    path: {
+        userId: string;
+    };
+    query?: never;
+    url: '/api/v1/users/{userId}/deactivate';
+};
+
+export type DeactivateUserErrors = {
+    /**
+     * The command broke a rule, or the request failed validation.
+     */
+    400: UserCommandError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The current User may not perform this operation.
+     */
+    403: ApiError;
+    /**
+     * `USER_NOT_FOUND`: no such User.
+     */
+    404: UserCommandError;
+    /**
+     * `UNAVAILABLE`: Better Auth could not complete the change.
+     */
+    500: UserCommandError;
+};
+
+export type DeactivateUserError = DeactivateUserErrors[keyof DeactivateUserErrors];
+
+export type DeactivateUserResponses = {
+    /**
+     * Done.
+     */
+    200: UserCommandResult;
+};
+
+export type DeactivateUserResponse = DeactivateUserResponses[keyof DeactivateUserResponses];
+
+export type EraseUserData = {
+    body: {
+        confirmation?: string;
+    };
+    path: {
+        userId: string;
+    };
+    query?: never;
+    url: '/api/v1/users/{userId}/erase';
+};
+
+export type EraseUserErrors = {
+    /**
+     * The command broke a rule, or the request failed validation.
+     */
+    400: UserCommandError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The current User may not perform this operation.
+     */
+    403: ApiError;
+    /**
+     * `USER_NOT_FOUND`: no such User.
+     */
+    404: UserCommandError;
+    /**
+     * `UNAVAILABLE`: Better Auth could not complete the change.
+     */
+    500: UserCommandError;
+};
+
+export type EraseUserError = EraseUserErrors[keyof EraseUserErrors];
+
+export type EraseUserResponses = {
+    /**
+     * Done.
+     */
+    200: UserCommandResult;
+};
+
+export type EraseUserResponse = EraseUserResponses[keyof EraseUserResponses];
+
+export type ResendInvitationData = {
+    body?: never;
+    path: {
+        userId: string;
+    };
+    query?: never;
+    url: '/api/v1/users/{userId}/invitation';
+};
+
+export type ResendInvitationErrors = {
+    /**
+     * The command broke a rule, or the request failed validation.
+     */
+    400: UserCommandError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The current User may not perform this operation.
+     */
+    403: ApiError;
+    /**
+     * `USER_NOT_FOUND`: no such User.
+     */
+    404: UserCommandError;
+    /**
+     * `UNAVAILABLE`: Better Auth could not complete the change.
+     */
+    500: UserCommandError;
+};
+
+export type ResendInvitationError = ResendInvitationErrors[keyof ResendInvitationErrors];
+
+export type ResendInvitationResponses = {
+    /**
+     * Done.
+     */
+    200: UserCommandResult;
+};
+
+export type ResendInvitationResponse = ResendInvitationResponses[keyof ResendInvitationResponses];
+
+export type ChangeUserRolesData = {
+    body: {
+        roles: Array<'user' | 'admin'>;
+    };
+    path: {
+        userId: string;
+    };
+    query?: never;
+    url: '/api/v1/users/{userId}/roles';
+};
+
+export type ChangeUserRolesErrors = {
+    /**
+     * The command broke a rule, or the request failed validation.
+     */
+    400: UserCommandError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The current User may not perform this operation.
+     */
+    403: ApiError;
+    /**
+     * `USER_NOT_FOUND`: no such User.
+     */
+    404: UserCommandError;
+    /**
+     * `UNAVAILABLE`: Better Auth could not complete the change.
+     */
+    500: UserCommandError;
+};
+
+export type ChangeUserRolesError = ChangeUserRolesErrors[keyof ChangeUserRolesErrors];
+
+export type ChangeUserRolesResponses = {
+    /**
+     * Done.
+     */
+    200: UserCommandResult;
+};
+
+export type ChangeUserRolesResponse = ChangeUserRolesResponses[keyof ChangeUserRolesResponses];
 
 export type GetMemberIdSessionData = {
     body?: never;

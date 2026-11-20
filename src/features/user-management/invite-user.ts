@@ -1,43 +1,45 @@
-import { headers } from "next/headers"
-import { auth } from "@/core/auth/auth"
-import { requirePermission } from "@/core/authz"
+import "server-only"
+
+import { inArray } from "drizzle-orm"
+import type { Database } from "@/core/db"
+import { user } from "@/core/db/schema/auth"
+import type { AuthApi } from "@/core/http"
 import { logger } from "@/core/logging"
 import { ROUTES } from "@/core/navigation/site"
 import { getErrorCode, getErrorName, getErrorStatus } from "@/shared/errors"
 import { USER_ROLE } from "@/shared/roles"
 
+/** How an invitation runs: Better Auth's admin operations, as the calling Admin. */
+export type Inviter = { authApi: AuthApi; headers: Headers }
+
 export type InviteUserInput = { name: string; email: string }
 export type InviteUserResult =
-  | { kind: "sent" }
-  | { kind: "email-failed" }
+  | { kind: "sent"; id: string }
+  | { kind: "email-failed"; id: string }
   | { kind: "already-exists" }
   | { kind: "creation-failed" }
 
 const INVITE_CONCURRENCY = 5
 
-export async function inviteUser(input: InviteUserInput): Promise<InviteUserResult> {
-  await requirePermission({ action: "user.administer" })
-  return inviteUserAsAdmin(input)
-}
-
-export async function inviteUsers(inputs: InviteUserInput[]): Promise<InviteUserResult[]> {
-  await requirePermission({ action: "user.administer" })
+/** Invites Users a few at a time, answering each in input order. The caller authorizes. */
+export async function inviteUsers(inviter: Inviter, inputs: InviteUserInput[]): Promise<InviteUserResult[]> {
   const results: InviteUserResult[] = []
-
   for (let index = 0; index < inputs.length; index += INVITE_CONCURRENCY) {
-    const batch = await Promise.all(inputs.slice(index, index + INVITE_CONCURRENCY).map(inviteUserAsAdmin))
-    results.push(...batch)
+    const batch = inputs.slice(index, index + INVITE_CONCURRENCY)
+    results.push(...(await Promise.all(batch.map((input) => inviteUser(inviter, input)))))
   }
-
   return results
 }
 
-async function inviteUserAsAdmin(input: InviteUserInput): Promise<InviteUserResult> {
+/** Creates a User without a password and sends the magic link that activates them. The caller authorizes. */
+export async function inviteUser({ authApi, headers }: Inviter, input: InviteUserInput): Promise<InviteUserResult> {
+  let id: string
   try {
-    await auth.api.createUser({
-      headers: await headers(),
+    const created = await authApi.createUser({
+      headers,
       body: { name: input.name, email: input.email, role: USER_ROLE }
     })
+    id = created.user.id
   } catch (error) {
     if (getErrorCode(error) === "USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL") return { kind: "already-exists" }
 
@@ -50,8 +52,8 @@ async function inviteUserAsAdmin(input: InviteUserInput): Promise<InviteUserResu
   }
 
   try {
-    await auth.api.signInMagicLink({
-      headers: await headers(),
+    await authApi.signInMagicLink({
+      headers,
       body: {
         email: input.email,
         name: input.name,
@@ -59,14 +61,21 @@ async function inviteUserAsAdmin(input: InviteUserInput): Promise<InviteUserResu
         errorCallbackURL: ROUTES.activationFailed
       }
     })
-    return { kind: "sent" }
+    return { kind: "sent", id }
   } catch (error) {
     logger.error("admin.users.invite-dispatch-failed", {
-      email: input.email,
       errorCode: getErrorCode(error),
       errorName: getErrorName(error),
       status: getErrorStatus(error)
     })
-    return { kind: "email-failed" }
+    return { kind: "email-failed", id }
   }
+}
+
+/** Which of these emails already belong to a User, normalized to lower case. The caller authorizes. */
+export async function findExistingEmails(database: Database, emails: string[]) {
+  const normalized = [...new Set(emails.map((email) => email.trim().toLowerCase()).filter(Boolean))]
+  if (normalized.length === 0) return []
+  const users = await database.select({ email: user.email }).from(user).where(inArray(user.email, normalized))
+  return users.map((row) => row.email.toLowerCase())
 }

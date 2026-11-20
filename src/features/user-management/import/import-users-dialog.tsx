@@ -1,5 +1,6 @@
 "use client"
 
+import { useRouter } from "next/navigation"
 import { useRef, useState, useTransition } from "react"
 import { useTranslations } from "@/core/i18n/translations"
 import { useValidationMessage } from "@/core/i18n/validation-errors"
@@ -17,7 +18,7 @@ import { FieldError, FieldGroup } from "@/shared/ui/base/field"
 import { Input } from "@/shared/ui/base/input"
 import { Spinner } from "@/shared/ui/base/spinner"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/base/table"
-import { findExistingUserEmails, type ImportUsersState, importUsers } from "./actions"
+import { findExistingUserEmails, type ImportUsersState, importUsers } from "../user-commands"
 import { type ImportUserRow, MAX_IMPORT_FILE_SIZE_BYTES, parseUserCsv, validateImportUser } from "./schemas"
 
 const initialState: ImportUsersState = { status: "idle" }
@@ -36,6 +37,7 @@ export function ImportUsersDialog() {
   const [existingEmails, setExistingEmails] = useState<Set<string>>(new Set())
   const [pending, startTransition] = useTransition()
   const formRef = useRef<HTMLFormElement>(null)
+  const router = useRouter()
 
   function validateRows(rows: PreviewRow[], existingEmails: Set<string>): PreviewRow[] {
     const emails = new Set<string>()
@@ -95,7 +97,13 @@ export function ImportUsersDialog() {
   }
 
   function submit(formData: FormData) {
-    startTransition(() => void importUsers(initialState, formData).then(setState))
+    startTransition(
+      () =>
+        void importUsers(initialState, formData).then((next) => {
+          setState(next)
+          if (next.status === "success") router.refresh()
+        })
+    )
   }
 
   function changeOpen(nextOpen: boolean) {

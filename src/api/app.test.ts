@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test"
 import { AuthorizationDeniedError, type RequestAuthorization } from "@/core/authz/authorization"
 import { evaluatePermission } from "@/core/authz/policy-registry"
 import type { Database } from "@/core/db"
+import type { ApiDependencies } from "@/core/http"
 import { createApi, getApiContract } from "./app"
 
 function authorizationFor(actor: RequestAuthorization["actor"]): RequestAuthorization {
@@ -25,7 +26,7 @@ const offline = {
   database: new Proxy({} as Database, { get: unavailable }),
   secret: "unused",
   scheduleDelivery: unavailable,
-  setInitialPassword: unavailable
+  authApi: new Proxy({} as ApiDependencies["authApi"], { get: unavailable })
 }
 
 describe("API assembly", () => {

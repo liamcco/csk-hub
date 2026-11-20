@@ -1,13 +1,12 @@
 import "server-only"
 
 import { and, asc, eq, exists, isNotNull } from "drizzle-orm"
-import { requirePermission } from "@/core/authz"
-import { db } from "@/core/db"
+import type { Database } from "@/core/db"
 import { account, user } from "@/core/db/schema/auth"
 
-export async function listUsers() {
-  await requirePermission({ action: "user.administer" })
-  return db
+/** Every User, by name, with their status. The caller authorizes `user.administer`. */
+export async function listUsers(database: Database) {
+  return database
     .select({
       id: user.id,
       name: user.name,
@@ -15,7 +14,7 @@ export async function listUsers() {
       email: user.email,
       emailVerified: user.emailVerified,
       hasPassword: exists(
-        db
+        database
           .select({ id: account.id })
           .from(account)
           .where(and(eq(account.userId, user.id), eq(account.providerId, "credential"), isNotNull(account.password)))

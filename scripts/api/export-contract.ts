@@ -5,6 +5,7 @@
 import { mkdir, writeFile } from "node:fs/promises"
 import { dirname } from "node:path"
 import type { Database } from "@/core/db"
+import type { ApiDependencies } from "@/core/http"
 
 // Feature modules validate configuration when loaded. Assembly never connects or sends anything,
 // so placeholders let the export run on a machine without application secrets.
@@ -31,7 +32,7 @@ const contract = getApiContract(
     handleAuth: unavailable,
     resolveRequest: unavailable,
     scheduleDelivery: unavailable,
-    setInitialPassword: unavailable,
+    authApi: new Proxy({} as ApiDependencies["authApi"], { get: unavailable }),
     database: new Proxy({} as Database, { get: unavailable }),
     secret: "unused"
   })

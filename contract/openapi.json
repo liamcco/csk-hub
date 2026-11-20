@@ -2399,6 +2399,251 @@
           "confirmPassword"
         ]
       },
+      "AdministeredUsers": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdministeredUser"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "AdministeredUser": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "username": {
+            "type": "string",
+            "nullable": true
+          },
+          "email": {
+            "type": "string"
+          },
+          "emailVerified": {
+            "type": "boolean"
+          },
+          "hasPassword": {
+            "type": "boolean",
+            "description": "False until the User completes activation."
+          },
+          "role": {
+            "type": "string",
+            "nullable": true
+          },
+          "inactive": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "username",
+          "email",
+          "emailVerified",
+          "hasPassword",
+          "role",
+          "inactive",
+          "createdAt"
+        ]
+      },
+      "InvitedUser": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "delivery": {
+            "type": "string",
+            "enum": [
+              "sent",
+              "email-failed"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "delivery"
+        ]
+      },
+      "InviteError": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "NAME_REQUIRED",
+              "EMAIL_REQUIRED",
+              "EMAIL_INVALID",
+              "EMAIL_EXISTS",
+              "UNAVAILABLE"
+            ]
+          }
+        },
+        "required": [
+          "code"
+        ]
+      },
+      "UserImportResult": {
+        "type": "object",
+        "properties": {
+          "created": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "row": {
+                  "type": "integer"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "email": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "row",
+                "name",
+                "email"
+              ]
+            }
+          },
+          "emailFailed": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "row": {
+                  "type": "integer"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "email": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "row",
+                "name",
+                "email"
+              ]
+            }
+          },
+          "failed": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "row": {
+                  "type": "integer"
+                },
+                "error": {
+                  "type": "string",
+                  "enum": [
+                    "EMAIL_EXISTS",
+                    "UNAVAILABLE"
+                  ]
+                }
+              },
+              "required": [
+                "row",
+                "error"
+              ]
+            }
+          }
+        },
+        "required": [
+          "created",
+          "emailFailed",
+          "failed"
+        ]
+      },
+      "UserImport": {
+        "type": "object",
+        "properties": {
+          "users": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "row": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "exclusiveMinimum": true
+                },
+                "name": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "email": {
+                  "type": "string",
+                  "format": "email"
+                }
+              },
+              "required": [
+                "row",
+                "name",
+                "email"
+              ]
+            },
+            "minItems": 1,
+            "maxItems": 50
+          }
+        },
+        "required": [
+          "users"
+        ]
+      },
+      "UserCommandResult": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "UserCommandError": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "USER_NOT_FOUND",
+              "ALREADY_ACTIVE",
+              "ALREADY_INACTIVE",
+              "CANNOT_CHANGE_SELF",
+              "LAST_ADMIN",
+              "DEACTIVATE_FIRST",
+              "CONFIRMATION_MISMATCH",
+              "ALREADY_ACTIVATED",
+              "UNAVAILABLE"
+            ],
+            "description": "The rule a User administration command broke. Tolerate unknown codes."
+          }
+        },
+        "required": [
+          "code"
+        ]
+      },
       "MemberIdSession": {
         "type": "object",
         "properties": {
@@ -5514,6 +5759,739 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ActivationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/users": {
+      "get": {
+        "operationId": "listUsers",
+        "summary": "Every User with their activation and status, by name. Admins only.",
+        "tags": [
+          "users"
+        ],
+        "responses": {
+          "200": {
+            "description": "Users.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdministeredUsers"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No active signed-in User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The current User may not perform this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "inviteUser",
+        "summary": "Creates a User without a password and emails the magic link that activates them. Admins only.",
+        "tags": [
+          "users"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "maxLength": 200
+                  },
+                  "email": {
+                    "type": "string",
+                    "maxLength": 320
+                  }
+                },
+                "required": [
+                  "name",
+                  "email"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created. `email-failed` means the User exists but the invitation email could not be sent.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvitedUser"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The name or email is missing or malformed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InviteError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No active signed-in User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The current User may not perform this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`EMAIL_EXISTS`: a User already has this email.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InviteError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "`UNAVAILABLE`: the User could not be created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InviteError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/users/emails/existing": {
+      "post": {
+        "operationId": "findExistingUserEmails",
+        "summary": "Which of these emails already belong to a User, for reviewing an import. Admins only.",
+        "description": "A read sent as POST so the emails stay out of URLs and logs.",
+        "tags": [
+          "users"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "emails": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "maxLength": 320
+                    },
+                    "maxItems": 100
+                  }
+                },
+                "required": [
+                  "emails"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The taken emails, lower-cased.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "emails": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "required": [
+                    "emails"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request failed validation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No active signed-in User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The current User may not perform this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/users/import": {
+      "post": {
+        "operationId": "importUsers",
+        "summary": "Invites the reviewed rows of an import, reporting each row's outcome. Admins only.",
+        "tags": [
+          "users"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserImport"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Each row's outcome.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserImportResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request failed validation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No active signed-in User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The current User may not perform this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/users/{userId}/activate": {
+      "post": {
+        "operationId": "activateUser",
+        "summary": "Reactivates an inactive User. Admins only.",
+        "tags": [
+          "users"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "userId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Done.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserCommandResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The command broke a rule, or the request failed validation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserCommandError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No active signed-in User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The current User may not perform this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "`USER_NOT_FOUND`: no such User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserCommandError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "`UNAVAILABLE`: Better Auth could not complete the change.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserCommandError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/users/{userId}/deactivate": {
+      "post": {
+        "operationId": "deactivateUser",
+        "summary": "Deactivates a User and ends their sessions. Never the caller or the last active Admin.",
+        "tags": [
+          "users"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "userId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Done.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserCommandResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The command broke a rule, or the request failed validation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserCommandError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No active signed-in User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The current User may not perform this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "`USER_NOT_FOUND`: no such User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserCommandError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "`UNAVAILABLE`: Better Auth could not complete the change.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserCommandError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/users/{userId}/erase": {
+      "post": {
+        "operationId": "eraseUser",
+        "summary": "Erases an inactive User. The confirmation must read `delete <name>`.",
+        "tags": [
+          "users"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "userId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "confirmation": {
+                    "type": "string",
+                    "maxLength": 400
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Done.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserCommandResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The command broke a rule, or the request failed validation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserCommandError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No active signed-in User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The current User may not perform this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "`USER_NOT_FOUND`: no such User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserCommandError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "`UNAVAILABLE`: Better Auth could not complete the change.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserCommandError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/users/{userId}/invitation": {
+      "post": {
+        "operationId": "resendInvitation",
+        "summary": "Sends a new activation link to a User who has not activated.",
+        "tags": [
+          "users"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "userId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Done.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserCommandResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The command broke a rule, or the request failed validation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserCommandError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No active signed-in User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The current User may not perform this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "`USER_NOT_FOUND`: no such User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserCommandError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "`UNAVAILABLE`: Better Auth could not complete the change.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserCommandError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/users/{userId}/roles": {
+      "post": {
+        "operationId": "changeUserRoles",
+        "summary": "Sets a User's roles; every User keeps `user`. Never the caller, and never demotes the last active Admin.",
+        "tags": [
+          "users"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "userId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "roles": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "user",
+                        "admin"
+                      ]
+                    },
+                    "minItems": 1
+                  }
+                },
+                "required": [
+                  "roles"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Done.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserCommandResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The command broke a rule, or the request failed validation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserCommandError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No active signed-in User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The current User may not perform this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "`USER_NOT_FOUND`: no such User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserCommandError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "`UNAVAILABLE`: Better Auth could not complete the change.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserCommandError"
                 }
               }
             }
