@@ -52,9 +52,13 @@ describe("Architecture Rules", () => {
     expect(violations).toEqual([])
   })
 
-  test("only the session helper and proxy call auth.api.getSession", () => {
+  test("only the session helpers and proxy call auth.api.getSession", () => {
     // The shared helper gates Better Auth's expiry clock read behind io() (issue #84).
-    const allowedPaths = new Set(["src/core/auth/session.server.ts", "src/proxy.ts"])
+    const allowedPaths = new Set([
+      "src/core/auth/session.server.ts",
+      "src/core/auth/request-session.ts",
+      "src/proxy.ts"
+    ])
     const violations = sourceFiles("src")
       .filter((file) => !allowedPaths.has(projectPath(file)))
       .filter((file) => /\bauth\s*\.\s*api\s*\.\s*getSession\s*\(/.test(readFileSync(file, "utf8")))
@@ -112,6 +116,19 @@ describe("Architecture Rules", () => {
       .shouldNot()
       .dependOnFiles()
       .inPath("src/app/**")
+      .check()
+
+    expect(violations).toEqual([])
+  })
+
+  test("only app hosts depend on the API composition root", async () => {
+    const violations = await projectFiles()
+      .inPath("src/**", {
+        except: { inPath: ["src/app/**", "src/api/**"] }
+      })
+      .shouldNot()
+      .dependOnFiles()
+      .inPath("src/api/**")
       .check()
 
     expect(violations).toEqual([])

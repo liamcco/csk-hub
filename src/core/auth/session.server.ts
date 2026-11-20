@@ -4,6 +4,7 @@ import { io } from "next/cache"
 import { headers } from "next/headers"
 import { cache } from "react"
 import { auth } from "./auth"
+import { readFreshSession } from "./request-session"
 
 /**
  * Reads the request session outside prerendering so Better Auth can check expiry
@@ -25,6 +26,5 @@ export const getRequestSession = cache(async () => {
  */
 export async function getFreshRequestSession() {
   await io()
-  // Validation must remain read-only when a caller already holds a Session lock.
-  return auth.api.getSession({ headers: await headers(), query: { disableCookieCache: true, disableRefresh: true } })
+  return readFreshSession(auth, await headers())
 }
