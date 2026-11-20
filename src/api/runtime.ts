@@ -1,5 +1,6 @@
 import "server-only"
 
+import { after } from "next/server"
 import { getBaseURL } from "@/core/auth/base-url"
 import { createAuth } from "@/core/auth/create-auth"
 import { env, isProduction } from "@/core/config/env"
@@ -17,6 +18,6 @@ export const api = createApi(
     auth: createAuth({ database: db, baseURL: getBaseURL(env), production: isProduction }),
     database: db,
     secret: env.BETTER_AUTH_SECRET,
-    scheduleDelivery: scheduleActivityDispatch
+    scheduleDelivery: () => scheduleActivityDispatch(after)
   })
 )

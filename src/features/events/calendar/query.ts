@@ -3,9 +3,7 @@ import "server-only"
 import { and, asc, eq, gt, inArray, ne } from "drizzle-orm"
 import { alias } from "drizzle-orm/pg-core"
 import { z } from "zod"
-import { forCurrentRequest } from "@/core/authz"
 import { evaluatePermission } from "@/core/authz/policy-registry"
-import { db } from "@/core/db"
 import { user } from "@/core/db/schema/auth"
 import { event, eventDetail, eventTarget, gig, location, rehearsal, socialEvent } from "@/core/db/schema/events"
 import {
@@ -270,11 +268,7 @@ function minDate(a: string, b: string) {
 }
 
 /** Protected calendar collection: derive fresh active identity instead of accepting browser claims. */
-export async function listCurrentUpcomingEvents(
-  now: Date,
-  database: EventsDatabase = db,
-  resolve: EventAccessResolver = forCurrentRequest
-) {
+export async function listCurrentUpcomingEvents(now: Date, database: EventsDatabase, resolve: EventAccessResolver) {
   return database.transaction(async (tx) => {
     const access = await resolve(tx)
     const actor = access.requirePermission({ action: "app.access" })
@@ -287,8 +281,8 @@ export async function listCurrentUpcomingEvents(
 export async function getCurrentEventPage(
   eventId: string,
   now: Date,
-  database: EventsDatabase = db,
-  resolve: EventAccessResolver = forCurrentRequest
+  database: EventsDatabase,
+  resolve: EventAccessResolver
 ) {
   return database.transaction(async (tx) => {
     const access = await resolve(tx)

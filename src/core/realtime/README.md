@@ -5,13 +5,14 @@ endpoint; browsers never connect to Redis or receive broker credentials. Postgre
 stores Messages, read cursors and a transactional per-User delivery outbox. Recipient
 Redis streams carry only outbox IDs, with approximately 1,000 entries and 24-hour expiry.
 Redis is not the source of truth: pending deliveries and scheduled deadlines live in
-Postgres. Delivery runs through Next.js `after()` without a separate worker.
+Postgres. Delivery runs after the response in the process that committed the write, without a
+separate worker.
 
 ## Ownership
 
 `core/realtime` owns the shared delivery system: event contracts, transactional enqueue,
 Redis transport, authenticated SSE, acknowledgement handling, push fallback, retries,
-retention, `after()` scheduling and the app-wide browser connection. It imports no features.
+retention, post-response scheduling and the app-wide browser connection. It imports no features.
 
 `createActivityDelivery(policy)` binds the server workflow to required feature checks for
 current delivery access and authoritative read state. `src/app/api/realtime/delivery.ts`
@@ -36,7 +37,9 @@ Messaging/Post workflows. Transport and scheduling tests live beside their core 
 ## Scheduling and best-effort recovery
 
 A feature saves its data and delivery records in one Postgres transaction. After commit,
-`scheduleActivityDispatch()` uses Next.js `after()` to attempt delivery after the response.
+`scheduleActivityDispatch()` attempts delivery after the response. The host decides how that work
+stays alive: Next.js passes `after()`, and the standalone API (a long-running process) lets it run
+in the background.
 Message writes do not wait for delivery. Concurrent callbacks on an instance share one
 30-second processing loop per policy. A new relevant commit wakes the loop if it is waiting
 for a later deadline. Each request registers its own `after()` callback to await that shared

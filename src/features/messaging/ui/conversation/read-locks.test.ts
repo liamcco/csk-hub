@@ -34,7 +34,7 @@ if (!process.env.CSK_MESSAGING_READ_LOCK_TEST) {
   const identity = new AsyncLocalStorage<string>()
   let holdNextTransaction: { ready: () => void; release: Promise<void> } | undefined
 
-  mock.module("@/core/authz", () => ({
+  mock.module("@/core/authz/request", () => ({
     requirePermission: async () => ({ userId: identity.getStore(), isAdmin: false })
   }))
   mock.module("@/core/db", () => ({
@@ -62,6 +62,11 @@ if (!process.env.CSK_MESSAGING_READ_LOCK_TEST) {
   const { getConversationPage } = await import("./query")
   const { markConversationRead } = await import("./read")
   const { createReadToken } = await import("./read-token")
+  // The mocked database and authority, passed explicitly as the HTTP API passes its own.
+  const messaging = {
+    database: (await import("@/core/db")).db,
+    authorize: (await import("@/core/authz/request")).requirePermission
+  } as unknown as import("@/features/messaging/model/context").MessagingContext
 
   describe.skipIf(!database)("Conversation read concurrency", () => {
     const t = database as NonNullable<typeof database>
@@ -88,11 +93,12 @@ if (!process.env.CSK_MESSAGING_READ_LOCK_TEST) {
         .values([reader, sender].map((userId) => ({ conversationId: id, userId })))
       const send = () =>
         identity.run(sender, () =>
-          sendMessage({ conversationId: id, text: "Hello", idempotencyKey: crypto.randomUUID() })
+          sendMessage({ conversationId: id, text: "Hello", idempotencyKey: crypto.randomUUID() }, messaging)
         )
       await send()
-      const markRead = () => identity.run(reader, () => markConversationRead(id, 1, createReadToken(id, reader, 1)))
-      const page = () => identity.run(reader, () => getConversationPage(id))
+      const markRead = () =>
+        identity.run(reader, () => markConversationRead(id, 1, createReadToken(id, reader, 1), messaging))
+      const page = () => identity.run(reader, () => getConversationPage(id, undefined, messaging))
       return { id, reader, send, markRead, page }
     }
 
@@ -144,16 +150,16 @@ if (!process.env.CSK_MESSAGING_READ_LOCK_TEST) {
       test(`a group ${read} holds the departure cutoff stable until it commits`, async () => {
         const f = await fixture("group")
         await whileTransactionOpen(f[read], async () => {
-          await expect(identity.run(f.reader, () => leaveGroupConversation(f.id))).rejects.toMatchObject({
+          await expect(identity.run(f.reader, () => leaveGroupConversation(f.id, messaging))).rejects.toMatchObject({
             cause: { code: "55P03" }
           })
         })
-        await identity.run(f.reader, () => leaveGroupConversation(f.id))
+        await identity.run(f.reader, () => leaveGroupConversation(f.id, messaging))
         await f.send()
         expect(await f.page()).toMatchObject({ canSend: false, newestSequence: 1, members: [] })
         await f.markRead()
         await expect(
-          identity.run(f.reader, () => markConversationRead(f.id, 2, createReadToken(f.id, f.reader, 2)))
+          identity.run(f.reader, () => markConversationRead(f.id, 2, createReadToken(f.id, f.reader, 2), messaging))
         ).rejects.toMatchObject({ kind: "conversation-view-forbidden" })
         const [cursor] = await t.db
           .select()

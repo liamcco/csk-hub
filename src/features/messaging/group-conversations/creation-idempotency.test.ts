@@ -31,7 +31,7 @@ if (!process.env.CSK_GROUP_CREATION_TEST) {
   const database = await createTestDatabase()
   const identity = new AsyncLocalStorage<string>()
   let failBeforeCommit = false
-  mock.module("@/core/authz", () => ({
+  mock.module("@/core/authz/request", () => ({
     requirePermission: async () => ({ userId: identity.getStore(), isAdmin: false })
   }))
   mock.module("@/core/db", () => ({
@@ -52,6 +52,11 @@ if (!process.env.CSK_GROUP_CREATION_TEST) {
   const { addGroupMembers, createGroupConversation, leaveGroupConversation, renameGroupConversation } = await import(
     "./commands"
   )
+  // The mocked database and authority, passed explicitly as the HTTP API passes its own.
+  const messaging = {
+    database: (await import("@/core/db")).db,
+    authorize: (await import("@/core/authz/request")).requirePermission
+  } as unknown as import("@/features/messaging/model/context").MessagingContext
 
   describe.skipIf(!database)("Group creation idempotency", () => {
     const t = database as NonNullable<typeof database>
@@ -63,7 +68,7 @@ if (!process.env.CSK_GROUP_CREATION_TEST) {
       const [creator, first, second, extra] = ids as [string, string, string, string]
       const input = { name: "Planning", memberIds: [first, second], idempotencyKey: crypto.randomUUID() }
       const create = (changes: Partial<typeof input> = {}, creatorId = creator) =>
-        identity.run(creatorId, () => createGroupConversation({ ...input, ...changes }))
+        identity.run(creatorId, () => createGroupConversation({ ...input, ...changes }, messaging))
       return { creator, first, second, extra, input, create }
     }
 
@@ -126,9 +131,9 @@ if (!process.env.CSK_GROUP_CREATION_TEST) {
     test("retrying after rename, membership changes and departure returns the original without resetting state", async () => {
       const f = await fixture()
       const original = await f.create()
-      await identity.run(f.creator, () => renameGroupConversation({ ...original, name: "Renamed" }))
-      await identity.run(f.creator, () => addGroupMembers({ ...original, memberIds: [f.extra] }))
-      await identity.run(f.creator, () => leaveGroupConversation(original.conversationId))
+      await identity.run(f.creator, () => renameGroupConversation({ ...original, name: "Renamed" }, messaging))
+      await identity.run(f.creator, () => addGroupMembers({ ...original, memberIds: [f.extra] }, messaging))
+      await identity.run(f.creator, () => leaveGroupConversation(original.conversationId, messaging))
       await t.db.update(user).set({ banned: true }).where(eq(user.id, f.first))
       expect(await f.create()).toEqual(original)
       const [group] = await t.db
@@ -155,7 +160,7 @@ if (!process.env.CSK_GROUP_CREATION_TEST) {
         .update(conversationReadState)
         .set({ lastReadSequence: 2 })
         .where(eq(conversationReadState.conversationId, original.conversationId))
-      await identity.run(f.second, () => leaveGroupConversation(original.conversationId))
+      await identity.run(f.second, () => leaveGroupConversation(original.conversationId, messaging))
       const [before] = await t.db
         .select()
         .from(groupMembership)
@@ -163,10 +168,13 @@ if (!process.env.CSK_GROUP_CREATION_TEST) {
 
       const add = () =>
         identity.run(f.creator, () =>
-          addGroupMembers({
-            ...original,
-            memberIds: [f.extra, f.second, f.first, f.second]
-          })
+          addGroupMembers(
+            {
+              ...original,
+              memberIds: [f.extra, f.second, f.first, f.second]
+            },
+            messaging
+          )
         )
       await add()
       await add()
@@ -245,7 +253,9 @@ if (!process.env.CSK_GROUP_CREATION_TEST) {
         .insert(groupConversation)
         .values({ conversationId: created.id, name: "Legacy", createdByUserId: f.creator })
       await t.db.insert(groupMembership).values({ conversationId: created.id, userId: f.creator })
-      await identity.run(f.creator, () => renameGroupConversation({ conversationId: created.id, name: "Still works" }))
+      await identity.run(f.creator, () =>
+        renameGroupConversation({ conversationId: created.id, name: "Still works" }, messaging)
+      )
       const [legacy] = await t.db
         .select()
         .from(groupConversation)

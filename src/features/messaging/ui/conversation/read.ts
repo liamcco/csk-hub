@@ -5,7 +5,7 @@ import { conversation, conversationReadState, directConversation, groupMembershi
 import { queueActivity } from "@/core/realtime/outbox"
 import { acknowledgeConversationActivity } from "../../activity"
 import { canViewGroupSequence } from "../../group-conversations/access"
-import { type MessagingContext, messagingContext } from "../../model/context"
+import type { MessagingContext } from "../../model/context"
 import { getDirectCounterpartId } from "../../model/direct-conversation"
 import { MessagingAccessError } from "../../model/messaging-error"
 import { verifiesReadToken } from "./read-token"
@@ -15,9 +15,9 @@ export async function markConversationRead(
   conversationId: string,
   sequence: number,
   token: string,
-  context?: MessagingContext
+  context: MessagingContext
 ): Promise<boolean> {
-  const { database, authorize } = await messagingContext(context)
+  const { database, authorize } = context
   return database.transaction(async (tx) => {
     const { userId } = await authorize({ action: "app.access" }, tx)
     if (!Number.isInteger(sequence) || sequence < 1 || !verifiesReadToken(token, conversationId, userId, sequence))

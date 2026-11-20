@@ -2,7 +2,7 @@ import "server-only"
 
 import { handleActivityAcknowledgement } from "./acknowledge"
 import type { ActivityDeliveryPolicy } from "./delivery-access"
-import { scheduleActivityDispatch } from "./schedule-dispatch"
+import { type KeepAlive, scheduleActivityDispatch } from "./schedule-dispatch"
 import { handleActivityStream } from "./stream"
 
 /**
@@ -14,6 +14,6 @@ export function createActivityDelivery(policy: ActivityDeliveryPolicy) {
   return {
     handleActivityAcknowledgement: (request: Request) => handleActivityAcknowledgement(policy, request),
     handleActivityStream: (request: Request) => handleActivityStream(policy, request),
-    scheduleActivityDispatch: () => scheduleActivityDispatch(policy)
+    scheduleActivityDispatch: (keepAlive?: KeepAlive) => scheduleActivityDispatch(policy, keepAlive)
   }
 }

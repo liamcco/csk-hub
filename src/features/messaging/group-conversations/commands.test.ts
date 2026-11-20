@@ -35,10 +35,15 @@ const tx = {
 const db = { transaction: mock(async (callback: (transaction: typeof tx) => unknown) => callback(tx)) }
 const requirePermission = mock(async () => ({ userId: "creator", isAdmin: false }))
 mock.module("@/core/db", () => ({ db }))
-mock.module("@/core/authz", () => ({ requirePermission }))
+mock.module("@/core/authz/request", () => ({ requirePermission }))
 const { addGroupMembers, createGroupConversation, leaveGroupConversation, renameGroupConversation } = await import(
   "./commands"
 )
+// The mocked database and authority, passed explicitly as the HTTP API passes its own.
+const messaging = {
+  database: (await import("@/core/db")).db,
+  authorize: (await import("@/core/authz/request")).requirePermission
+} as unknown as import("@/features/messaging/model/context").MessagingContext
 
 beforeEach(() => {
   sets.length = 0
@@ -59,7 +64,7 @@ describe("Group Conversation commands", () => {
     }))
     selects.push([{ nextMessageSequence: 7 }], [{ leftAt: null }], members)
     returningRows.push(members.map(({ id }) => ({ userId: id })))
-    await addGroupMembers({ conversationId: "group-1", memberIds: members.map(({ id }) => id).reverse() })
+    await addGroupMembers({ conversationId: "group-1", memberIds: members.map(({ id }) => id).reverse() }, messaging)
     expect(tx.select).toHaveBeenCalledTimes(3)
     expect(tx.insert).toHaveBeenCalledTimes(2)
   })
@@ -73,7 +78,7 @@ describe("Group Conversation commands", () => {
     )
     returningRows.push([{ id: "group-1" }])
     await expect(
-      createGroupConversation({ name: "  Planning ", memberIds: ["member"], idempotencyKey: "intent-1" })
+      createGroupConversation({ name: "  Planning ", memberIds: ["member"], idempotencyKey: "intent-1" }, messaging)
     ).resolves.toEqual({
       conversationId: "group-1"
     })
@@ -107,7 +112,7 @@ describe("Group Conversation commands", () => {
       ]
     )
     await expect(
-      createGroupConversation({ name: "Planning", memberIds: ["member"], idempotencyKey: "intent-1" })
+      createGroupConversation({ name: "Planning", memberIds: ["member"], idempotencyKey: "intent-1" }, messaging)
     ).rejects.toMatchObject({
       kind: "recipient-inactive"
     })
@@ -117,7 +122,7 @@ describe("Group Conversation commands", () => {
     db.transaction.mockClear()
     for (const idempotencyKey of ["", "  "]) {
       await expect(
-        createGroupConversation({ name: "Planning", memberIds: ["member"], idempotencyKey })
+        createGroupConversation({ name: "Planning", memberIds: ["member"], idempotencyKey }, messaging)
       ).rejects.toMatchObject({
         kind: "idempotency-key-required"
       })
@@ -128,8 +133,8 @@ describe("Group Conversation commands", () => {
     tx.select.mockClear()
     const memberIds = Array.from({ length: 1_000 }, (_, index) => `member-${index}`)
     for (const command of [
-      () => createGroupConversation({ name: "Planning", memberIds, idempotencyKey: "intent-1" }),
-      () => addGroupMembers({ conversationId: "group-1", memberIds })
+      () => createGroupConversation({ name: "Planning", memberIds, idempotencyKey: "intent-1" }, messaging),
+      () => addGroupMembers({ conversationId: "group-1", memberIds }, messaging)
     ]) {
       await expect(command()).rejects.toMatchObject({ kind: "group-members-too-many" })
     }
@@ -138,9 +143,9 @@ describe("Group Conversation commands", () => {
   })
   test("rejects a missing user in a batch before changing memberships", async () => {
     selects.push([{ nextMessageSequence: 7 }], [{ leftAt: null }], [{ id: "first", banned: false }])
-    await expect(addGroupMembers({ conversationId: "group-1", memberIds: ["first", "missing"] })).rejects.toMatchObject(
-      { kind: "recipient-required" }
-    )
+    await expect(
+      addGroupMembers({ conversationId: "group-1", memberIds: ["first", "missing"] }, messaging)
+    ).rejects.toMatchObject({ kind: "recipient-required" })
     expect(inserts).toEqual([])
   })
   test("rejects an inactive user in a batch before changing memberships", async () => {
@@ -152,15 +157,17 @@ describe("Group Conversation commands", () => {
         { id: "second", banned: true }
       ]
     )
-    await expect(addGroupMembers({ conversationId: "group-1", memberIds: ["first", "second"] })).rejects.toMatchObject({
+    await expect(
+      addGroupMembers({ conversationId: "group-1", memberIds: ["first", "second"] }, messaging)
+    ).rejects.toMatchObject({
       kind: "recipient-inactive"
     })
     expect(inserts).toEqual([])
   })
   test("rejects additions and rename attempts from a former member", async () => {
     for (const command of [
-      () => addGroupMembers({ conversationId: "group-1", memberIds: ["member"] }),
-      () => renameGroupConversation({ conversationId: "group-1", name: "New name" })
+      () => addGroupMembers({ conversationId: "group-1", memberIds: ["member"] }, messaging),
+      () => renameGroupConversation({ conversationId: "group-1", name: "New name" }, messaging)
     ]) {
       selects.push([{ nextMessageSequence: 7 }], [{ leftAt: new Date() }])
       await expect(command()).rejects.toMatchObject({ kind: "group-management-forbidden" })
@@ -170,25 +177,27 @@ describe("Group Conversation commands", () => {
   })
   test("rejects a nonmember's leave attempt", async () => {
     selects.push([{ nextMessageSequence: 7 }], [])
-    await expect(leaveGroupConversation("group-1")).rejects.toMatchObject({ kind: "group-management-forbidden" })
+    await expect(leaveGroupConversation("group-1", messaging)).rejects.toMatchObject({
+      kind: "group-management-forbidden"
+    })
     expect(sets).toEqual([])
   })
   test("leaving stores the precise last committed Message sequence without deleting history", async () => {
     selects.push([{ nextMessageSequence: 7 }], [{ leftAt: null }])
-    await leaveGroupConversation("group-1")
+    await leaveGroupConversation("group-1", messaging)
     expect(sets).toEqual([{ leftAt: expect.any(Date), historyVisibleThroughSequence: 6 }])
     expect(inserts).toEqual([])
   })
   test("rejoining immediately marks retained history read", async () => {
     selects.push([{ nextMessageSequence: 7 }], [{ leftAt: null }], [{ id: "member", banned: false }])
     returningRows.push([{ userId: "member" }])
-    await addGroupMembers({ conversationId: "group-1", memberIds: ["member"] })
+    await addGroupMembers({ conversationId: "group-1", memberIds: ["member"] }, messaging)
     expect(inserts).toContainEqual([{ conversationId: "group-1", userId: "member", lastReadSequence: 6 }])
   })
   test("adding an already active member preserves their unread position", async () => {
     selects.push([{ nextMessageSequence: 7 }], [{ leftAt: null }], [{ id: "member", banned: false }])
     returningRows.push([])
-    await addGroupMembers({ conversationId: "group-1", memberIds: ["member"] })
+    await addGroupMembers({ conversationId: "group-1", memberIds: ["member"] }, messaging)
     expect(inserts).toHaveLength(1)
   })
   test("a mixed batch initializes read cursors only for new and rejoined members", async () => {
@@ -198,7 +207,7 @@ describe("Group Conversation commands", () => {
       ["active", "new", "rejoined"].map((id) => ({ id, banned: false }))
     )
     returningRows.push([{ userId: "new" }, { userId: "rejoined" }])
-    await addGroupMembers({ conversationId: "group-1", memberIds: ["rejoined", "active", "new", "active"] })
+    await addGroupMembers({ conversationId: "group-1", memberIds: ["rejoined", "active", "new", "active"] }, messaging)
     expect(inserts).toEqual([
       ["active", "new", "rejoined"].map((userId) => ({ conversationId: "group-1", userId })),
       ["new", "rejoined"].map((userId) => ({ conversationId: "group-1", userId, lastReadSequence: 6 }))

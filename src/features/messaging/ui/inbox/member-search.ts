@@ -2,12 +2,12 @@ import "server-only"
 
 import { and, asc, eq, ilike, isNull, ne, or } from "drizzle-orm"
 import { user } from "@/core/db/schema/auth"
-import { type MessagingContext, messagingContext } from "../../model/context"
+import type { MessagingContext } from "../../model/context"
 
 const MEMBER_SEARCH_LIMIT = 20
 
-export async function searchMembers(query: string, context?: MessagingContext) {
-  const { database, authorize } = await messagingContext(context)
+export async function searchMembers(query: string, context: MessagingContext) {
+  const { database, authorize } = context
   const { userId } = await authorize({ action: "app.access" })
   const search = query.trim()
 

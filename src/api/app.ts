@@ -18,9 +18,10 @@ const openApiInfo = {
 
 const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"])
 
-function isSameOrigin(origin: string | undefined, url: string) {
+function isHubOrigin(origin: string | undefined, url: string, publicOrigin: string | undefined) {
   if (!origin) return false
   try {
+    if (publicOrigin) return new URL(origin).origin === new URL(publicOrigin).origin
     return new URL(origin).host === new URL(url).host
   } catch {
     return false
@@ -57,7 +58,7 @@ export function createApi(dependencies: ApiDependencies) {
   api.use("/api/v1/*", async (c, next) => {
     // Session cookies authenticate these requests, so state changes must come from Hub itself:
     // browsers send Origin on unsafe requests, and Hub's own servers and apps set it.
-    if (!SAFE_METHODS.has(c.req.method) && !isSameOrigin(c.req.header("origin"), c.req.url)) {
+    if (!SAFE_METHODS.has(c.req.method) && !isHubOrigin(c.req.header("origin"), c.req.url, dependencies.publicOrigin)) {
       return apiError(c, 403, "FORBIDDEN")
     }
     await next()

@@ -15,7 +15,7 @@ function selectRows(rows: unknown[]) {
   return query
 }
 
-mock.module("@/core/authz", () => ({ requirePermission, AuthorizationDeniedError }))
+mock.module("@/core/authz/request", () => ({ requirePermission, AuthorizationDeniedError }))
 mock.module("server-only", () => ({}))
 
 const db = {
@@ -25,6 +25,11 @@ const db = {
 mock.module("@/core/db", () => ({ db }))
 
 const { startDirectConversation } = await import("./start-direct-conversation")
+// The mocked database and authority, passed explicitly as the HTTP API passes its own.
+const messaging = {
+  database: (await import("@/core/db")).db,
+  authorize: (await import("@/core/authz/request")).requirePermission
+} as unknown as import("@/features/messaging/model/context").MessagingContext
 
 describe("startDirectConversation", () => {
   test("advances the sender's read cursor in the Message transaction", async () => {
@@ -56,7 +61,7 @@ describe("startDirectConversation", () => {
     db.transaction.mockImplementationOnce((callback: (transaction: typeof tx) => unknown) => callback(tx))
 
     await expect(
-      startDirectConversation({ recipientId: "recipient", text: "Hello", idempotencyKey: "request-1" })
+      startDirectConversation({ recipientId: "recipient", text: "Hello", idempotencyKey: "request-1" }, messaging)
     ).resolves.toEqual({ id: "message-1", conversationId: "conversation-1", sequence: 1, created: true })
 
     expect(updateSet).toHaveBeenCalledWith({ lastReadSequence: 1 })
@@ -70,7 +75,7 @@ describe("startDirectConversation", () => {
     db.transaction.mockImplementationOnce((callback: (transaction: typeof tx) => unknown) => callback(tx))
 
     await expect(
-      startDirectConversation({ recipientId: "recipient", text: "Hello", idempotencyKey: "request-2" })
+      startDirectConversation({ recipientId: "recipient", text: "Hello", idempotencyKey: "request-2" }, messaging)
     ).rejects.toMatchObject({ kind: "recipient-inactive" })
 
     expect(execute).not.toHaveBeenCalled()

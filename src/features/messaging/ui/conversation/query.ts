@@ -10,7 +10,7 @@ import {
   message
 } from "@/core/db/schema/messaging"
 import { groupHistoryVisibility } from "../../group-conversations/access"
-import { type MessagingContext, messagingContext } from "../../model/context"
+import type { MessagingContext } from "../../model/context"
 import { canReceiveDirectMessages, getDirectCounterpartId } from "../../model/direct-conversation"
 import { MessagingAccessError } from "../../model/messaging-error"
 import { createReadToken } from "./read-token"
@@ -154,8 +154,12 @@ async function getGroupConversationPage(
   })
 }
 
-export async function getConversationPage(conversationId: string, beforeSequence?: number, context?: MessagingContext) {
-  const resolved = await messagingContext(context)
+export async function getConversationPage(
+  conversationId: string,
+  beforeSequence: number | undefined,
+  context: MessagingContext
+) {
+  const resolved = context
   const { database } = resolved
   const [target] = await database
     .select({ kind: conversation.kind })
