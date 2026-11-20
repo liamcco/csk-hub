@@ -78,17 +78,18 @@ if (!process.env.CSK_ACTIVITY_TEST) {
         failureCategories: {}
       })
     )
-    const { listUsersWithActiveSubscriptions } = await import("@/core/notifications/subscription")
+    const notifications = { ...(await import("@/core/notifications")) }
     mock.module("@/core/notifications", () => ({
+      ...notifications,
       sendToUser: push,
       sendToAll: push,
-      sendToUsers: push,
-      listUsersWithActiveSubscriptions
+      sendToUsers: push
     }))
     const afterResponse: Array<() => Promise<void>> = []
     const { env } = await import("@/core/config/env")
     const { queueActivity } = await import("@/core/realtime/outbox")
     const { activityStreamKey } = await import("@/core/realtime/broker")
+    const { activityEventSchema, activityReadySchema } = await import("@/core/realtime/events")
     const { startDirectConversation, sendMessage } = await import("@/features/messaging/sending")
     const { createGroupConversation, leaveGroupConversation } = await import("@/features/messaging/group-conversations")
     const { markConversationRead } = await import("@/features/messaging/ui/conversation/read")
@@ -101,7 +102,9 @@ if (!process.env.CSK_ACTIVITY_TEST) {
     const { dispatchActivity, nextActivityDelay, pruneActivity } = await import("@/core/realtime/dispatch")
     const { deliverPendingActivity } = await import("@/core/realtime/deliver-pending")
     const { conversationActivityPolicy, scheduleActivityDispatch } = await import("@/features/messaging/activity")
-    const { handleActivityStream, handleActivityAcknowledgement } = await import("@/app/api/realtime/delivery")
+    // Streams and acknowledgements go through the real API, signed in through Better Auth.
+    const { createApiHarness, testOrigin } = await import("@test/api")
+    const harness = createApiHarness(testDatabase)
     const { notifyUsers, searchNotificationRecipients } = await import("@/features/notification-broadcast/service")
     const { createPost, saveDraft, unpublishPost } = await import("@/features/posts/lifecycle")
     const broadcast = { database: testDatabase.db, scheduleDelivery: scheduleActivityDispatch }
@@ -126,18 +129,15 @@ if (!process.env.CSK_ACTIVITY_TEST) {
     })
 
     async function singer() {
-      const userId = crypto.randomUUID()
-      const sessionId = crypto.randomUUID()
-      await testDatabase.db.insert(user).values({ id: userId, name: "Singer", email: `${userId}@example.test` })
-      fixtureUsers.push(userId)
-      await testDatabase.db.insert(session).values({
-        id: sessionId,
-        userId,
-        token: crypto.randomUUID(),
-        expiresAt: new Date(Date.now() + 60_000),
-        updatedAt: new Date()
-      })
-      return { userId, sessionId }
+      const member = await harness.createMember()
+      fixtureUsers.push(member.id)
+      const cookie = await harness.signIn(member)
+      const [current] = await testDatabase.db
+        .select({ id: session.id })
+        .from(session)
+        .where(eq(session.userId, member.id))
+      if (!current) throw new Error("Expected a signed-in session")
+      return { userId: member.id, sessionId: current.id, cookie }
     }
 
     async function direct() {
@@ -174,24 +174,20 @@ if (!process.env.CSK_ACTIVITY_TEST) {
         .where(sql`${activityDelivery.body} IS NOT NULL`)
     }
 
-    function acknowledgement(id: string, origin = "http://localhost:3001") {
-      return new Request("http://localhost:3001/api/realtime/ack", {
-        method: "POST",
-        headers: { origin, "content-type": "application/json" },
-        body: JSON.stringify({ id })
+    function acknowledge(current: Awaited<ReturnType<typeof singer>>, id: string, origin?: string | null) {
+      return harness.request("/api/realtime/ack", { method: "POST", cookie: current.cookie, body: { id }, origin })
+    }
+
+    function openStream(cookie: string | undefined, headers: Record<string, string> = {}, signal?: AbortSignal) {
+      return harness.api.request(`${testOrigin}/api/realtime/events`, {
+        signal,
+        headers: { ...(cookie ? { cookie } : {}), ...headers }
       })
     }
 
     async function streamAs(current: Awaited<ReturnType<typeof singer>>, cursor?: string) {
       const controller = new AbortController()
-      const response = await identity.run(current, () =>
-        handleActivityStream(
-          new Request("http://localhost:3001/api/realtime/events", {
-            signal: controller.signal,
-            headers: cursor ? { "last-event-id": cursor } : undefined
-          })
-        )
-      )
+      const response = await openStream(current.cookie, cursor ? { "last-event-id": cursor } : {}, controller.signal)
       expect(response.status).toBe(200)
       if (!response.body) throw new Error("Expected an SSE response body")
       const reader = response.body.getReader()
@@ -206,6 +202,18 @@ if (!process.env.CSK_ACTIVITY_TEST) {
         return new TextDecoder().decode(next.value)
       }
       return { read, close: () => controller.abort() }
+    }
+
+    /** One SSE frame's fields, with `data` parsed as JSON. */
+    function parseFrame(text: string) {
+      const fields = Object.fromEntries(
+        text
+          .trim()
+          .split("\n")
+          .filter((line) => !line.startsWith(":"))
+          .map((line) => [line.slice(0, line.indexOf(":")), line.slice(line.indexOf(":") + 1).trim()])
+      )
+      return { id: fields.id, event: fields.event, data: fields.data ? JSON.parse(fields.data) : undefined }
     }
 
     async function storedDelivery(id: string) {
@@ -282,9 +290,7 @@ if (!process.env.CSK_ACTIVITY_TEST) {
       test("a visible toast cancels fallback without advancing the unread cursor", async () => {
         const { recipient, sent } = await direct()
         const delivery = await messageDelivery(recipient.userId)
-        const response = await identity.run(recipient, () =>
-          handleActivityAcknowledgement(acknowledgement(delivery.id))
-        )
+        const response = await acknowledge(recipient, delivery.id)
         expect(response.status).toBe(204)
         await makePushDue()
         await dispatchActivity(conversationActivityPolicy)
@@ -317,21 +323,47 @@ if (!process.env.CSK_ACTIVITY_TEST) {
       test("cross-User, cross-origin and revoked-session acknowledgements fail closed", async () => {
         const { sender, recipient } = await direct()
         const delivery = await messageDelivery(recipient.userId)
-        expect(
-          (await identity.run(sender, () => handleActivityAcknowledgement(acknowledgement(delivery.id)))).status
-        ).toBe(404)
-        expect(
-          (
-            await identity.run(recipient, () =>
-              handleActivityAcknowledgement(acknowledgement(delivery.id, "https://elsewhere.test"))
-            )
-          ).status
-        ).toBe(403)
+        expect((await acknowledge(sender, delivery.id)).status).toBe(404)
+        expect((await acknowledge(recipient, delivery.id, "https://elsewhere.test")).status).toBe(403)
+        expect((await acknowledge(recipient, delivery.id, null)).status).toBe(403)
         await testDatabase.db.delete(session).where(eq(session.id, recipient.sessionId))
-        expect(
-          (await identity.run(recipient, () => handleActivityAcknowledgement(acknowledgement(delivery.id)))).status
-        ).toBe(401)
+        expect((await acknowledge(recipient, delivery.id)).status).toBe(401)
         expect((await messageDelivery(recipient.userId)).acknowledgedAt).toBeNull()
+      })
+
+      test("streams answer 204 without a session or under impersonation, and refuse foreign origins", async () => {
+        const { sender, recipient } = await direct()
+        expect((await openStream(undefined)).status).toBe(204)
+        expect((await openStream(recipient.cookie, { origin: "https://elsewhere.test" })).status).toBe(403)
+        await testDatabase.db
+          .update(session)
+          .set({ impersonatedBy: sender.userId })
+          .where(eq(session.id, recipient.sessionId))
+        expect((await openStream(recipient.cookie)).status).toBe(204)
+        const delivery = await messageDelivery(recipient.userId)
+        expect((await acknowledge(recipient, delivery.id)).status).toBe(401)
+        expect((await messageDelivery(recipient.userId)).acknowledgedAt).toBeNull()
+      })
+
+      test("stream frames follow the documented event schemas", async () => {
+        const { recipient } = await direct()
+        const stream = await streamAs(recipient)
+        try {
+          const ready = parseFrame(await stream.read())
+          expect(ready.event).toBe("ready")
+          expect(activityReadySchema.parse(ready.data)).toEqual({ reset: true })
+          await dispatchActivity(conversationActivityPolicy)
+          const activity = parseFrame(await stream.read())
+          expect(activity.event).toBe("activity")
+          expect(activity.id).toMatch(/^\d+-\d+$/)
+          expect(activityEventSchema.parse(activity.data)).toMatchObject({
+            kind: "message.created",
+            notify: true,
+            href: expect.stringMatching(/^\/messages\//)
+          })
+        } finally {
+          stream.close()
+        }
       })
 
       test("concurrent dispatches lease fallback once; presentation carries a Conversation link", async () => {
@@ -620,7 +652,7 @@ if (!process.env.CSK_ACTIVITY_TEST) {
         const running = deliverPendingActivity(conversationActivityPolicy)
         try {
           await waitUntil(async () => (await storedDelivery(delivery.id)).publishedAt !== null)
-          await identity.run(recipient, () => handleActivityAcknowledgement(acknowledgement(delivery.id)))
+          expect((await acknowledge(recipient, delivery.id)).status).toBe(204)
         } finally {
           await running
         }

@@ -14,9 +14,14 @@ separate worker.
 Redis transport, authenticated SSE, acknowledgement handling, push fallback, retries,
 retention, post-response scheduling and the app-wide browser connection. It imports no features.
 
-`createActivityDelivery(policy)` binds the server workflow to required feature checks for
-current delivery access and authoritative read state. `src/app/api/realtime/delivery.ts`
-composes the HTTP handlers with `conversationActivityPolicy` from the public `features/messaging/activity` entrypoint.
+`createRealtimeRouter(policy)` (`http.ts`) binds the HTTP endpoints to required feature checks
+for current delivery access and authoritative read state. The API (`src/api/app.ts`) mounts it
+at `/api/realtime` with `conversationActivityPolicy` from the public
+`features/messaging/activity` entrypoint, behind the same Hub Origin guard as `/api/v1`.
+`GET /api/realtime/events` is the event stream (frames documented as `ActivityStreamFrame` in
+the OpenAPI contract, typed by `activityStreamFrameSchema` in `events.ts`) and
+`POST /api/realtime/ack` the acknowledgement. Both read the session afresh through the API's
+request resolution, then recheck the stored session; impersonated sessions get neither.
 Messaging owns Conversation membership, read-cursor rules and its policy-bound dispatch
 function. Other features call that dispatch entrypoint after commit; notification broadcast
 owns recipient search, delivery-mode selection and queued-versus-sent results. The policy is passed

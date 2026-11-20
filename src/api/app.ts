@@ -1,8 +1,10 @@
 import { type ApiDependencies, apiError, createRouter, handleApiError } from "@/core/http"
+import { createRealtimeRouter } from "@/core/realtime/http"
 import { accountRouter } from "@/features/account/http"
 import { eventsRouter } from "@/features/events/http"
 import { memberIdRouter } from "@/features/member-id"
 import { membersRouter } from "@/features/members/http"
+import { conversationActivityPolicy } from "@/features/messaging/activity"
 import { messagingRouter } from "@/features/messaging/http"
 import { broadcastsRouter } from "@/features/notification-broadcast/http"
 import { orgStructureRouter } from "@/features/org-structure/http"
@@ -64,6 +66,14 @@ export function createApi(dependencies: ApiDependencies) {
     await next()
   })
 
+  api.use("/api/realtime/*", async (c, next) => {
+    // The same guard, and a cross-origin page may not open the User's event stream either.
+    const origin = c.req.header("origin")
+    const required = !SAFE_METHODS.has(c.req.method) || origin !== undefined
+    if (required && !isHubOrigin(origin, c.req.url, dependencies.publicOrigin)) return c.body(null, 403)
+    await next()
+  })
+
   const v1 = createRouter()
     .route("/", currentActorRouter)
     .route("/", membersRouter)
@@ -77,6 +87,8 @@ export function createApi(dependencies: ApiDependencies) {
   api.route("/api/v1", v1)
   // Released before /api/v1; its paths and representations stay frozen for installed clients.
   api.route("/api/member-id", memberIdRouter)
+  // Paths fixed by the browser's EventSource; Messaging decides who may receive what.
+  api.route("/api/realtime", createRealtimeRouter(conversationActivityPolicy))
 
   api.notFound((c) => apiError(c, 404, "NOT_FOUND"))
   api.onError(handleApiError)

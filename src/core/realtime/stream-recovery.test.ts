@@ -18,7 +18,6 @@ if (!process.env.CSK_STREAM_RECOVERY_TEST) {
   mock.module("@/core/config/env", () => ({ env: { REDIS_URL: "redis://localhost:6379" } }))
   mock.module("@/core/db", () => ({ db: {} }))
   mock.module("./access", () => ({
-    getActivitySession: async () => ({ userId: "recipient", sessionId: "session" }),
     isActivitySessionActive: async () => true
   }))
   const connect = mock()
@@ -26,12 +25,17 @@ if (!process.env.CSK_STREAM_RECOVERY_TEST) {
     connectActivityBroker: connect,
     activityStreamKey: () => "recipient-stream"
   }))
-  const { handleActivityStream } = await import("./stream")
+  const { streamActivity } = await import("./stream")
   const policy = { canDeliver: async () => true, isAlreadyOpened: async () => false }
   afterEach(() => connect.mockReset())
 
   async function expectReconnectResponse() {
-    const response = await handleActivityStream(policy, new Request("http://localhost/api/realtime/events"))
+    const response = await streamActivity(policy, {
+      database: {} as never,
+      identity: { userId: "recipient", sessionId: "session" },
+      lastEventId: undefined,
+      signal: new AbortController().signal
+    })
     expect(response.status).toBe(200)
     expect(response.headers.get("content-type")).toBe("text/event-stream")
     expect(await response.text()).toBe("retry: 5000\nevent: unavailable\ndata: {}\n\n")

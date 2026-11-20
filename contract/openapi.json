@@ -3674,6 +3674,169 @@
         "required": [
           "token"
         ]
+      },
+      "ActivityStreamFrame": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "event": {
+                "type": "string",
+                "enum": [
+                  "ready"
+                ]
+              },
+              "retry": {
+                "type": "number",
+                "enum": [
+                  3000
+                ]
+              },
+              "id": {
+                "type": "string"
+              },
+              "data": {
+                "type": "object",
+                "properties": {
+                  "reset": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "reset"
+                ]
+              }
+            },
+            "required": [
+              "event",
+              "retry",
+              "id",
+              "data"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "event": {
+                "type": "string",
+                "enum": [
+                  "activity"
+                ]
+              },
+              "id": {
+                "type": "string"
+              },
+              "data": {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "message.created",
+                      "conversation.changed",
+                      "unread.changed",
+                      "posts.changed",
+                      "notification.created"
+                    ]
+                  },
+                  "conversationId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "sequence": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "exclusiveMinimum": true
+                  },
+                  "id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "notify": {
+                    "type": "boolean"
+                  },
+                  "notifyUntil": {
+                    "type": "number"
+                  },
+                  "href": {
+                    "type": "string"
+                  },
+                  "body": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "kind",
+                  "id",
+                  "notify"
+                ]
+              }
+            },
+            "required": [
+              "event",
+              "id",
+              "data"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "event": {
+                "type": "string",
+                "enum": [
+                  "unauthorized"
+                ]
+              },
+              "data": {
+                "type": "object",
+                "properties": {}
+              }
+            },
+            "required": [
+              "event",
+              "data"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "event": {
+                "type": "string",
+                "enum": [
+                  "unavailable"
+                ]
+              },
+              "retry": {
+                "type": "number",
+                "enum": [
+                  5000
+                ]
+              },
+              "data": {
+                "type": "object",
+                "properties": {}
+              }
+            },
+            "required": [
+              "event",
+              "retry",
+              "data"
+            ]
+          }
+        ],
+        "description": "One server-sent event: `event`, `id` and `retry` are SSE fields and `data` is JSON. `ready` opens every stream; `reset: true` asks the client to refresh authoritative state. `activity` carries an `ActivityEvent`. `unauthorized` ends the stream when the session stops being valid; `unavailable` (with `retry: 5000`) when the broker is unreachable. Heartbeat comments (`: heartbeat`) carry the current `id` at most every 15 seconds; the server closes the stream after four minutes and EventSource reconnects with `Last-Event-ID`."
+      },
+      "ActivityAcknowledgement": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "id"
+        ]
       }
     },
     "parameters": {}
@@ -8745,6 +8908,90 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/api/realtime/events": {
+      "get": {
+        "operationId": "streamActivity",
+        "summary": "The signed-in User's live activity as server-sent events.",
+        "description": "For the User's own, non-impersonated session. Use EventSource; there is no generated client call. The stream never fails with an HTTP error a browser could treat as final: without real-time delivery or a valid session it answers 204, which stops EventSource.",
+        "tags": [
+          "realtime"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "The last received `id`; retained events after it are replayed."
+            },
+            "required": false,
+            "description": "The last received `id`; retained events after it are replayed.",
+            "name": "last-event-id",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "An event stream. Each frame is an `ActivityStreamFrame`.",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActivityStreamFrame"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "Real-time delivery is off, or there is no own, valid session."
+          },
+          "403": {
+            "description": "The request came from another origin."
+          }
+        }
+      }
+    },
+    "/api/realtime/ack": {
+      "post": {
+        "operationId": "acknowledgeActivity",
+        "summary": "Records that a visible client presented a notification, so its Web Push fallback is not sent.",
+        "description": "Does not mark a Conversation read. Impersonated sessions cannot acknowledge.",
+        "tags": [
+          "realtime"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActivityAcknowledgement"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Acknowledged, or already acknowledged."
+          },
+          "400": {
+            "description": "Invalid input.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No own, valid session."
+          },
+          "403": {
+            "description": "The request did not come from Hub's origin."
+          },
+          "404": {
+            "description": "No such delivery for this User, or it is no longer deliverable."
           }
         }
       }
