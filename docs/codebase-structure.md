@@ -37,6 +37,9 @@ The source tree uses four top-level areas plus Next.js and tooling-owned excepti
 
 - `src/core`: app infrastructure, app shell wiring, and external adapters.
 - `src/app`: Next.js route topology and framework route files.
+- `src/api`: the HTTP API's composition root. `createApi` mounts Better Auth and feature routers;
+  `runtime.ts` binds it to the database. Next.js hosts it through `src/app/api/[...path]` during
+  the migration. Only `src/app` may import it.
 - `src/shared`: cross-feature presentation primitives and generic helpers.
 - `src/features/<feature-name>`: product and domain behavior.
 - `src/proxy.ts`: Next.js proxy convention file.
@@ -61,6 +64,11 @@ Use `src/core` for infrastructure and app shell modules:
   never features. See
   [authorization adoption](authorization.md) before migrating existing guards.
 - `src/core/db`: database client and schemas.
+- `src/core/http`: framework-neutral API infrastructure: `createRouter` for feature routers,
+  stable error codes, and the request context that resolves fresh authority from explicit
+  request headers. A feature exposes its operations by exporting a router from its public
+  entrypoint; `src/api` mounts it under `/api/v1`. Run `bun run api:generate` after changing
+  route schemas and commit `contract/`.
 - `src/core/email`: email delivery adapters.
 - `src/core/i18n`: locale definitions, locale-cookie handling, next-intl routing/request configuration, and translation loading. See `src/core/i18n/README.md` before adding translated UI.
 - `src/core/preferences`: the application-wide user-preferences contract, including storage, runtime validation, backward-compatible defaults, and atomic partial updates used by app-shell and feature modules.
@@ -174,7 +182,11 @@ enclosing `<Suspense>` boundary around session reads and guards. Keep them outsi
 `"use cache: private"`, and `"use cache: remote"`: `io()` does not provide the intended gate inside
 cache scopes. Do not cache an authorization result.
 
-Direct `auth.api.getSession()` calls stay confined to the shared helper and `src/proxy.ts`.
+API operations do not use these helpers or any Next.js request API. They call
+`c.var.resolveRequest()` once per operation, which validates the session named by the request's
+own headers through `readFreshSession` and reloads the User, then use the returned authorization.
+
+Direct `auth.api.getSession()` calls stay confined to the session helpers and `src/proxy.ts`.
 Proxy's cached-session navigation gates are preliminary; protected data and Server Actions
 establish fresh authority themselves. Do not query per-resource policies from Proxy.
 
