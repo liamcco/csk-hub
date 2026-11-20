@@ -69,11 +69,14 @@ services:
       db:
         condition: service_healthy
 
-  # The standalone Hono API on Bun: /api/v1, Better Auth under /api/auth and Member ID.
+  # The standalone Hono API on Bun: /api/v1, Better Auth under /api/auth, Member ID and real-time
+  # delivery (/api/realtime and the outbox worker). Several replicas share the outbox through leases.
   api:
     image: *release-image
     command: ["bun", "api.js"]
     restart: unless-stopped
+    # On stop it ends event streams and finishes its current delivery wave, then exits.
+    stop_grace_period: 30s
     environment: *app-environment
     depends_on:
       migrate:
@@ -81,8 +84,7 @@ services:
       redis:
         condition: service_healthy
 
-  # The Next.js web server. It reads data through the API by service name and still serves
-  # /api/realtime until real-time delivery moves to the API.
+  # The Next.js web server. It reads data through the API by service name.
   web:
     image: *release-image
     restart: unless-stopped

@@ -46,8 +46,8 @@ key pair therefore means a new image.
 | --- | --- | --- |
 | `db`, `redis` | PostgreSQL 17, Redis 7 | |
 | `migrate` | `bun cli.js migrate`, then exits | `csk_hub`, the schema owner |
-| `api` | `bun api.js`: `/api/v1`, Better Auth (`/api/auth`), Member ID (`/api/member-id`) | `csk_hub_app`, data only |
-| `web` | `bun server.js`: the Next.js pages and, until real-time moves to the API, `/api/realtime` | `csk_hub_app`, data only |
+| `api` | `bun api.js`: `/api/v1`, Better Auth (`/api/auth`), Member ID (`/api/member-id`), real-time (`/api/realtime`) and the outbox delivery worker | `csk_hub_app`, data only |
+| `web` | `bun server.js`: the Next.js pages | `csk_hub_app`, data only |
 | `proxy` | Caddy: one origin for browsers and the iPhone companion | |
 
 On every start:
@@ -63,9 +63,16 @@ On every start:
 4. `web` starts once `api` is healthy, then `proxy`.
 
 The proxy routes by path: `/api` and `/api/*` go to `api`, which answers unknown API paths with
-`404 {"code":"NOT_FOUND"}`; `/api/realtime/*` goes to `web` until the following delivery ticket
-moves real-time to the API; everything else goes to `web`. Nothing is compressed or buffered, so
-server-sent events stream as they are written.
+`404 {"code":"NOT_FOUND"}`; everything else goes to `web`. Nothing is compressed or buffered, so
+server-sent events stream as they are written. `/api/realtime/*` has its own route with a 60-second
+upstream read timeout, above the event stream's 15-second heartbeat (Bun's idle timeout in the
+API is 60 seconds too).
+
+The API delivers the real-time outbox in the background, independently of requests: it resumes
+pending work on startup and takes over leases abandoned by a stopped runner. Several `api`
+replicas can run at once; leases make each record go out once. On stop (`stop_grace_period`
+30 seconds) it ends event streams, finishes its current delivery wave and exits. See
+[`src/core/realtime/README.md`](../src/core/realtime/README.md) for the logs to monitor.
 
 The web server renders pages from the API at `API_INTERNAL_URL` (`http://api:3000`), forwarding
 the caller's cookie and the public origin as `Origin`. The API accepts unsafe requests only with
@@ -101,8 +108,13 @@ docker compose -p csk-hub-local exec api bun cli.js admin bootstrap --email you@
 
 `validate` checks, through the proxy: unknown API paths get the API's error and web paths reach
 the web server; Better Auth activation and sign-in for a freshly invited Admin; Member ID issue
-and verify; a protected write that needs Hub's `Origin`; and a protected page that the web server
-renders from the API by service name.
+and verify; a protected write that needs Hub's `Origin`; a protected page that the web server
+renders from the API by service name; and real-time delivery: an event stream that is neither
+buffered nor compressed and outlives its heartbeat interval, acknowledgement suppressing the push
+fallback, push retry against a push sink that refuses connections, recovery after an API restart
+and from an abandoned lease, two API runners publishing each record once, and publication retry
+across a Redis restart followed by replay on reconnect. The real-time checks stop and start the
+API and Redis and briefly add containers, so run them against a local stack only.
 
 `up` is also how to apply new migrations: it rebuilds the image and `migrate` runs before the new
 `api` starts. The stack's project name is `csk-hub-local`, separate from the development database
