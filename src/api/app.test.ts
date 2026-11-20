@@ -24,7 +24,8 @@ const offline = {
   resolveRequest: unavailable,
   database: new Proxy({} as Database, { get: unavailable }),
   secret: "unused",
-  scheduleDelivery: unavailable
+  scheduleDelivery: unavailable,
+  setInitialPassword: unavailable
 }
 
 describe("API assembly", () => {

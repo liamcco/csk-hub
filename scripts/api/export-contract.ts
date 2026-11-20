@@ -31,6 +31,7 @@ const contract = getApiContract(
     handleAuth: unavailable,
     resolveRequest: unavailable,
     scheduleDelivery: unavailable,
+    setInitialPassword: unavailable,
     database: new Proxy({} as Database, { get: unavailable }),
     secret: "unused"
   })

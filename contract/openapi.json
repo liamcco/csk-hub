@@ -2200,6 +2200,205 @@
           "name"
         ]
       },
+      "LocalePreference": {
+        "type": "object",
+        "properties": {
+          "locale": {
+            "type": "string",
+            "enum": [
+              "en",
+              "sv",
+              "de"
+            ]
+          }
+        },
+        "required": [
+          "locale"
+        ]
+      },
+      "PushSubscriptionStatus": {
+        "type": "object",
+        "properties": {
+          "binding": {
+            "type": "string",
+            "enum": [
+              "bound",
+              "unbound",
+              "unsupported"
+            ]
+          }
+        },
+        "required": [
+          "binding"
+        ]
+      },
+      "PushEndpoint": {
+        "type": "object",
+        "properties": {
+          "endpoint": {
+            "type": "string",
+            "maxLength": 2048
+          }
+        },
+        "required": [
+          "endpoint"
+        ]
+      },
+      "PushSubscriptionError": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "INVALID_SUBSCRIPTION"
+            ],
+            "description": "The endpoint or keys are not a supported browser push subscription."
+          }
+        },
+        "required": [
+          "code"
+        ]
+      },
+      "PushSubscription": {
+        "type": "object",
+        "properties": {
+          "endpoint": {
+            "type": "string",
+            "maxLength": 2048
+          },
+          "expirationTime": {
+            "type": "number",
+            "nullable": true
+          },
+          "keys": {
+            "type": "object",
+            "properties": {
+              "p256dh": {
+                "type": "string",
+                "maxLength": 256
+              },
+              "auth": {
+                "type": "string",
+                "maxLength": 256
+              }
+            },
+            "required": [
+              "p256dh",
+              "auth"
+            ]
+          }
+        },
+        "required": [
+          "endpoint",
+          "keys"
+        ],
+        "description": "A browser's `PushSubscription.toJSON()`."
+      },
+      "PushDeliveryResult": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "success": {
+                "type": "boolean",
+                "enum": [
+                  true
+                ]
+              },
+              "accepted": {
+                "type": "integer"
+              },
+              "failed": {
+                "type": "integer"
+              },
+              "failureCategories": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "integer"
+                }
+              }
+            },
+            "required": [
+              "success",
+              "accepted",
+              "failed",
+              "failureCategories"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "success": {
+                "type": "boolean",
+                "enum": [
+                  false
+                ]
+              },
+              "error": {
+                "type": "string",
+                "enum": [
+                  "noActiveSubscriptions",
+                  "noRecipients",
+                  "deliveryFailed"
+                ]
+              },
+              "accepted": {
+                "type": "integer"
+              },
+              "failed": {
+                "type": "integer"
+              },
+              "failureCategories": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "integer"
+                }
+              }
+            },
+            "required": [
+              "success",
+              "error",
+              "accepted",
+              "failed",
+              "failureCategories"
+            ]
+          }
+        ]
+      },
+      "ActivationError": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "PASSWORD_REQUIRED",
+              "PASSWORD_TOO_SHORT",
+              "CONFIRM_PASSWORD_REQUIRED",
+              "PASSWORDS_MISMATCH",
+              "INVALID_LINK"
+            ],
+            "description": "Why activation failed. Tolerate unknown codes."
+          }
+        },
+        "required": [
+          "code"
+        ]
+      },
+      "Activation": {
+        "type": "object",
+        "properties": {
+          "password": {
+            "type": "string"
+          },
+          "confirmPassword": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "password",
+          "confirmPassword"
+        ]
+      },
       "MemberIdSession": {
         "type": "object",
         "properties": {
@@ -5011,6 +5210,310 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/EventError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/account/locale": {
+      "put": {
+        "operationId": "updateLocalePreference",
+        "summary": "Saves the caller's locale preference, keeping their other preferences.",
+        "tags": [
+          "account"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LocalePreference"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Saved."
+          },
+          "400": {
+            "description": "The request failed validation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No active signed-in User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/account/push-subscriptions/status": {
+      "post": {
+        "operationId": "getPushSubscriptionStatus",
+        "summary": "Whether this browser's push endpoint is bound to the caller.",
+        "description": "A read sent as POST so the endpoint, a bearer-like secret, stays out of URLs and logs. Another User's binding reads as `unbound`; an unsupported endpoint reads as `unsupported` so the browser can drop it.",
+        "tags": [
+          "account"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PushEndpoint"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The binding.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PushSubscriptionStatus"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request failed validation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No active signed-in User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/account/push-subscriptions": {
+      "post": {
+        "operationId": "registerPushSubscription",
+        "summary": "Binds a browser push subscription to the caller, taking it over from any earlier owner.",
+        "tags": [
+          "account"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PushSubscription"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Bound."
+          },
+          "400": {
+            "description": "Not a supported push subscription, or the request failed validation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PushSubscriptionError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No active signed-in User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/account/push-subscriptions/remove": {
+      "post": {
+        "operationId": "removePushSubscription",
+        "summary": "Removes the caller's own binding for an endpoint, as on disabling notifications or signing out.",
+        "tags": [
+          "account"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PushEndpoint"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Whether a binding of the caller's was removed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "removed": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "removed"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Not a supported push endpoint, or the request failed validation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PushSubscriptionError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No active signed-in User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/account/push-subscriptions/test": {
+      "post": {
+        "operationId": "sendTestPushNotification",
+        "summary": "Sends a test notification to the caller's own active subscriptions.",
+        "tags": [
+          "account"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "message": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 500
+                  }
+                },
+                "required": [
+                  "message"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "How the push providers answered.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PushDeliveryResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request failed validation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No active signed-in User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/account/activation": {
+      "post": {
+        "operationId": "activateAccount",
+        "summary": "Sets an invited User's first password from the session their magic link opened.",
+        "tags": [
+          "account"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Activation"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Activated."
+          },
+          "400": {
+            "description": "The passwords break the password policy.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActivationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "`INVALID_LINK`: no valid magic-link session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActivationError"
                 }
               }
             }

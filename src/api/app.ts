@@ -1,4 +1,5 @@
 import { type ApiDependencies, apiError, createRouter, handleApiError } from "@/core/http"
+import { accountRouter } from "@/features/account/http"
 import { eventsRouter } from "@/features/events/http"
 import { memberIdRouter } from "@/features/member-id"
 import { membersRouter } from "@/features/members/http"
@@ -40,6 +41,7 @@ export function createApi(dependencies: ApiDependencies) {
     c.set("database", dependencies.database)
     c.set("secret", dependencies.secret)
     c.set("scheduleDelivery", dependencies.scheduleDelivery)
+    c.set("setInitialPassword", (newPassword) => dependencies.setInitialPassword(c.req.raw.headers, newPassword))
     await next()
   })
 
@@ -64,6 +66,7 @@ export function createApi(dependencies: ApiDependencies) {
     .route("/", postsRouter)
     .route("/", messagingRouter)
     .route("/", eventsRouter)
+    .route("/", accountRouter)
   api.route("/api/v1", v1)
   // Released before /api/v1; its paths and representations stay frozen for installed clients.
   api.route("/api/member-id", memberIdRouter)

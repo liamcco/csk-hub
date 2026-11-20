@@ -29,6 +29,11 @@ export type ApiDependencies = Readonly<{
    * has committed. Never call it inside a transaction.
    */
   scheduleDelivery: () => void
+  /**
+   * Gives the session's User their first password through Better Auth. Rejects with Better
+   * Auth's error when the session is missing or expired, or the User already has one.
+   */
+  setInitialPassword: (headers: Headers, newPassword: string) => Promise<void>
 }>
 
 export type ApiEnv = {
@@ -44,5 +49,7 @@ export type ApiEnv = {
     secret: string
     /** Wakes outbox delivery. Call only after the transaction that queued activity commits. */
     scheduleDelivery: () => void
+    /** Gives this request's signed-in User their first password (account activation). */
+    setInitialPassword: (newPassword: string) => Promise<void>
   }
 }

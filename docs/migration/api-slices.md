@@ -35,7 +35,7 @@ behind `scheduleActivityDispatch()` (see "Delivery boundary").
 | 4 | Home (greeting, latest News, upcoming Events) | `getCurrentCapabilities`, `listLatestPosts`, `listUpcomingEvents` | via slices 2, 3 and 6 | `/` greeting, News card, next Event and Coming up cards | `events.e2e.ts` (published Event on Home) | done |
 | 5 | Direct and Group Conversations, Messages, unread | `listConversations`, `getConversationUnread`, `searchMessageRecipients`, `getConversation`, `startConversation`, `sendMessage`, `markConversationRead`, `addGroupMembers`, `renameGroupConversation`, `leaveGroupConversation` | `messaging.test.ts` | `/messages`, `/messages/[id]`, start dialog, composer, Group controls, Messages badge | `messaging.e2e.ts` | done |
 | 6 | Events and Locations | `listUpcomingEvents`, `getEventPage`, `listManagedEvents`, `getEventFormOptions`, `getEventEditor`, `createEvent`, `updateEvent`, `changeEventStatus`, `deleteEvent`, `listLocations`, `createLocation`, `updateLocation`, `archiveLocation` | `events.test.ts` | `/events`, `/events/[id]`, `/events/manage` (and `/admin/events`), new and edit forms, lifecycle dialogs, Locations | `events.e2e.ts` | done |
-| 7 | Account settings: locale, push subscriptions | | | | | todo |
+| 7 | Account activation and settings: locale, push subscriptions | `activateAccount`, `updateLocalePreference`, `getPushSubscriptionStatus`, `registerPushSubscription`, `removePushSubscription`, `sendTestPushNotification` | `account.test.ts` | `/activate`, `/me/settings` gate, language, notifications, push revocation on logout | `account.e2e.ts` | done |
 | 8 | User administration | | | | | todo |
 | 9 | Groups, Memberships, Positions | | | | | todo |
 | 10 | Admin broadcasts | | | | | todo |
@@ -66,6 +66,13 @@ the single explicit boundary that today runs dispatch through Next.js `after()`.
 keep their own path: `push: false` outbox rows plus direct Web Push.
 
 ## Gaps
+
+- Account activation and push subscriptions are verified over HTTP (`account.test.ts`); browser
+  push permission and magic-link sign-in are not driven by Playwright. Signing out revokes the push
+  binding through `removePushSubscription`, which needs an active User; for a deactivated User the
+  browser still drops its subscription, as it did when server cleanup failed.
+- The account settings screen reads profile, two-factor and session details from Better Auth's
+  session (`/api/auth`), which stays outside `/api/v1`.
 
 - Real-time delivery (`/api/realtime/events`, `/api/realtime/ack`, `ActivityConnection`) stays on
   its Next.js route handlers; moving it onto Hono and a supervised worker is ticket #6.

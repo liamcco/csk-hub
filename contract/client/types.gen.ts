@@ -573,6 +573,66 @@ export type LocationInput = {
     mapUrl?: string;
 };
 
+export type LocalePreference = {
+    locale: 'en' | 'sv' | 'de';
+};
+
+export type PushSubscriptionStatus = {
+    binding: 'bound' | 'unbound' | 'unsupported';
+};
+
+export type PushEndpoint = {
+    endpoint: string;
+};
+
+export type PushSubscriptionError = {
+    /**
+     * The endpoint or keys are not a supported browser push subscription.
+     */
+    code: 'INVALID_SUBSCRIPTION';
+};
+
+/**
+ * A browser's `PushSubscription.toJSON()`.
+ */
+export type PushSubscription = {
+    endpoint: string;
+    expirationTime?: number | null;
+    keys: {
+        p256dh: string;
+        auth: string;
+    };
+};
+
+export type PushDeliveryResult = {
+    success: true;
+    accepted: number;
+    failed: number;
+    failureCategories: {
+        [key: string]: number;
+    };
+} | {
+    success: false;
+    error: 'noActiveSubscriptions' | 'noRecipients' | 'deliveryFailed';
+    accepted: number;
+    failed: number;
+    failureCategories: {
+        [key: string]: number;
+    };
+};
+
+export type ActivationError = {
+    /**
+     * Why activation failed. Tolerate unknown codes.
+     */
+    code: 'PASSWORD_REQUIRED' | 'PASSWORD_TOO_SHORT' | 'CONFIRM_PASSWORD_REQUIRED' | 'PASSWORDS_MISMATCH' | 'INVALID_LINK';
+};
+
+export type Activation = {
+    password: string;
+    confirmPassword: string;
+};
+
 export type MemberIdSession = {
     member: MemberIdMember;
     /**
@@ -2088,6 +2148,184 @@ export type ArchiveLocationResponses = {
 };
 
 export type ArchiveLocationResponse = ArchiveLocationResponses[keyof ArchiveLocationResponses];
+
+export type UpdateLocalePreferenceData = {
+    body: LocalePreference;
+    path?: never;
+    query?: never;
+    url: '/api/v1/account/locale';
+};
+
+export type UpdateLocalePreferenceErrors = {
+    /**
+     * The request failed validation.
+     */
+    400: ValidationError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+};
+
+export type UpdateLocalePreferenceError = UpdateLocalePreferenceErrors[keyof UpdateLocalePreferenceErrors];
+
+export type UpdateLocalePreferenceResponses = {
+    /**
+     * Saved.
+     */
+    204: void;
+};
+
+export type UpdateLocalePreferenceResponse = UpdateLocalePreferenceResponses[keyof UpdateLocalePreferenceResponses];
+
+export type GetPushSubscriptionStatusData = {
+    body: PushEndpoint;
+    path?: never;
+    query?: never;
+    url: '/api/v1/account/push-subscriptions/status';
+};
+
+export type GetPushSubscriptionStatusErrors = {
+    /**
+     * The request failed validation.
+     */
+    400: ValidationError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+};
+
+export type GetPushSubscriptionStatusError = GetPushSubscriptionStatusErrors[keyof GetPushSubscriptionStatusErrors];
+
+export type GetPushSubscriptionStatusResponses = {
+    /**
+     * The binding.
+     */
+    200: PushSubscriptionStatus;
+};
+
+export type GetPushSubscriptionStatusResponse = GetPushSubscriptionStatusResponses[keyof GetPushSubscriptionStatusResponses];
+
+export type RegisterPushSubscriptionData = {
+    body: PushSubscription;
+    path?: never;
+    query?: never;
+    url: '/api/v1/account/push-subscriptions';
+};
+
+export type RegisterPushSubscriptionErrors = {
+    /**
+     * Not a supported push subscription, or the request failed validation.
+     */
+    400: PushSubscriptionError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+};
+
+export type RegisterPushSubscriptionError = RegisterPushSubscriptionErrors[keyof RegisterPushSubscriptionErrors];
+
+export type RegisterPushSubscriptionResponses = {
+    /**
+     * Bound.
+     */
+    204: void;
+};
+
+export type RegisterPushSubscriptionResponse = RegisterPushSubscriptionResponses[keyof RegisterPushSubscriptionResponses];
+
+export type RemovePushSubscriptionData = {
+    body: PushEndpoint;
+    path?: never;
+    query?: never;
+    url: '/api/v1/account/push-subscriptions/remove';
+};
+
+export type RemovePushSubscriptionErrors = {
+    /**
+     * Not a supported push endpoint, or the request failed validation.
+     */
+    400: PushSubscriptionError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+};
+
+export type RemovePushSubscriptionError = RemovePushSubscriptionErrors[keyof RemovePushSubscriptionErrors];
+
+export type RemovePushSubscriptionResponses = {
+    /**
+     * Whether a binding of the caller's was removed.
+     */
+    200: {
+        removed: boolean;
+    };
+};
+
+export type RemovePushSubscriptionResponse = RemovePushSubscriptionResponses[keyof RemovePushSubscriptionResponses];
+
+export type SendTestPushNotificationData = {
+    body: {
+        message: string;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/v1/account/push-subscriptions/test';
+};
+
+export type SendTestPushNotificationErrors = {
+    /**
+     * The request failed validation.
+     */
+    400: ValidationError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+};
+
+export type SendTestPushNotificationError = SendTestPushNotificationErrors[keyof SendTestPushNotificationErrors];
+
+export type SendTestPushNotificationResponses = {
+    /**
+     * How the push providers answered.
+     */
+    200: PushDeliveryResult;
+};
+
+export type SendTestPushNotificationResponse = SendTestPushNotificationResponses[keyof SendTestPushNotificationResponses];
+
+export type ActivateAccountData = {
+    body: Activation;
+    path?: never;
+    query?: never;
+    url: '/api/v1/account/activation';
+};
+
+export type ActivateAccountErrors = {
+    /**
+     * The passwords break the password policy.
+     */
+    400: ActivationError;
+    /**
+     * `INVALID_LINK`: no valid magic-link session.
+     */
+    401: ActivationError;
+};
+
+export type ActivateAccountError = ActivateAccountErrors[keyof ActivateAccountErrors];
+
+export type ActivateAccountResponses = {
+    /**
+     * Activated.
+     */
+    204: void;
+};
+
+export type ActivateAccountResponse = ActivateAccountResponses[keyof ActivateAccountResponses];
 
 export type GetMemberIdSessionData = {
     body?: never;

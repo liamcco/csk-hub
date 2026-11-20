@@ -53,8 +53,6 @@ mock.module("@/core/notifications", () => ({
   listUsersWithActiveSubscriptions: mock(async () => [])
 }))
 const { searchNotificationUsers, sendTestNotificationToAll, sendTestNotificationToUsers } = await import("./actions")
-const { getPushSubscriptionBinding, sendPushNotificationTest, subscribeUserToPush, unsubscribeUserFromPush } =
-  await import("../account/settings/notifications/push-notification-actions")
 
 beforeEach(() => {
   subscriptions = []
@@ -206,64 +204,6 @@ describe("notification actions without a translation context", () => {
     await expect(sendTestNotificationToUsers(["user-1"], "Hello")).rejects.toThrow("Forbidden")
     expect(select).not.toHaveBeenCalled()
   })
-
-  test("account test delivery also works without translations", async () => {
-    subscriptions = [activeSubscription]
-    expect(await sendPushNotificationTest("Hello")).toEqual({
-      success: true,
-      accepted: 1,
-      failed: 0,
-      failureCategories: {}
-    })
-    expect(getSession).toHaveBeenCalledTimes(1)
-    expect(getTranslations).not.toHaveBeenCalled()
-  })
-
-  test("signed-out account actions reject before subscription changes or delivery", async () => {
-    getSession.mockResolvedValue(null)
-    await expect(sendPushNotificationTest("Hello")).rejects.toThrow("Unauthorized")
-    await expect(
-      subscribeUserToPush({ endpoint: "https://push.example.test", keys: { p256dh: "key", auth: "auth" } })
-    ).rejects.toThrow("Unauthorized")
-    await expect(unsubscribeUserFromPush("https://push.example.test")).rejects.toThrow("Unauthorized")
-    expect(subscribe).not.toHaveBeenCalled()
-    expect(unsubscribe).not.toHaveBeenCalled()
-    expect(select).not.toHaveBeenCalled()
-    expect(getTranslations).not.toHaveBeenCalled()
-  })
-})
-
-const { InvalidNotificationSubscriptionError } = await import("@/core/notifications/subscription-validation")
-const { revokePushBindingBeforeLogout } = await import("@/core/navigation/logout-actions")
-
-test("binding lookup distinguishes owned, missing, unsupported, and unavailable", async () => {
-  expect(await getPushSubscriptionBinding(activeSubscription.endpoint)).toBe("bound")
-  expect(hasActiveSubscription).toHaveBeenCalledWith("user-1", activeSubscription.endpoint)
-  hasActiveSubscription.mockResolvedValue(false)
-  expect(await getPushSubscriptionBinding(activeSubscription.endpoint)).toBe("unbound")
-  hasActiveSubscription.mockRejectedValue(new InvalidNotificationSubscriptionError())
-  expect(await getPushSubscriptionBinding(activeSubscription.endpoint)).toBe("unsupported")
-  hasActiveSubscription.mockRejectedValue(new Error("Database unavailable"))
-  await expect(getPushSubscriptionBinding(activeSubscription.endpoint)).rejects.toThrow("Database unavailable")
-})
-
-test("signed-out binding lookup rejects before inspecting subscriptions", async () => {
-  getSession.mockResolvedValue(null)
-  await expect(getPushSubscriptionBinding(activeSubscription.endpoint)).rejects.toThrow("Unauthorized")
-  expect(hasActiveSubscription).not.toHaveBeenCalled()
-})
-
-test("logout revocation uses only the authenticated owner and reports whether removal occurred", async () => {
-  unsubscribe.mockResolvedValue(true)
-  expect(await revokePushBindingBeforeLogout(activeSubscription.endpoint)).toBe(true)
-  expect(unsubscribe).toHaveBeenCalledWith("user-1", activeSubscription.endpoint)
-  unsubscribe.mockResolvedValue(false)
-  expect(await revokePushBindingBeforeLogout(activeSubscription.endpoint)).toBe(false)
-})
-
-test("logout revocation refuses signed-out sessions", async () => {
-  getSession.mockResolvedValue(null)
-  await expect(revokePushBindingBeforeLogout(activeSubscription.endpoint)).rejects.toThrow("Unauthorized")
 })
 
 afterEach(() => jest.useRealTimers())

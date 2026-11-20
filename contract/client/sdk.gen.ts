@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { AddGroupMembersData, AddGroupMembersErrors, AddGroupMembersResponses, ArchiveLocationData, ArchiveLocationErrors, ArchiveLocationResponses, ChangeEventStatusData, ChangeEventStatusErrors, ChangeEventStatusResponses, CreateEventData, CreateEventErrors, CreateEventResponses, CreateLocationData, CreateLocationErrors, CreateLocationResponses, CreatePostData, CreatePostErrors, CreatePostResponses, DeleteEventData, DeleteEventErrors, DeleteEventResponses, DiscardDraftData, DiscardDraftErrors, DiscardDraftResponses, EditPublishedPostData, EditPublishedPostErrors, EditPublishedPostResponses, GetConversationData, GetConversationErrors, GetConversationResponses, GetConversationUnreadData, GetConversationUnreadErrors, GetConversationUnreadResponses, GetCurrentActorData, GetCurrentActorErrors, GetCurrentActorResponses, GetCurrentCapabilitiesData, GetCurrentCapabilitiesErrors, GetCurrentCapabilitiesResponses, GetEditablePostData, GetEditablePostErrors, GetEditablePostResponses, GetEventEditorData, GetEventEditorErrors, GetEventEditorResponses, GetEventFormOptionsData, GetEventFormOptionsErrors, GetEventFormOptionsResponses, GetEventPageData, GetEventPageErrors, GetEventPageResponses, GetMemberIdSessionData, GetMemberIdSessionErrors, GetMemberIdSessionResponses, GetMemberProfileData, GetMemberProfileErrors, GetMemberProfileResponses, GetOwnProfileData, GetOwnProfileErrors, GetOwnProfileResponses, GetPostData, GetPostErrors, GetPostResponses, GetPostUnreadData, GetPostUnreadErrors, GetPostUnreadResponses, GetProfileEditorData, GetProfileEditorErrors, GetProfileEditorResponses, IssueMemberIdData, IssueMemberIdErrors, IssueMemberIdResponses, LeaveGroupConversationData, LeaveGroupConversationErrors, LeaveGroupConversationResponses, ListConversationsData, ListConversationsErrors, ListConversationsResponses, ListLatestPostsData, ListLatestPostsErrors, ListLatestPostsResponses, ListLocationsData, ListLocationsErrors, ListLocationsResponses, ListManagedEventsData, ListManagedEventsErrors, ListManagedEventsResponses, ListMembersData, ListMembersErrors, ListMembersResponses, ListNewsFeedData, ListNewsFeedErrors, ListNewsFeedResponses, ListOwnDraftsData, ListOwnDraftsErrors, ListOwnDraftsResponses, ListUpcomingEventsData, ListUpcomingEventsErrors, ListUpcomingEventsResponses, MarkConversationReadData, MarkConversationReadErrors, MarkConversationReadResponses, MarkPostReadData, MarkPostReadErrors, MarkPostReadResponses, RecallPostData, RecallPostErrors, RecallPostResponses, RenameGroupConversationData, RenameGroupConversationErrors, RenameGroupConversationResponses, SaveDraftData, SaveDraftErrors, SaveDraftResponses, SearchMessageRecipientsData, SearchMessageRecipientsErrors, SearchMessageRecipientsResponses, SendMessageData, SendMessageErrors, SendMessageResponses, StartConversationData, StartConversationErrors, StartConversationResponses, UpdateEventData, UpdateEventErrors, UpdateEventResponses, UpdateLocationData, UpdateLocationErrors, UpdateLocationResponses, UpdateProfileVoicesData, UpdateProfileVoicesErrors, UpdateProfileVoicesResponses, VerifyMemberIdData, VerifyMemberIdErrors, VerifyMemberIdResponses } from './types.gen';
+import type { ActivateAccountData, ActivateAccountErrors, ActivateAccountResponses, AddGroupMembersData, AddGroupMembersErrors, AddGroupMembersResponses, ArchiveLocationData, ArchiveLocationErrors, ArchiveLocationResponses, ChangeEventStatusData, ChangeEventStatusErrors, ChangeEventStatusResponses, CreateEventData, CreateEventErrors, CreateEventResponses, CreateLocationData, CreateLocationErrors, CreateLocationResponses, CreatePostData, CreatePostErrors, CreatePostResponses, DeleteEventData, DeleteEventErrors, DeleteEventResponses, DiscardDraftData, DiscardDraftErrors, DiscardDraftResponses, EditPublishedPostData, EditPublishedPostErrors, EditPublishedPostResponses, GetConversationData, GetConversationErrors, GetConversationResponses, GetConversationUnreadData, GetConversationUnreadErrors, GetConversationUnreadResponses, GetCurrentActorData, GetCurrentActorErrors, GetCurrentActorResponses, GetCurrentCapabilitiesData, GetCurrentCapabilitiesErrors, GetCurrentCapabilitiesResponses, GetEditablePostData, GetEditablePostErrors, GetEditablePostResponses, GetEventEditorData, GetEventEditorErrors, GetEventEditorResponses, GetEventFormOptionsData, GetEventFormOptionsErrors, GetEventFormOptionsResponses, GetEventPageData, GetEventPageErrors, GetEventPageResponses, GetMemberIdSessionData, GetMemberIdSessionErrors, GetMemberIdSessionResponses, GetMemberProfileData, GetMemberProfileErrors, GetMemberProfileResponses, GetOwnProfileData, GetOwnProfileErrors, GetOwnProfileResponses, GetPostData, GetPostErrors, GetPostResponses, GetPostUnreadData, GetPostUnreadErrors, GetPostUnreadResponses, GetProfileEditorData, GetProfileEditorErrors, GetProfileEditorResponses, GetPushSubscriptionStatusData, GetPushSubscriptionStatusErrors, GetPushSubscriptionStatusResponses, IssueMemberIdData, IssueMemberIdErrors, IssueMemberIdResponses, LeaveGroupConversationData, LeaveGroupConversationErrors, LeaveGroupConversationResponses, ListConversationsData, ListConversationsErrors, ListConversationsResponses, ListLatestPostsData, ListLatestPostsErrors, ListLatestPostsResponses, ListLocationsData, ListLocationsErrors, ListLocationsResponses, ListManagedEventsData, ListManagedEventsErrors, ListManagedEventsResponses, ListMembersData, ListMembersErrors, ListMembersResponses, ListNewsFeedData, ListNewsFeedErrors, ListNewsFeedResponses, ListOwnDraftsData, ListOwnDraftsErrors, ListOwnDraftsResponses, ListUpcomingEventsData, ListUpcomingEventsErrors, ListUpcomingEventsResponses, MarkConversationReadData, MarkConversationReadErrors, MarkConversationReadResponses, MarkPostReadData, MarkPostReadErrors, MarkPostReadResponses, RecallPostData, RecallPostErrors, RecallPostResponses, RegisterPushSubscriptionData, RegisterPushSubscriptionErrors, RegisterPushSubscriptionResponses, RemovePushSubscriptionData, RemovePushSubscriptionErrors, RemovePushSubscriptionResponses, RenameGroupConversationData, RenameGroupConversationErrors, RenameGroupConversationResponses, SaveDraftData, SaveDraftErrors, SaveDraftResponses, SearchMessageRecipientsData, SearchMessageRecipientsErrors, SearchMessageRecipientsResponses, SendMessageData, SendMessageErrors, SendMessageResponses, SendTestPushNotificationData, SendTestPushNotificationErrors, SendTestPushNotificationResponses, StartConversationData, StartConversationErrors, StartConversationResponses, UpdateEventData, UpdateEventErrors, UpdateEventResponses, UpdateLocalePreferenceData, UpdateLocalePreferenceErrors, UpdateLocalePreferenceResponses, UpdateLocationData, UpdateLocationErrors, UpdateLocationResponses, UpdateProfileVoicesData, UpdateProfileVoicesErrors, UpdateProfileVoicesResponses, VerifyMemberIdData, VerifyMemberIdErrors, VerifyMemberIdResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -339,6 +339,80 @@ export const updateLocation = <ThrowOnError extends boolean = false>(options: Op
  * Archives a Location; Events that use it keep it. Admins only.
  */
 export const archiveLocation = <ThrowOnError extends boolean = false>(options: Options<ArchiveLocationData, ThrowOnError>): RequestResult<ArchiveLocationResponses, ArchiveLocationErrors, ThrowOnError> => (options.client ?? client).post<ArchiveLocationResponses, ArchiveLocationErrors, ThrowOnError>({ url: '/api/v1/locations/{locationId}/archive', ...options });
+
+/**
+ * Saves the caller's locale preference, keeping their other preferences.
+ */
+export const updateLocalePreference = <ThrowOnError extends boolean = false>(options: Options<UpdateLocalePreferenceData, ThrowOnError>): RequestResult<UpdateLocalePreferenceResponses, UpdateLocalePreferenceErrors, ThrowOnError> => (options.client ?? client).put<UpdateLocalePreferenceResponses, UpdateLocalePreferenceErrors, ThrowOnError>({
+    url: '/api/v1/account/locale',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Whether this browser's push endpoint is bound to the caller.
+ *
+ * A read sent as POST so the endpoint, a bearer-like secret, stays out of URLs and logs. Another User's binding reads as `unbound`; an unsupported endpoint reads as `unsupported` so the browser can drop it.
+ */
+export const getPushSubscriptionStatus = <ThrowOnError extends boolean = false>(options: Options<GetPushSubscriptionStatusData, ThrowOnError>): RequestResult<GetPushSubscriptionStatusResponses, GetPushSubscriptionStatusErrors, ThrowOnError> => (options.client ?? client).post<GetPushSubscriptionStatusResponses, GetPushSubscriptionStatusErrors, ThrowOnError>({
+    url: '/api/v1/account/push-subscriptions/status',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Binds a browser push subscription to the caller, taking it over from any earlier owner.
+ */
+export const registerPushSubscription = <ThrowOnError extends boolean = false>(options: Options<RegisterPushSubscriptionData, ThrowOnError>): RequestResult<RegisterPushSubscriptionResponses, RegisterPushSubscriptionErrors, ThrowOnError> => (options.client ?? client).post<RegisterPushSubscriptionResponses, RegisterPushSubscriptionErrors, ThrowOnError>({
+    url: '/api/v1/account/push-subscriptions',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Removes the caller's own binding for an endpoint, as on disabling notifications or signing out.
+ */
+export const removePushSubscription = <ThrowOnError extends boolean = false>(options: Options<RemovePushSubscriptionData, ThrowOnError>): RequestResult<RemovePushSubscriptionResponses, RemovePushSubscriptionErrors, ThrowOnError> => (options.client ?? client).post<RemovePushSubscriptionResponses, RemovePushSubscriptionErrors, ThrowOnError>({
+    url: '/api/v1/account/push-subscriptions/remove',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Sends a test notification to the caller's own active subscriptions.
+ */
+export const sendTestPushNotification = <ThrowOnError extends boolean = false>(options: Options<SendTestPushNotificationData, ThrowOnError>): RequestResult<SendTestPushNotificationResponses, SendTestPushNotificationErrors, ThrowOnError> => (options.client ?? client).post<SendTestPushNotificationResponses, SendTestPushNotificationErrors, ThrowOnError>({
+    url: '/api/v1/account/push-subscriptions/test',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Sets an invited User's first password from the session their magic link opened.
+ */
+export const activateAccount = <ThrowOnError extends boolean = false>(options: Options<ActivateAccountData, ThrowOnError>): RequestResult<ActivateAccountResponses, ActivateAccountErrors, ThrowOnError> => (options.client ?? client).post<ActivateAccountResponses, ActivateAccountErrors, ThrowOnError>({
+    url: '/api/v1/account/activation',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
 
 /**
  * The signed-in User's own Member ID profile and whether they may verify others.
