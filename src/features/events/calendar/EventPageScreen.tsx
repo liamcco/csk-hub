@@ -1,6 +1,5 @@
 import { io } from "next/cache"
 import Link from "next/link"
-import { notFound } from "next/navigation"
 import type { ReactNode } from "react"
 import { getFormatter, getTranslations } from "@/core/i18n/server"
 import { PageBreadcrumb } from "@/core/navigation/PageBreadcrumb"
@@ -12,9 +11,10 @@ import { Skeleton } from "@/shared/ui/base/skeleton"
 import { stockholmInstant } from "../model"
 import { eventManagementPath } from "../ui/command-state"
 import { StatusBadge } from "../ui/StatusBadge"
+import { readEventPage } from "../ui/screen-reads"
 import { eventDays } from "./days"
 import { EventKind } from "./EventKind"
-import { type EventPage, getCurrentEventPage } from "./query"
+import type { EventPage } from "./query"
 
 /**
  * One Event as its Audience reads it. Anything the viewer may not see, including every Draft, is
@@ -22,11 +22,7 @@ import { type EventPage, getCurrentEventPage } from "./query"
  */
 export async function EventPageScreen({ eventId }: { eventId: string }) {
   await io()
-  const [page, t] = await Promise.all([
-    getCurrentEventPage(eventId, new Date()),
-    getTranslations("Events.calendar.page")
-  ])
-  if (!page) notFound()
+  const [page, t] = await Promise.all([readEventPage(eventId), getTranslations("Events.calendar.page")])
 
   return (
     <ContentPage>

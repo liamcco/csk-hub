@@ -1,12 +1,14 @@
 "use client"
 
+import { useRouter } from "next/navigation"
 import { useTranslations } from "@/core/i18n/translations"
+import { ROUTES } from "@/core/navigation/site"
 import { Button } from "@/shared/ui/base/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/base/card"
 import type { EventDeletionImpact } from "../../lifecycle"
 import { type EventStatus, statusChangesFrom } from "../../model"
 import { EventCommandDialog } from "../EventCommandDialog"
-import { changeEventStatusAction, deleteEventAction } from "./actions"
+import { useEventCommand } from "../use-event-command"
 
 /** What moving from one status to another is called. */
 const STATUS_CHANGE: Record<EventStatus, Partial<Record<EventStatus, "publish" | "cancel" | "reinstate">>> = {
@@ -29,6 +31,9 @@ export function EventLifecycle({
 }) {
   const t = useTranslations("Events.lifecycle")
   const recorded = impact.responses + impact.registrations + impact.attendance
+  const changeStatus = useEventCommand({ kind: "changeEventStatus" })
+  const remove = useEventCommand({ kind: "deleteEvent" })
+  const router = useRouter()
 
   return (
     <Card>
@@ -50,7 +55,7 @@ export function EventLifecycle({
               }
               title={t(`${change}Title`, { title })}
               description={t(`${change}Explanation`)}
-              action={changeEventStatusAction}
+              action={changeStatus}
               submitLabel={t(change)}
               successMessage={t(`${change}Done`)}
               destructive={change === "cancel"}
@@ -75,7 +80,8 @@ export function EventLifecycle({
               </span>
             </>
           }
-          action={deleteEventAction}
+          action={remove}
+          afterSuccess={() => router.push(ROUTES.eventsManage)}
           submitLabel={t("delete")}
           successMessage={t("deleteDone")}
           destructive

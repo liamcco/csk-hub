@@ -1,4 +1,5 @@
 import { type ApiDependencies, apiError, createRouter, handleApiError } from "@/core/http"
+import { eventsRouter } from "@/features/events/http"
 import { memberIdRouter } from "@/features/member-id"
 import { membersRouter } from "@/features/members/http"
 import { messagingRouter } from "@/features/messaging/http"
@@ -62,6 +63,7 @@ export function createApi(dependencies: ApiDependencies) {
     .route("/", membersRouter)
     .route("/", postsRouter)
     .route("/", messagingRouter)
+    .route("/", eventsRouter)
   api.route("/api/v1", v1)
   // Released before /api/v1; its paths and representations stay frozen for installed clients.
   api.route("/api/member-id", memberIdRouter)

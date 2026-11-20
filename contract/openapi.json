@@ -1230,6 +1230,976 @@
           "changed"
         ]
       },
+      "UpcomingEvents": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "title": {
+                  "type": "string"
+                },
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "Rehearsal",
+                    "Gig",
+                    "Concert",
+                    "Social",
+                    "Rephelg",
+                    "Körmöte",
+                    "Booking",
+                    "Meeting",
+                    "Other"
+                  ]
+                },
+                "rehearsalKind": {
+                  "type": "string",
+                  "nullable": true,
+                  "enum": [
+                    "ChoirRehearsal",
+                    "ExtraRehearsal",
+                    "SectionalRehearsal",
+                    "Rehearsal",
+                    null
+                  ]
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "Published",
+                    "Cancelled"
+                  ]
+                },
+                "startsAt": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "endsAt": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "allDay": {
+                  "type": "boolean"
+                },
+                "location": {
+                  "type": "string",
+                  "nullable": true
+                }
+              },
+              "required": [
+                "id",
+                "title",
+                "type",
+                "rehearsalKind",
+                "status",
+                "startsAt",
+                "endsAt",
+                "allDay",
+                "location"
+              ]
+            }
+          },
+          "permissions": {
+            "type": "object",
+            "properties": {
+              "create": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "create"
+            ]
+          }
+        },
+        "required": [
+          "items",
+          "permissions"
+        ]
+      },
+      "ManagedEvents": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "title": {
+                  "type": "string"
+                },
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "Rehearsal",
+                    "Gig",
+                    "Concert",
+                    "Social",
+                    "Rephelg",
+                    "Körmöte",
+                    "Booking",
+                    "Meeting",
+                    "Other"
+                  ]
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "Draft",
+                    "Published",
+                    "Cancelled"
+                  ]
+                },
+                "startsAt": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "endsAt": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "allDay": {
+                  "type": "boolean"
+                },
+                "organiserGroup": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "targets": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "group": {
+                        "type": "string",
+                        "nullable": true
+                      },
+                      "voiceFamily": {
+                        "type": "string",
+                        "nullable": true,
+                        "enum": [
+                          "S",
+                          "A",
+                          "T",
+                          "B",
+                          null
+                        ]
+                      }
+                    },
+                    "required": [
+                      "group",
+                      "voiceFamily"
+                    ]
+                  }
+                }
+              },
+              "required": [
+                "id",
+                "title",
+                "type",
+                "status",
+                "startsAt",
+                "endsAt",
+                "allDay",
+                "organiserGroup",
+                "targets"
+              ]
+            }
+          },
+          "permissions": {
+            "type": "object",
+            "properties": {
+              "create": {
+                "type": "boolean"
+              },
+              "administer": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "create",
+              "administer"
+            ]
+          }
+        },
+        "required": [
+          "items",
+          "permissions"
+        ]
+      },
+      "EventFormOptions": {
+        "type": "object",
+        "properties": {
+          "canCreate": {
+            "type": "boolean"
+          },
+          "locations": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "active": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "id",
+                "name",
+                "active"
+              ]
+            }
+          },
+          "organiserGroups": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "Choir",
+                    "Section",
+                    "Board",
+                    "GigGroup",
+                    "Gigmästeri",
+                    "Sexmästeri",
+                    "Roddgrupp",
+                    "Festgrupp",
+                    "Rephelg",
+                    "Konsertmästeri",
+                    "Rekryteringskommitté",
+                    "Turnékommitté",
+                    "Valberedning",
+                    "Webmästeri",
+                    "Föräldramötet",
+                    "Arkivarie",
+                    "Utantillkommitté",
+                    "Övrig"
+                  ]
+                },
+                "active": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "id",
+                "name",
+                "type",
+                "active"
+              ]
+            }
+          },
+          "groups": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "Choir",
+                    "Section",
+                    "Board",
+                    "GigGroup",
+                    "Gigmästeri",
+                    "Sexmästeri",
+                    "Roddgrupp",
+                    "Festgrupp",
+                    "Rephelg",
+                    "Konsertmästeri",
+                    "Rekryteringskommitté",
+                    "Turnékommitté",
+                    "Valberedning",
+                    "Webmästeri",
+                    "Föräldramötet",
+                    "Arkivarie",
+                    "Utantillkommitté",
+                    "Övrig"
+                  ]
+                },
+                "active": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "id",
+                "name",
+                "type",
+                "active"
+              ]
+            }
+          },
+          "users": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "email": {
+                  "type": "string",
+                  "description": "Admins only."
+                }
+              },
+              "required": [
+                "id",
+                "name"
+              ]
+            }
+          }
+        },
+        "required": [
+          "canCreate",
+          "locations",
+          "organiserGroups",
+          "groups",
+          "users"
+        ]
+      },
+      "EventEditor": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "Draft",
+              "Published",
+              "Cancelled"
+            ]
+          },
+          "values": {
+            "$ref": "#/components/schemas/EventFormValues"
+          },
+          "options": {
+            "$ref": "#/components/schemas/EventFormOptions"
+          },
+          "impact": {
+            "type": "object",
+            "properties": {
+              "responses": {
+                "type": "integer"
+              },
+              "registrations": {
+                "type": "integer"
+              },
+              "attendance": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "responses",
+              "registrations",
+              "attendance"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "status",
+          "values",
+          "options",
+          "impact"
+        ]
+      },
+      "EventFormValues": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "Rehearsal",
+              "Gig",
+              "Concert",
+              "Social",
+              "Rephelg",
+              "Körmöte",
+              "Booking",
+              "Meeting",
+              "Other"
+            ]
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "$ref": "#/components/schemas/EventDescription"
+          },
+          "allDay": {
+            "type": "boolean"
+          },
+          "startsAt": {
+            "type": "string"
+          },
+          "endsAt": {
+            "type": "string"
+          },
+          "firstDay": {
+            "type": "string"
+          },
+          "lastDay": {
+            "type": "string"
+          },
+          "callTime": {
+            "type": "string"
+          },
+          "respondBy": {
+            "type": "string"
+          },
+          "participationMode": {
+            "type": "string",
+            "enum": [
+              "None",
+              "ResponseRequired",
+              "ResponseRequiredStrict",
+              "Registration"
+            ]
+          },
+          "locationId": {
+            "type": "string"
+          },
+          "locationText": {
+            "type": "string"
+          },
+          "organiserGroupId": {
+            "type": "string"
+          },
+          "leaderUserId": {
+            "type": "string"
+          },
+          "responsibleUserId": {
+            "type": "string"
+          },
+          "contactName": {
+            "type": "string"
+          },
+          "contactDetails": {
+            "type": "string"
+          },
+          "costInfo": {
+            "type": "string"
+          },
+          "targets": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "groupId": {
+                  "type": "string"
+                },
+                "voiceFamily": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "groupId",
+                "voiceFamily"
+              ]
+            }
+          },
+          "details": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "label": {
+                  "type": "string"
+                },
+                "value": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "label",
+                "value"
+              ]
+            }
+          }
+        },
+        "required": [
+          "type",
+          "title",
+          "description",
+          "allDay",
+          "startsAt",
+          "endsAt",
+          "firstDay",
+          "lastDay",
+          "callTime",
+          "respondBy",
+          "participationMode",
+          "locationId",
+          "locationText",
+          "organiserGroupId",
+          "leaderUserId",
+          "responsibleUserId",
+          "contactName",
+          "contactDetails",
+          "costInfo",
+          "targets",
+          "details"
+        ]
+      },
+      "EventDescription": {
+        "type": "object",
+        "nullable": true,
+        "additionalProperties": {
+          "nullable": true
+        },
+        "description": "The editor's document (ProseMirror JSON) for an Event description."
+      },
+      "EventPage": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "Rehearsal",
+              "Gig",
+              "Concert",
+              "Social",
+              "Rephelg",
+              "Körmöte",
+              "Booking",
+              "Meeting",
+              "Other"
+            ]
+          },
+          "rehearsalKind": {
+            "type": "string",
+            "nullable": true,
+            "enum": [
+              "ChoirRehearsal",
+              "ExtraRehearsal",
+              "SectionalRehearsal",
+              "Rehearsal",
+              null
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "Published",
+              "Cancelled"
+            ]
+          },
+          "startsAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "endsAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "allDay": {
+            "type": "boolean"
+          },
+          "canManage": {
+            "type": "boolean"
+          },
+          "description": {
+            "$ref": "#/components/schemas/EventDescription"
+          },
+          "callTime": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "locationText": {
+            "type": "string",
+            "nullable": true
+          },
+          "location": {
+            "type": "object",
+            "nullable": true,
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "address": {
+                "type": "string",
+                "nullable": true
+              },
+              "mapUrl": {
+                "type": "string",
+                "nullable": true
+              }
+            },
+            "required": [
+              "name",
+              "address",
+              "mapUrl"
+            ]
+          },
+          "organiserGroup": {
+            "type": "string",
+            "nullable": true
+          },
+          "details": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "label": {
+                  "type": "string"
+                },
+                "value": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "label",
+                "value"
+              ]
+            }
+          },
+          "leaderName": {
+            "type": "string",
+            "nullable": true
+          },
+          "responsibleName": {
+            "type": "string",
+            "nullable": true
+          },
+          "costInfo": {
+            "type": "string",
+            "nullable": true
+          },
+          "targets": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "groupName": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "voiceFamily": {
+                  "type": "string",
+                  "nullable": true,
+                  "enum": [
+                    "S",
+                    "A",
+                    "T",
+                    "B",
+                    null
+                  ]
+                }
+              },
+              "required": [
+                "groupName",
+                "voiceFamily"
+              ]
+            }
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "type",
+          "rehearsalKind",
+          "status",
+          "startsAt",
+          "endsAt",
+          "allDay",
+          "canManage",
+          "description",
+          "callTime",
+          "locationText",
+          "location",
+          "organiserGroup",
+          "details",
+          "leaderName",
+          "responsibleName",
+          "costInfo",
+          "targets"
+        ]
+      },
+      "EventCommandResult": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "EventError": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "EVENT_NOT_FOUND",
+              "TITLE_REQUIRED",
+              "DESCRIPTION_INVALID",
+              "INVALID_DATE",
+              "ENDS_BEFORE_START",
+              "CALL_TIME_AFTER_START",
+              "RESPOND_BY_AFTER_START",
+              "RESPOND_BY_WITHOUT_PARTICIPATION",
+              "PARTICIPATION_MODE_LOCKED",
+              "STATUS_CHANGE_NOT_ALLOWED",
+              "LOCATION_NOT_FOUND",
+              "LOCATION_ARCHIVED",
+              "LOCATION_NAME_REQUIRED",
+              "LOCATION_NAME_TAKEN",
+              "INVALID_MAP_URL",
+              "ORGANISER_GROUP_NOT_FOUND",
+              "ORGANISER_GROUP_ARCHIVED",
+              "TARGET_GROUP_NOT_FOUND",
+              "TARGET_GROUP_ARCHIVED",
+              "TARGET_EMPTY",
+              "TARGET_DUPLICATE",
+              "DETAIL_INCOMPLETE",
+              "USER_NOT_FOUND",
+              "INVALID_INPUT"
+            ],
+            "description": "Stable Events failure code: a rule the Event or Location broke. Tolerate unknown codes."
+          }
+        },
+        "required": [
+          "code"
+        ]
+      },
+      "EventInput": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string",
+            "description": "The description document as a JSON string."
+          },
+          "schedule": {
+            "type": "object",
+            "properties": {
+              "allDay": {
+                "type": "boolean"
+              },
+              "startsAt": {
+                "type": "string"
+              },
+              "endsAt": {
+                "type": "string"
+              },
+              "firstDay": {
+                "type": "string"
+              },
+              "lastDay": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "allDay"
+            ]
+          },
+          "callTime": {
+            "type": "string"
+          },
+          "respondBy": {
+            "type": "string"
+          },
+          "participationMode": {
+            "type": "string"
+          },
+          "locationId": {
+            "type": "string"
+          },
+          "locationText": {
+            "type": "string"
+          },
+          "organiserGroupId": {
+            "type": "string"
+          },
+          "rehearsal": {
+            "type": "object",
+            "properties": {
+              "leaderUserId": {
+                "type": "string"
+              }
+            }
+          },
+          "gig": {
+            "type": "object",
+            "properties": {
+              "responsibleUserId": {
+                "type": "string"
+              },
+              "contactName": {
+                "type": "string"
+              },
+              "contactDetails": {
+                "type": "string"
+              }
+            }
+          },
+          "social": {
+            "type": "object",
+            "properties": {
+              "costInfo": {
+                "type": "string"
+              }
+            }
+          },
+          "targets": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "groupId": {
+                  "type": "string"
+                },
+                "voiceFamily": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "details": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "label": {
+                  "type": "string"
+                },
+                "value": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "label",
+                "value"
+              ]
+            }
+          }
+        },
+        "required": [
+          "title",
+          "schedule",
+          "rehearsal",
+          "gig",
+          "social",
+          "targets",
+          "details"
+        ]
+      },
+      "Locations": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Location"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "Location": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "address": {
+            "type": "string",
+            "nullable": true
+          },
+          "mapUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "eventCount": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "address",
+          "mapUrl",
+          "active",
+          "eventCount"
+        ]
+      },
+      "LocationInput": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "address": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "mapUrl": {
+            "type": "string",
+            "maxLength": 2000
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
       "MemberIdSession": {
         "type": "object",
         "properties": {
@@ -3199,6 +4169,848 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/MessagingError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/events/upcoming": {
+      "get": {
+        "operationId": "listUpcomingEvents",
+        "summary": "Published and Cancelled Events in the caller's Audience that have not ended, soonest first.",
+        "tags": [
+          "events"
+        ],
+        "responses": {
+          "200": {
+            "description": "Upcoming Events.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpcomingEvents"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No active signed-in User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/events/manage": {
+      "get": {
+        "operationId": "listManagedEvents",
+        "summary": "Events the caller may manage, in any status, with their capabilities.",
+        "tags": [
+          "events"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "upcoming",
+                "past"
+              ],
+              "default": "upcoming"
+            },
+            "required": false,
+            "name": "when",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "Draft",
+                "Published",
+                "Cancelled"
+              ]
+            },
+            "required": false,
+            "name": "status",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "Rehearsal",
+                "Gig",
+                "Concert",
+                "Social",
+                "Rephelg",
+                "Körmöte",
+                "Booking",
+                "Meeting",
+                "Other"
+              ]
+            },
+            "required": false,
+            "name": "type",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Manageable Events.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ManagedEvents"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request failed validation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No active signed-in User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createEvent",
+        "summary": "Creates a Draft Event organised by a Group the caller may organise for.",
+        "tags": [
+          "events"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EventInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The Draft.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventCommandResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The input broke an Event or Location rule.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No active signed-in User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The current User may not perform this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "`EVENT_NOT_FOUND`: no such Event.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/events/manage/options": {
+      "get": {
+        "operationId": "getEventFormOptions",
+        "summary": "What a new Event's form offers the caller.",
+        "tags": [
+          "events"
+        ],
+        "responses": {
+          "200": {
+            "description": "Form options.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventFormOptions"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No active signed-in User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/events/manage/{eventId}": {
+      "get": {
+        "operationId": "getEventEditor",
+        "summary": "One Event as its management page edits it.",
+        "tags": [
+          "events"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "eventId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The editor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventEditor"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request failed validation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No active signed-in User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The resource does not exist or is not visible to the current User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "operationId": "updateEvent",
+        "summary": "Saves the whole Event form onto the Event.",
+        "tags": [
+          "events"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "eventId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EventInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Saved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventCommandResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The input broke an Event or Location rule.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No active signed-in User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The current User may not perform this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "`EVENT_NOT_FOUND`: no such Event.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteEvent",
+        "summary": "Deletes an Event with everything recorded for it.",
+        "tags": [
+          "events"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "eventId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Deleted.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventCommandResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The input broke an Event or Location rule.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No active signed-in User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The current User may not perform this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "`EVENT_NOT_FOUND`: no such Event.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/events/{eventId}": {
+      "get": {
+        "operationId": "getEventPage",
+        "summary": "One Event as its Audience reads it.",
+        "description": "Drafts, Events outside the caller's Audience and missing Events are all 404.",
+        "tags": [
+          "events"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "eventId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The Event.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventPage"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No active signed-in User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The resource does not exist or is not visible to the current User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/events/manage/{eventId}/status": {
+      "post": {
+        "operationId": "changeEventStatus",
+        "summary": "Publishes, cancels or reinstates an Event.",
+        "tags": [
+          "events"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "eventId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "Draft",
+                      "Published",
+                      "Cancelled"
+                    ]
+                  }
+                },
+                "required": [
+                  "status"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Changed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventCommandResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The input broke an Event or Location rule.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No active signed-in User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The current User may not perform this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "`EVENT_NOT_FOUND`: no such Event.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/locations": {
+      "get": {
+        "operationId": "listLocations",
+        "summary": "Every Location, active ones first, with how many Events use each. Admins only.",
+        "tags": [
+          "events"
+        ],
+        "responses": {
+          "200": {
+            "description": "Locations.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Locations"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No active signed-in User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The current User may not perform this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createLocation",
+        "summary": "Adds a Location. Admins only.",
+        "tags": [
+          "events"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LocationInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The Location.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventCommandResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The input broke an Event or Location rule.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No active signed-in User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The current User may not perform this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "`EVENT_NOT_FOUND`: no such Event.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/locations/{locationId}": {
+      "put": {
+        "operationId": "updateLocation",
+        "summary": "Changes a Location. Admins only.",
+        "tags": [
+          "events"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "locationId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LocationInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Saved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventCommandResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The input broke an Event or Location rule.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No active signed-in User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The current User may not perform this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "`EVENT_NOT_FOUND`: no such Event.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/locations/{locationId}/archive": {
+      "post": {
+        "operationId": "archiveLocation",
+        "summary": "Archives a Location; Events that use it keep it. Admins only.",
+        "tags": [
+          "events"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "locationId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Archived.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventCommandResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The input broke an Event or Location rule.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No active signed-in User.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The current User may not perform this operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "`EVENT_NOT_FOUND`: no such Event.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventError"
                 }
               }
             }

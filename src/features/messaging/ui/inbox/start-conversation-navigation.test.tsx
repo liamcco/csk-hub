@@ -17,7 +17,8 @@ const startConversation = mock(
     conversationId: "group-1"
   })
 )
-mock.module("./actions", () => ({ startConversationAction: startConversation }))
+const commands = await import("../api-commands")
+mock.module("../api-commands", () => ({ ...commands, startConversationCommand: startConversation }))
 
 // Keep the real form and action state; replace only dialog presentation and member search.
 function Container({ children }: { children?: ReactNode }) {

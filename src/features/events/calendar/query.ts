@@ -16,6 +16,7 @@ import {
 } from "@/features/org-structure"
 import type { RichTextDocument } from "@/features/rich-text"
 import type { VoiceFamily } from "@/features/voice/model"
+import type { EventAccessResolver } from "../access"
 import { eventGroupContext } from "../access"
 import type { AudienceTarget } from "../audience"
 import {
@@ -269,9 +270,13 @@ function minDate(a: string, b: string) {
 }
 
 /** Protected calendar collection: derive fresh active identity instead of accepting browser claims. */
-export async function listCurrentUpcomingEvents(now: Date, database: EventsDatabase = db) {
+export async function listCurrentUpcomingEvents(
+  now: Date,
+  database: EventsDatabase = db,
+  resolve: EventAccessResolver = forCurrentRequest
+) {
   return database.transaction(async (tx) => {
-    const access = await forCurrentRequest(tx)
+    const access = await resolve(tx)
     const actor = access.requirePermission({ action: "app.access" })
     await lockGroupAuthorizationFacts(tx, actor.userId, [])
     return listUpcomingEventsForUser(tx, actor.userId, now, actor.isAdmin)
@@ -279,9 +284,14 @@ export async function listCurrentUpcomingEvents(now: Date, database: EventsDatab
 }
 
 /** Protected calendar detail; hidden resources map to null without exposing authz diagnostics. */
-export async function getCurrentEventPage(eventId: string, now: Date, database: EventsDatabase = db) {
+export async function getCurrentEventPage(
+  eventId: string,
+  now: Date,
+  database: EventsDatabase = db,
+  resolve: EventAccessResolver = forCurrentRequest
+) {
   return database.transaction(async (tx) => {
-    const access = await forCurrentRequest(tx)
+    const access = await resolve(tx)
     const actor = access.requirePermission({ action: "app.access" })
     await lockGroupAuthorizationFacts(tx, actor.userId, [])
     return getEventPage(tx, eventId, actor, now)

@@ -353,6 +353,226 @@ export type ConversationReadResult = {
     changed: boolean;
 };
 
+export type UpcomingEvents = {
+    items: Array<{
+        id: string;
+        title: string;
+        type: 'Rehearsal' | 'Gig' | 'Concert' | 'Social' | 'Rephelg' | 'Körmöte' | 'Booking' | 'Meeting' | 'Other';
+        rehearsalKind: 'ChoirRehearsal' | 'ExtraRehearsal' | 'SectionalRehearsal' | 'Rehearsal' | null;
+        status: 'Published' | 'Cancelled';
+        startsAt: string;
+        endsAt: string;
+        allDay: boolean;
+        location: string | null;
+    }>;
+    permissions: {
+        create: boolean;
+    };
+};
+
+export type ManagedEvents = {
+    items: Array<{
+        id: string;
+        title: string;
+        type: 'Rehearsal' | 'Gig' | 'Concert' | 'Social' | 'Rephelg' | 'Körmöte' | 'Booking' | 'Meeting' | 'Other';
+        status: 'Draft' | 'Published' | 'Cancelled';
+        startsAt: string;
+        endsAt: string;
+        allDay: boolean;
+        organiserGroup: string | null;
+        targets: Array<{
+            group: string | null;
+            voiceFamily: 'S' | 'A' | 'T' | 'B' | null;
+        }>;
+    }>;
+    permissions: {
+        create: boolean;
+        administer: boolean;
+    };
+};
+
+export type EventFormOptions = {
+    canCreate: boolean;
+    locations: Array<{
+        id: string;
+        name: string;
+        active: boolean;
+    }>;
+    organiserGroups: Array<{
+        id: string;
+        name: string;
+        type: 'Choir' | 'Section' | 'Board' | 'GigGroup' | 'Gigmästeri' | 'Sexmästeri' | 'Roddgrupp' | 'Festgrupp' | 'Rephelg' | 'Konsertmästeri' | 'Rekryteringskommitté' | 'Turnékommitté' | 'Valberedning' | 'Webmästeri' | 'Föräldramötet' | 'Arkivarie' | 'Utantillkommitté' | 'Övrig';
+        active: boolean;
+    }>;
+    groups: Array<{
+        id: string;
+        name: string;
+        type: 'Choir' | 'Section' | 'Board' | 'GigGroup' | 'Gigmästeri' | 'Sexmästeri' | 'Roddgrupp' | 'Festgrupp' | 'Rephelg' | 'Konsertmästeri' | 'Rekryteringskommitté' | 'Turnékommitté' | 'Valberedning' | 'Webmästeri' | 'Föräldramötet' | 'Arkivarie' | 'Utantillkommitté' | 'Övrig';
+        active: boolean;
+    }>;
+    users: Array<{
+        id: string;
+        name: string;
+        /**
+         * Admins only.
+         */
+        email?: string;
+    }>;
+};
+
+export type EventEditor = {
+    id: string;
+    title: string;
+    status: 'Draft' | 'Published' | 'Cancelled';
+    values: EventFormValues;
+    options: EventFormOptions;
+    impact: {
+        responses: number;
+        registrations: number;
+        attendance: number;
+    };
+};
+
+export type EventFormValues = {
+    type: 'Rehearsal' | 'Gig' | 'Concert' | 'Social' | 'Rephelg' | 'Körmöte' | 'Booking' | 'Meeting' | 'Other';
+    title: string;
+    description: EventDescription;
+    allDay: boolean;
+    startsAt: string;
+    endsAt: string;
+    firstDay: string;
+    lastDay: string;
+    callTime: string;
+    respondBy: string;
+    participationMode: 'None' | 'ResponseRequired' | 'ResponseRequiredStrict' | 'Registration';
+    locationId: string;
+    locationText: string;
+    organiserGroupId: string;
+    leaderUserId: string;
+    responsibleUserId: string;
+    contactName: string;
+    contactDetails: string;
+    costInfo: string;
+    targets: Array<{
+        groupId: string;
+        voiceFamily: string;
+    }>;
+    details: Array<{
+        label: string;
+        value: string;
+    }>;
+};
+
+/**
+ * The editor's document (ProseMirror JSON) for an Event description.
+ */
+export type EventDescription = {
+    [key: string]: unknown;
+} | null;
+
+export type EventPage = {
+    id: string;
+    title: string;
+    type: 'Rehearsal' | 'Gig' | 'Concert' | 'Social' | 'Rephelg' | 'Körmöte' | 'Booking' | 'Meeting' | 'Other';
+    rehearsalKind: 'ChoirRehearsal' | 'ExtraRehearsal' | 'SectionalRehearsal' | 'Rehearsal' | null;
+    status: 'Published' | 'Cancelled';
+    startsAt: string;
+    endsAt: string;
+    allDay: boolean;
+    canManage: boolean;
+    description: EventDescription;
+    callTime: string | null;
+    locationText: string | null;
+    location: {
+        name: string;
+        address: string | null;
+        mapUrl: string | null;
+    } | null;
+    organiserGroup: string | null;
+    details: Array<{
+        label: string;
+        value: string;
+    }>;
+    leaderName: string | null;
+    responsibleName: string | null;
+    costInfo: string | null;
+    targets: Array<{
+        groupName: string | null;
+        voiceFamily: 'S' | 'A' | 'T' | 'B' | null;
+    }>;
+};
+
+export type EventCommandResult = {
+    id: string;
+};
+
+export type EventError = {
+    /**
+     * Stable Events failure code: a rule the Event or Location broke. Tolerate unknown codes.
+     */
+    code: 'EVENT_NOT_FOUND' | 'TITLE_REQUIRED' | 'DESCRIPTION_INVALID' | 'INVALID_DATE' | 'ENDS_BEFORE_START' | 'CALL_TIME_AFTER_START' | 'RESPOND_BY_AFTER_START' | 'RESPOND_BY_WITHOUT_PARTICIPATION' | 'PARTICIPATION_MODE_LOCKED' | 'STATUS_CHANGE_NOT_ALLOWED' | 'LOCATION_NOT_FOUND' | 'LOCATION_ARCHIVED' | 'LOCATION_NAME_REQUIRED' | 'LOCATION_NAME_TAKEN' | 'INVALID_MAP_URL' | 'ORGANISER_GROUP_NOT_FOUND' | 'ORGANISER_GROUP_ARCHIVED' | 'TARGET_GROUP_NOT_FOUND' | 'TARGET_GROUP_ARCHIVED' | 'TARGET_EMPTY' | 'TARGET_DUPLICATE' | 'DETAIL_INCOMPLETE' | 'USER_NOT_FOUND' | 'INVALID_INPUT';
+};
+
+export type EventInput = {
+    type?: string;
+    title: string;
+    /**
+     * The description document as a JSON string.
+     */
+    description?: string;
+    schedule: {
+        allDay: boolean;
+        startsAt?: string;
+        endsAt?: string;
+        firstDay?: string;
+        lastDay?: string;
+    };
+    callTime?: string;
+    respondBy?: string;
+    participationMode?: string;
+    locationId?: string;
+    locationText?: string;
+    organiserGroupId?: string;
+    rehearsal: {
+        leaderUserId?: string;
+    };
+    gig: {
+        responsibleUserId?: string;
+        contactName?: string;
+        contactDetails?: string;
+    };
+    social: {
+        costInfo?: string;
+    };
+    targets: Array<{
+        groupId?: string;
+        voiceFamily?: string;
+    }>;
+    details: Array<{
+        label: string;
+        value: string;
+    }>;
+};
+
+export type Locations = {
+    items: Array<Location>;
+};
+
+export type Location = {
+    id: string;
+    name: string;
+    address: string | null;
+    mapUrl: string | null;
+    active: boolean;
+    eventCount: number;
+};
+
+export type LocationInput = {
+    name: string;
+    address?: string;
+    mapUrl?: string;
+};
+
 export type MemberIdSession = {
     member: MemberIdMember;
     /**
@@ -1419,6 +1639,455 @@ export type LeaveGroupConversationResponses = {
 };
 
 export type LeaveGroupConversationResponse = LeaveGroupConversationResponses[keyof LeaveGroupConversationResponses];
+
+export type ListUpcomingEventsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/events/upcoming';
+};
+
+export type ListUpcomingEventsErrors = {
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+};
+
+export type ListUpcomingEventsError = ListUpcomingEventsErrors[keyof ListUpcomingEventsErrors];
+
+export type ListUpcomingEventsResponses = {
+    /**
+     * Upcoming Events.
+     */
+    200: UpcomingEvents;
+};
+
+export type ListUpcomingEventsResponse = ListUpcomingEventsResponses[keyof ListUpcomingEventsResponses];
+
+export type ListManagedEventsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        when?: 'upcoming' | 'past';
+        status?: 'Draft' | 'Published' | 'Cancelled';
+        type?: 'Rehearsal' | 'Gig' | 'Concert' | 'Social' | 'Rephelg' | 'Körmöte' | 'Booking' | 'Meeting' | 'Other';
+    };
+    url: '/api/v1/events/manage';
+};
+
+export type ListManagedEventsErrors = {
+    /**
+     * The request failed validation.
+     */
+    400: ValidationError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+};
+
+export type ListManagedEventsError = ListManagedEventsErrors[keyof ListManagedEventsErrors];
+
+export type ListManagedEventsResponses = {
+    /**
+     * Manageable Events.
+     */
+    200: ManagedEvents;
+};
+
+export type ListManagedEventsResponse = ListManagedEventsResponses[keyof ListManagedEventsResponses];
+
+export type CreateEventData = {
+    body: EventInput;
+    path?: never;
+    query?: never;
+    url: '/api/v1/events/manage';
+};
+
+export type CreateEventErrors = {
+    /**
+     * The input broke an Event or Location rule.
+     */
+    400: EventError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The current User may not perform this operation.
+     */
+    403: ApiError;
+    /**
+     * `EVENT_NOT_FOUND`: no such Event.
+     */
+    404: EventError;
+};
+
+export type CreateEventError = CreateEventErrors[keyof CreateEventErrors];
+
+export type CreateEventResponses = {
+    /**
+     * The Draft.
+     */
+    201: EventCommandResult;
+};
+
+export type CreateEventResponse = CreateEventResponses[keyof CreateEventResponses];
+
+export type GetEventFormOptionsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/events/manage/options';
+};
+
+export type GetEventFormOptionsErrors = {
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+};
+
+export type GetEventFormOptionsError = GetEventFormOptionsErrors[keyof GetEventFormOptionsErrors];
+
+export type GetEventFormOptionsResponses = {
+    /**
+     * Form options.
+     */
+    200: EventFormOptions;
+};
+
+export type GetEventFormOptionsResponse = GetEventFormOptionsResponses[keyof GetEventFormOptionsResponses];
+
+export type DeleteEventData = {
+    body?: never;
+    path: {
+        eventId: string;
+    };
+    query?: never;
+    url: '/api/v1/events/manage/{eventId}';
+};
+
+export type DeleteEventErrors = {
+    /**
+     * The input broke an Event or Location rule.
+     */
+    400: EventError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The current User may not perform this operation.
+     */
+    403: ApiError;
+    /**
+     * `EVENT_NOT_FOUND`: no such Event.
+     */
+    404: EventError;
+};
+
+export type DeleteEventError = DeleteEventErrors[keyof DeleteEventErrors];
+
+export type DeleteEventResponses = {
+    /**
+     * Deleted.
+     */
+    200: EventCommandResult;
+};
+
+export type DeleteEventResponse = DeleteEventResponses[keyof DeleteEventResponses];
+
+export type GetEventEditorData = {
+    body?: never;
+    path: {
+        eventId: string;
+    };
+    query?: never;
+    url: '/api/v1/events/manage/{eventId}';
+};
+
+export type GetEventEditorErrors = {
+    /**
+     * The request failed validation.
+     */
+    400: ValidationError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The resource does not exist or is not visible to the current User.
+     */
+    404: ApiError;
+};
+
+export type GetEventEditorError = GetEventEditorErrors[keyof GetEventEditorErrors];
+
+export type GetEventEditorResponses = {
+    /**
+     * The editor.
+     */
+    200: EventEditor;
+};
+
+export type GetEventEditorResponse = GetEventEditorResponses[keyof GetEventEditorResponses];
+
+export type UpdateEventData = {
+    body: EventInput;
+    path: {
+        eventId: string;
+    };
+    query?: never;
+    url: '/api/v1/events/manage/{eventId}';
+};
+
+export type UpdateEventErrors = {
+    /**
+     * The input broke an Event or Location rule.
+     */
+    400: EventError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The current User may not perform this operation.
+     */
+    403: ApiError;
+    /**
+     * `EVENT_NOT_FOUND`: no such Event.
+     */
+    404: EventError;
+};
+
+export type UpdateEventError = UpdateEventErrors[keyof UpdateEventErrors];
+
+export type UpdateEventResponses = {
+    /**
+     * Saved.
+     */
+    200: EventCommandResult;
+};
+
+export type UpdateEventResponse = UpdateEventResponses[keyof UpdateEventResponses];
+
+export type GetEventPageData = {
+    body?: never;
+    path: {
+        eventId: string;
+    };
+    query?: never;
+    url: '/api/v1/events/{eventId}';
+};
+
+export type GetEventPageErrors = {
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The resource does not exist or is not visible to the current User.
+     */
+    404: ApiError;
+};
+
+export type GetEventPageError = GetEventPageErrors[keyof GetEventPageErrors];
+
+export type GetEventPageResponses = {
+    /**
+     * The Event.
+     */
+    200: EventPage;
+};
+
+export type GetEventPageResponse = GetEventPageResponses[keyof GetEventPageResponses];
+
+export type ChangeEventStatusData = {
+    body: {
+        status: 'Draft' | 'Published' | 'Cancelled';
+    };
+    path: {
+        eventId: string;
+    };
+    query?: never;
+    url: '/api/v1/events/manage/{eventId}/status';
+};
+
+export type ChangeEventStatusErrors = {
+    /**
+     * The input broke an Event or Location rule.
+     */
+    400: EventError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The current User may not perform this operation.
+     */
+    403: ApiError;
+    /**
+     * `EVENT_NOT_FOUND`: no such Event.
+     */
+    404: EventError;
+};
+
+export type ChangeEventStatusError = ChangeEventStatusErrors[keyof ChangeEventStatusErrors];
+
+export type ChangeEventStatusResponses = {
+    /**
+     * Changed.
+     */
+    200: EventCommandResult;
+};
+
+export type ChangeEventStatusResponse = ChangeEventStatusResponses[keyof ChangeEventStatusResponses];
+
+export type ListLocationsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/locations';
+};
+
+export type ListLocationsErrors = {
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The current User may not perform this operation.
+     */
+    403: ApiError;
+};
+
+export type ListLocationsError = ListLocationsErrors[keyof ListLocationsErrors];
+
+export type ListLocationsResponses = {
+    /**
+     * Locations.
+     */
+    200: Locations;
+};
+
+export type ListLocationsResponse = ListLocationsResponses[keyof ListLocationsResponses];
+
+export type CreateLocationData = {
+    body: LocationInput;
+    path?: never;
+    query?: never;
+    url: '/api/v1/locations';
+};
+
+export type CreateLocationErrors = {
+    /**
+     * The input broke an Event or Location rule.
+     */
+    400: EventError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The current User may not perform this operation.
+     */
+    403: ApiError;
+    /**
+     * `EVENT_NOT_FOUND`: no such Event.
+     */
+    404: EventError;
+};
+
+export type CreateLocationError = CreateLocationErrors[keyof CreateLocationErrors];
+
+export type CreateLocationResponses = {
+    /**
+     * The Location.
+     */
+    201: EventCommandResult;
+};
+
+export type CreateLocationResponse = CreateLocationResponses[keyof CreateLocationResponses];
+
+export type UpdateLocationData = {
+    body: LocationInput;
+    path: {
+        locationId: string;
+    };
+    query?: never;
+    url: '/api/v1/locations/{locationId}';
+};
+
+export type UpdateLocationErrors = {
+    /**
+     * The input broke an Event or Location rule.
+     */
+    400: EventError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The current User may not perform this operation.
+     */
+    403: ApiError;
+    /**
+     * `EVENT_NOT_FOUND`: no such Event.
+     */
+    404: EventError;
+};
+
+export type UpdateLocationError = UpdateLocationErrors[keyof UpdateLocationErrors];
+
+export type UpdateLocationResponses = {
+    /**
+     * Saved.
+     */
+    200: EventCommandResult;
+};
+
+export type UpdateLocationResponse = UpdateLocationResponses[keyof UpdateLocationResponses];
+
+export type ArchiveLocationData = {
+    body?: never;
+    path: {
+        locationId: string;
+    };
+    query?: never;
+    url: '/api/v1/locations/{locationId}/archive';
+};
+
+export type ArchiveLocationErrors = {
+    /**
+     * The input broke an Event or Location rule.
+     */
+    400: EventError;
+    /**
+     * No active signed-in User.
+     */
+    401: ApiError;
+    /**
+     * The current User may not perform this operation.
+     */
+    403: ApiError;
+    /**
+     * `EVENT_NOT_FOUND`: no such Event.
+     */
+    404: EventError;
+};
+
+export type ArchiveLocationError = ArchiveLocationErrors[keyof ArchiveLocationErrors];
+
+export type ArchiveLocationResponses = {
+    /**
+     * Archived.
+     */
+    200: EventCommandResult;
+};
+
+export type ArchiveLocationResponse = ArchiveLocationResponses[keyof ArchiveLocationResponses];
 
 export type GetMemberIdSessionData = {
     body?: never;

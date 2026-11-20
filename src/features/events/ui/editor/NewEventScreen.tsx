@@ -4,15 +4,15 @@ import { PageBreadcrumb } from "@/core/navigation/PageBreadcrumb"
 import { ROUTES } from "@/core/navigation/site"
 import { Skeleton } from "@/shared/ui/base/skeleton"
 import { DEFAULT_PARTICIPATION_MODE, EVENT_TYPES, type EventType } from "../../model"
-import { createEventAction } from "./actions"
+import { readEventFormOptions } from "../screen-reads"
 import { EventForm } from "./EventForm"
-import { EMPTY_EVENT_FORM, getEventFormOptions } from "./query"
+import { EMPTY_EVENT_FORM } from "./query"
 
 const FIRST_TYPE = EVENT_TYPES[0] as EventType
 
 /** The form for a new Event, which is saved as a Draft. */
 export async function NewEventScreen() {
-  const [options, t] = await Promise.all([getEventFormOptions(), getTranslations("Events")])
+  const [options, t] = await Promise.all([readEventFormOptions(), getTranslations("Events")])
 
   if (!options.canCreate) notFound()
 
@@ -24,7 +24,7 @@ export async function NewEventScreen() {
         <p className="text-sm text-muted-foreground">{t("newPage.description")}</p>
       </div>
       <EventForm
-        action={createEventAction}
+        command={{ kind: "createEvent" }}
         initial={{ ...EMPTY_EVENT_FORM, type: FIRST_TYPE, participationMode: DEFAULT_PARTICIPATION_MODE[FIRST_TYPE] }}
         options={options}
         unsavedSlot="new"

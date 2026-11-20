@@ -6,12 +6,13 @@ import { Button } from "@/shared/ui/base/button"
 import { Card } from "@/shared/ui/base/card"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/shared/ui/base/collapsible"
 import { Skeleton } from "@/shared/ui/base/skeleton"
+import { readLocations } from "../screen-reads"
 import { ArchiveLocationDialog, CreateLocationDialog, EditLocationDialog } from "./LocationDialogs"
-import { type LocationRow, listLocations } from "./query"
+import type { LocationRow } from "./query"
 
 /** The reusable venues Events are held at. Archived ones stay on their Events but are not offered for new ones. */
 export async function LocationsScreen() {
-  const [locations, t] = await Promise.all([listLocations(), getTranslations("Events.locations")])
+  const [locations, t] = await Promise.all([readLocations(), getTranslations("Events.locations")])
   const active = locations.filter((location) => location.active)
   const archived = locations.filter((location) => !location.active)
 

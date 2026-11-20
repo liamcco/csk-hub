@@ -7,12 +7,21 @@ import { event } from "@/core/db/schema/events"
 import { getGroupAuthorizationFacts, lockGroupAuthorizationFacts } from "@/features/org-structure"
 
 type EventAccess = Awaited<ReturnType<typeof forCurrentRequest>>
+
+/**
+ * Resolves the acting User for one operation on the given connection. The HTTP API passes the
+ * request's own resolution; the default reads the Next.js request session.
+ */
+export type EventAccessResolver = (connection: Database) => Promise<EventAccess>
 type GroupFacts = Awaited<ReturnType<typeof getGroupAuthorizationFacts>>
 type EventAction = "event.read" | "event.update" | "event.changeStatus" | "event.delete"
 
 /** Resolve fresh identity and trusted organisational facts for one protected read operation. */
-export async function getEventManagementScope(database: Parameters<typeof lockGroupAuthorizationFacts>[0]) {
-  const access = await forCurrentRequest(database)
+export async function getEventManagementScope(
+  database: Parameters<typeof lockGroupAuthorizationFacts>[0],
+  resolve: EventAccessResolver = forCurrentRequest
+) {
+  const access = await resolve(database)
   const actor = access.requirePermission({ action: "app.access" })
   const initial = await getGroupAuthorizationFacts(database, actor.userId)
   const ids = managedEventGroupIds(access, initial)
@@ -42,10 +51,11 @@ export async function withEventPermission<T>(
   eventId: string | null,
   proposed: { organiserGroupId: string | null } | undefined,
   work: (database: Database, actorId: string) => Promise<T>,
-  database: Database = db
+  database: Database = db,
+  resolve: EventAccessResolver = forCurrentRequest
 ): Promise<T> {
   return database.transaction(async (tx) => {
-    const access = await forCurrentRequest(tx)
+    const access = await resolve(tx)
     const actor = access.requirePermission({ action: "app.access" })
     const [observed] = eventId
       ? await tx.select({ organiserGroupId: event.organiserGroupId }).from(event).where(eq(event.id, eventId))
@@ -97,9 +107,12 @@ export function managedEventGroupIds(access: EventAccess, facts: GroupFacts) {
 }
 
 /** Presentation hints only; command and read entrypoints establish authority independently. */
-export async function getEventManagementCapabilities() {
-  return db.transaction(async (tx) => {
-    const { access, facts } = await getEventManagementScope(tx)
+export async function getEventManagementCapabilities(
+  database: Database = db,
+  resolve: EventAccessResolver = forCurrentRequest
+) {
+  return database.transaction(async (tx) => {
+    const { access, facts } = await getEventManagementScope(tx, resolve)
     return {
       canCreate: access.actor?.isAdmin === true || managedEventGroupIds(access, facts).length > 0,
       canAdminister: access.can({ action: "event.administer" })

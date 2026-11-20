@@ -32,9 +32,9 @@ behind `scheduleActivityDispatch()` (see "Delivery boundary").
 | 1 | Member directory, profile, profile edit | `listMembers`, `getMemberProfile`, `getOwnProfile`, `getProfileEditor`, `updateProfileVoices` | `members.test.ts` | `/members`, `/members/[id]`, `/me`, `/me/edit` | `members.e2e.ts` | done |
 | 2 | App shell: navigation capabilities, admin page gates | `getCurrentCapabilities` | `capabilities.test.ts` | primary navigation, quick-access bar, every `/admin` page gate | `shell.e2e.ts` | done |
 | 3 | News feed, Posts, Drafts, recall, unread | `listNewsFeed`, `listLatestPosts`, `listOwnDrafts`, `getPostUnread`, `getPost`, `getEditablePost`, `createPost`, `saveDraft`, `editPublishedPost`, `recallPost`, `discardDraft`, `markPostRead` | `posts.test.ts` | `/news`, `/news/new`, `/news/[id]`, `/news/[id]/edit`, News badge and expiry | `posts.e2e.ts` | done |
-| 4 | Home (greeting, latest News; upcoming Events with slice 6) | `getCurrentCapabilities`, `listLatestPosts` | via slices 2–3 | `/` greeting and News card | — | partial |
+| 4 | Home (greeting, latest News, upcoming Events) | `getCurrentCapabilities`, `listLatestPosts`, `listUpcomingEvents` | via slices 2, 3 and 6 | `/` greeting, News card, next Event and Coming up cards | `events.e2e.ts` (published Event on Home) | done |
 | 5 | Direct and Group Conversations, Messages, unread | `listConversations`, `getConversationUnread`, `searchMessageRecipients`, `getConversation`, `startConversation`, `sendMessage`, `markConversationRead`, `addGroupMembers`, `renameGroupConversation`, `leaveGroupConversation` | `messaging.test.ts` | `/messages`, `/messages/[id]`, start dialog, composer, Group controls, Messages badge | `messaging.e2e.ts` | done |
-| 6 | Events and Locations | | | | | todo |
+| 6 | Events and Locations | `listUpcomingEvents`, `getEventPage`, `listManagedEvents`, `getEventFormOptions`, `getEventEditor`, `createEvent`, `updateEvent`, `changeEventStatus`, `deleteEvent`, `listLocations`, `createLocation`, `updateLocation`, `archiveLocation` | `events.test.ts` | `/events`, `/events/[id]`, `/events/manage` (and `/admin/events`), new and edit forms, lifecycle dialogs, Locations | `events.e2e.ts` | done |
 | 7 | Account settings: locale, push subscriptions | | | | | todo |
 | 8 | User administration | | | | | todo |
 | 9 | Groups, Memberships, Positions | | | | | todo |

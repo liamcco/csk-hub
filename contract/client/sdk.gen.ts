@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { AddGroupMembersData, AddGroupMembersErrors, AddGroupMembersResponses, CreatePostData, CreatePostErrors, CreatePostResponses, DiscardDraftData, DiscardDraftErrors, DiscardDraftResponses, EditPublishedPostData, EditPublishedPostErrors, EditPublishedPostResponses, GetConversationData, GetConversationErrors, GetConversationResponses, GetConversationUnreadData, GetConversationUnreadErrors, GetConversationUnreadResponses, GetCurrentActorData, GetCurrentActorErrors, GetCurrentActorResponses, GetCurrentCapabilitiesData, GetCurrentCapabilitiesErrors, GetCurrentCapabilitiesResponses, GetEditablePostData, GetEditablePostErrors, GetEditablePostResponses, GetMemberIdSessionData, GetMemberIdSessionErrors, GetMemberIdSessionResponses, GetMemberProfileData, GetMemberProfileErrors, GetMemberProfileResponses, GetOwnProfileData, GetOwnProfileErrors, GetOwnProfileResponses, GetPostData, GetPostErrors, GetPostResponses, GetPostUnreadData, GetPostUnreadErrors, GetPostUnreadResponses, GetProfileEditorData, GetProfileEditorErrors, GetProfileEditorResponses, IssueMemberIdData, IssueMemberIdErrors, IssueMemberIdResponses, LeaveGroupConversationData, LeaveGroupConversationErrors, LeaveGroupConversationResponses, ListConversationsData, ListConversationsErrors, ListConversationsResponses, ListLatestPostsData, ListLatestPostsErrors, ListLatestPostsResponses, ListMembersData, ListMembersErrors, ListMembersResponses, ListNewsFeedData, ListNewsFeedErrors, ListNewsFeedResponses, ListOwnDraftsData, ListOwnDraftsErrors, ListOwnDraftsResponses, MarkConversationReadData, MarkConversationReadErrors, MarkConversationReadResponses, MarkPostReadData, MarkPostReadErrors, MarkPostReadResponses, RecallPostData, RecallPostErrors, RecallPostResponses, RenameGroupConversationData, RenameGroupConversationErrors, RenameGroupConversationResponses, SaveDraftData, SaveDraftErrors, SaveDraftResponses, SearchMessageRecipientsData, SearchMessageRecipientsErrors, SearchMessageRecipientsResponses, SendMessageData, SendMessageErrors, SendMessageResponses, StartConversationData, StartConversationErrors, StartConversationResponses, UpdateProfileVoicesData, UpdateProfileVoicesErrors, UpdateProfileVoicesResponses, VerifyMemberIdData, VerifyMemberIdErrors, VerifyMemberIdResponses } from './types.gen';
+import type { AddGroupMembersData, AddGroupMembersErrors, AddGroupMembersResponses, ArchiveLocationData, ArchiveLocationErrors, ArchiveLocationResponses, ChangeEventStatusData, ChangeEventStatusErrors, ChangeEventStatusResponses, CreateEventData, CreateEventErrors, CreateEventResponses, CreateLocationData, CreateLocationErrors, CreateLocationResponses, CreatePostData, CreatePostErrors, CreatePostResponses, DeleteEventData, DeleteEventErrors, DeleteEventResponses, DiscardDraftData, DiscardDraftErrors, DiscardDraftResponses, EditPublishedPostData, EditPublishedPostErrors, EditPublishedPostResponses, GetConversationData, GetConversationErrors, GetConversationResponses, GetConversationUnreadData, GetConversationUnreadErrors, GetConversationUnreadResponses, GetCurrentActorData, GetCurrentActorErrors, GetCurrentActorResponses, GetCurrentCapabilitiesData, GetCurrentCapabilitiesErrors, GetCurrentCapabilitiesResponses, GetEditablePostData, GetEditablePostErrors, GetEditablePostResponses, GetEventEditorData, GetEventEditorErrors, GetEventEditorResponses, GetEventFormOptionsData, GetEventFormOptionsErrors, GetEventFormOptionsResponses, GetEventPageData, GetEventPageErrors, GetEventPageResponses, GetMemberIdSessionData, GetMemberIdSessionErrors, GetMemberIdSessionResponses, GetMemberProfileData, GetMemberProfileErrors, GetMemberProfileResponses, GetOwnProfileData, GetOwnProfileErrors, GetOwnProfileResponses, GetPostData, GetPostErrors, GetPostResponses, GetPostUnreadData, GetPostUnreadErrors, GetPostUnreadResponses, GetProfileEditorData, GetProfileEditorErrors, GetProfileEditorResponses, IssueMemberIdData, IssueMemberIdErrors, IssueMemberIdResponses, LeaveGroupConversationData, LeaveGroupConversationErrors, LeaveGroupConversationResponses, ListConversationsData, ListConversationsErrors, ListConversationsResponses, ListLatestPostsData, ListLatestPostsErrors, ListLatestPostsResponses, ListLocationsData, ListLocationsErrors, ListLocationsResponses, ListManagedEventsData, ListManagedEventsErrors, ListManagedEventsResponses, ListMembersData, ListMembersErrors, ListMembersResponses, ListNewsFeedData, ListNewsFeedErrors, ListNewsFeedResponses, ListOwnDraftsData, ListOwnDraftsErrors, ListOwnDraftsResponses, ListUpcomingEventsData, ListUpcomingEventsErrors, ListUpcomingEventsResponses, MarkConversationReadData, MarkConversationReadErrors, MarkConversationReadResponses, MarkPostReadData, MarkPostReadErrors, MarkPostReadResponses, RecallPostData, RecallPostErrors, RecallPostResponses, RenameGroupConversationData, RenameGroupConversationErrors, RenameGroupConversationResponses, SaveDraftData, SaveDraftErrors, SaveDraftResponses, SearchMessageRecipientsData, SearchMessageRecipientsErrors, SearchMessageRecipientsResponses, SendMessageData, SendMessageErrors, SendMessageResponses, StartConversationData, StartConversationErrors, StartConversationResponses, UpdateEventData, UpdateEventErrors, UpdateEventResponses, UpdateLocationData, UpdateLocationErrors, UpdateLocationResponses, UpdateProfileVoicesData, UpdateProfileVoicesErrors, UpdateProfileVoicesResponses, VerifyMemberIdData, VerifyMemberIdErrors, VerifyMemberIdResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -237,6 +237,108 @@ export const renameGroupConversation = <ThrowOnError extends boolean = false>(op
  * Leaves a Group Conversation. History up to departure stays visible, read-only.
  */
 export const leaveGroupConversation = <ThrowOnError extends boolean = false>(options: Options<LeaveGroupConversationData, ThrowOnError>): RequestResult<LeaveGroupConversationResponses, LeaveGroupConversationErrors, ThrowOnError> => (options.client ?? client).post<LeaveGroupConversationResponses, LeaveGroupConversationErrors, ThrowOnError>({ url: '/api/v1/conversations/{conversationId}/leave', ...options });
+
+/**
+ * Published and Cancelled Events in the caller's Audience that have not ended, soonest first.
+ */
+export const listUpcomingEvents = <ThrowOnError extends boolean = false>(options?: Options<ListUpcomingEventsData, ThrowOnError>): RequestResult<ListUpcomingEventsResponses, ListUpcomingEventsErrors, ThrowOnError> => (options?.client ?? client).get<ListUpcomingEventsResponses, ListUpcomingEventsErrors, ThrowOnError>({ url: '/api/v1/events/upcoming', ...options });
+
+/**
+ * Events the caller may manage, in any status, with their capabilities.
+ */
+export const listManagedEvents = <ThrowOnError extends boolean = false>(options?: Options<ListManagedEventsData, ThrowOnError>): RequestResult<ListManagedEventsResponses, ListManagedEventsErrors, ThrowOnError> => (options?.client ?? client).get<ListManagedEventsResponses, ListManagedEventsErrors, ThrowOnError>({ url: '/api/v1/events/manage', ...options });
+
+/**
+ * Creates a Draft Event organised by a Group the caller may organise for.
+ */
+export const createEvent = <ThrowOnError extends boolean = false>(options: Options<CreateEventData, ThrowOnError>): RequestResult<CreateEventResponses, CreateEventErrors, ThrowOnError> => (options.client ?? client).post<CreateEventResponses, CreateEventErrors, ThrowOnError>({
+    url: '/api/v1/events/manage',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * What a new Event's form offers the caller.
+ */
+export const getEventFormOptions = <ThrowOnError extends boolean = false>(options?: Options<GetEventFormOptionsData, ThrowOnError>): RequestResult<GetEventFormOptionsResponses, GetEventFormOptionsErrors, ThrowOnError> => (options?.client ?? client).get<GetEventFormOptionsResponses, GetEventFormOptionsErrors, ThrowOnError>({ url: '/api/v1/events/manage/options', ...options });
+
+/**
+ * Deletes an Event with everything recorded for it.
+ */
+export const deleteEvent = <ThrowOnError extends boolean = false>(options: Options<DeleteEventData, ThrowOnError>): RequestResult<DeleteEventResponses, DeleteEventErrors, ThrowOnError> => (options.client ?? client).delete<DeleteEventResponses, DeleteEventErrors, ThrowOnError>({ url: '/api/v1/events/manage/{eventId}', ...options });
+
+/**
+ * One Event as its management page edits it.
+ */
+export const getEventEditor = <ThrowOnError extends boolean = false>(options: Options<GetEventEditorData, ThrowOnError>): RequestResult<GetEventEditorResponses, GetEventEditorErrors, ThrowOnError> => (options.client ?? client).get<GetEventEditorResponses, GetEventEditorErrors, ThrowOnError>({ url: '/api/v1/events/manage/{eventId}', ...options });
+
+/**
+ * Saves the whole Event form onto the Event.
+ */
+export const updateEvent = <ThrowOnError extends boolean = false>(options: Options<UpdateEventData, ThrowOnError>): RequestResult<UpdateEventResponses, UpdateEventErrors, ThrowOnError> => (options.client ?? client).put<UpdateEventResponses, UpdateEventErrors, ThrowOnError>({
+    url: '/api/v1/events/manage/{eventId}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * One Event as its Audience reads it.
+ *
+ * Drafts, Events outside the caller's Audience and missing Events are all 404.
+ */
+export const getEventPage = <ThrowOnError extends boolean = false>(options: Options<GetEventPageData, ThrowOnError>): RequestResult<GetEventPageResponses, GetEventPageErrors, ThrowOnError> => (options.client ?? client).get<GetEventPageResponses, GetEventPageErrors, ThrowOnError>({ url: '/api/v1/events/{eventId}', ...options });
+
+/**
+ * Publishes, cancels or reinstates an Event.
+ */
+export const changeEventStatus = <ThrowOnError extends boolean = false>(options: Options<ChangeEventStatusData, ThrowOnError>): RequestResult<ChangeEventStatusResponses, ChangeEventStatusErrors, ThrowOnError> => (options.client ?? client).post<ChangeEventStatusResponses, ChangeEventStatusErrors, ThrowOnError>({
+    url: '/api/v1/events/manage/{eventId}/status',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Every Location, active ones first, with how many Events use each. Admins only.
+ */
+export const listLocations = <ThrowOnError extends boolean = false>(options?: Options<ListLocationsData, ThrowOnError>): RequestResult<ListLocationsResponses, ListLocationsErrors, ThrowOnError> => (options?.client ?? client).get<ListLocationsResponses, ListLocationsErrors, ThrowOnError>({ url: '/api/v1/locations', ...options });
+
+/**
+ * Adds a Location. Admins only.
+ */
+export const createLocation = <ThrowOnError extends boolean = false>(options: Options<CreateLocationData, ThrowOnError>): RequestResult<CreateLocationResponses, CreateLocationErrors, ThrowOnError> => (options.client ?? client).post<CreateLocationResponses, CreateLocationErrors, ThrowOnError>({
+    url: '/api/v1/locations',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Changes a Location. Admins only.
+ */
+export const updateLocation = <ThrowOnError extends boolean = false>(options: Options<UpdateLocationData, ThrowOnError>): RequestResult<UpdateLocationResponses, UpdateLocationErrors, ThrowOnError> => (options.client ?? client).put<UpdateLocationResponses, UpdateLocationErrors, ThrowOnError>({
+    url: '/api/v1/locations/{locationId}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Archives a Location; Events that use it keep it. Admins only.
+ */
+export const archiveLocation = <ThrowOnError extends boolean = false>(options: Options<ArchiveLocationData, ThrowOnError>): RequestResult<ArchiveLocationResponses, ArchiveLocationErrors, ThrowOnError> => (options.client ?? client).post<ArchiveLocationResponses, ArchiveLocationErrors, ThrowOnError>({ url: '/api/v1/locations/{locationId}/archive', ...options });
 
 /**
  * The signed-in User's own Member ID profile and whether they may verify others.
