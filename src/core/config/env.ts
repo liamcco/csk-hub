@@ -1,6 +1,6 @@
 import { z } from "zod"
 
-const environment = process.env.ENVIRONMENT ?? process.env.VERCEL_ENV
+const environment = process.env.ENVIRONMENT || process.env.VERCEL_ENV
 
 const envSchema = z
   .object({
@@ -58,7 +58,9 @@ const envSchema = z
     }
   })
 
-const parsed = envSchema.safeParse({ ...process.env, ENVIRONMENT: environment })
+// An empty variable counts as unset: Compose passes `${SMTP_USER:-}` as "" when it is not configured.
+const configured = Object.fromEntries(Object.entries(process.env).filter(([, value]) => value !== ""))
+const parsed = envSchema.safeParse({ ...configured, ENVIRONMENT: environment })
 if (!parsed.success) {
   console.error("❌ Invalid environment variables:", JSON.stringify(z.treeifyError(parsed.error), null, 2))
   process.exit(1)

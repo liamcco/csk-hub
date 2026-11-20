@@ -1,3 +1,9 @@
+# Local development services: PostgreSQL on localhost:5433 and Redis on localhost:6379.
+#   docker compose -f deploy/compose.dev.yml up -d
+# The project name keeps the volumes the old root docker-compose.yml created, so moving the file
+# here does not lose local data.
+name: csk-hub
+
 services:
   redis:
     image: redis:7-alpine

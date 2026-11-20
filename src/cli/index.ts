@@ -1,7 +1,12 @@
 #!/usr/bin/env bun
 import { createInterface } from "node:readline/promises"
 import { parseArgs } from "node:util"
-import type { AdminOutcome } from "./admin"
+import { getBaseURL } from "@/core/auth/base-url"
+import { type Auth, createAuth } from "@/core/auth/create-auth"
+import { createDb, type Db } from "@/core/db/client"
+import { migrateDatabase } from "@/core/db/migrate"
+import { bootstrapOrgStructure } from "@/features/org-structure/defaults"
+import { type AdminOutcome, bootstrapAdmin, recoverAdmin } from "./admin"
 
 /**
  * Maintenance commands shipped in the release image. They run inside the deployed environment,
@@ -44,14 +49,12 @@ async function main(argv: string[]): Promise<number> {
     case "admin bootstrap": {
       const email = required(values.email, "--email")
       const name = required(values.name, "--name")
-      const { bootstrapAdmin } = await import("./admin")
       return withRuntime(async (runtime) =>
         report(await bootstrapAdmin({ ...runtime, email, name, confirm: (question) => confirm(question, values.yes) }))
       )
     }
     case "admin recover": {
       const email = required(values.email, "--email")
-      const { recoverAdmin } = await import("./admin")
       return withRuntime(async (runtime) => report(await recoverAdmin({ ...runtime, email })))
     }
     default:
@@ -66,9 +69,6 @@ async function main(argv: string[]): Promise<number> {
 async function migrate(): Promise<number> {
   const url = process.env.POSTGRES_URL
   if (!url) throw new UsageError("POSTGRES_URL is not set.")
-  const { createDb } = await import("@/core/db/client")
-  const { migrateDatabase } = await import("@/core/db/migrate")
-
   const database = createDb(url)
   try {
     await migrateDatabase(database, { migrationsFolder: process.env.MIGRATIONS_FOLDER ?? "drizzle" })
@@ -76,7 +76,9 @@ async function migrate(): Promise<number> {
     return 0
   } catch (error) {
     console.error("✖ Migration failed; the app must not start on this database.")
-    console.error(error instanceof Error ? (error.cause ?? error) : error)
+    // Drizzle wraps the database error; its message names the failing statement's problem.
+    const cause = error instanceof Error && error.cause instanceof Error ? error.cause : error
+    console.error(cause instanceof Error ? `  ${cause.message}` : cause)
     return 1
   } finally {
     await database.$client.end().catch(() => {})
@@ -84,7 +86,6 @@ async function migrate(): Promise<number> {
 }
 
 async function orgBootstrap(): Promise<number> {
-  const { bootstrapOrgStructure } = await import("@/features/org-structure/defaults")
   return withRuntime(async ({ database }) => {
     const { created } = await bootstrapOrgStructure(database)
     console.log(
@@ -96,17 +97,14 @@ async function orgBootstrap(): Promise<number> {
   })
 }
 
-type Runtime = {
-  auth: import("@/core/auth/create-auth").Auth
-  database: import("@/core/db/client").Db
-}
+type Runtime = { auth: Auth; database: Db }
 
-/** The deployed environment's database and Better Auth, from its own configuration. */
+/**
+ * The deployed environment's database and Better Auth, from its own configuration. Loading the
+ * configuration validates it and exits on anything invalid, so only these commands load it.
+ */
 async function withRuntime(work: (runtime: Runtime) => Promise<number>): Promise<number> {
   const { env, isProduction } = await import("@/core/config/env")
-  const { createDb } = await import("@/core/db/client")
-  const { createAuth } = await import("@/core/auth/create-auth")
-  const { getBaseURL } = await import("@/core/auth/base-url")
 
   const database = createDb(env.POSTGRES_URL)
   try {

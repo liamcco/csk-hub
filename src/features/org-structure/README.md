@@ -16,9 +16,8 @@ fields, so Group policy adoption needs focused attribute projections. Authz's de
 current Memberships and Position holdings must match this module. Administration UI may project
 minimal Group attributes for policy checks before invoking this module's commands. See
 [`docs/authorization.md`](../../../docs/authorization.md) for the adoption contract.
-This is a convention, not a test. The ops scripts are another deliberate exception: `bun run ops
-reference-data` and `bun run ops seed-groups` write the tables directly, so that scripts never
-depend on a feature, and they keep these rules by hand.
+This is a convention, not a test. The local demo seeds are the deliberate exception: `bun run db
+seed-groups` writes the tables directly and keeps these rules by hand.
 
 The rules below are not database constraints, so going around this module breaks them
 silently:
@@ -80,10 +79,6 @@ races, never surface as thrown errors.
   `listMembershipsOfUser`: a user's dated Memberships from a date on, from which the events
   module computes an Event's Audience.
 
-The structure every environment shares (MK, DK and KK with their Sections and Voices, Styret and
-the Position catalogue) comes from `bun run ops reference-data`, which can also run against
-production. `bun run ops seed-groups` adds local example data on top. Both live in `scripts/`.
-
 "Current" means no end date. Dates are calendar dates, `YYYY-MM-DD`; a period may end on the
 day the next one starts.
 
@@ -94,6 +89,20 @@ Assignments and catalogue changes use the same catalogue lock, so an allowance c
 between validation and insertion. Membership-ending commands take the User lock before ending that
 User's holder rows, and do not acquire catalogue or Position-in-Group locks; they therefore cannot
 form a reverse wait cycle with a handover.
+
+## Default structure
+
+`@/features/org-structure/defaults` owns the structure a new environment starts with: MK, DK and
+KK with their Sections and Voices, Styret, the Gigmästeri and the Position catalogue
+(`DEFAULT_ORG_STRUCTURE`). `bootstrapOrgStructure` creates it through this module's commands in
+one transaction, and only while the environment has no group and no Position at all. After that
+the structure belongs to the Admins: a later run never recreates a default they archived,
+renamed or deleted, so none of these names is system data. Only the group types, a schema enum,
+are.
+
+A deployed environment runs it once with `bun cli.js org bootstrap` (see
+[`deploy/README.md`](../../../deploy/README.md)). Locally, `bun run db reset` and
+`bun run db seed-demo` run it, and `bun run db seed-groups` adds example data on top.
 
 ## Admin pages
 

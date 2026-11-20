@@ -1,23 +1,30 @@
 # Database
 
-The application's database client (`index.ts`), Drizzle schemas (`schema/`) and the TLS
-policy for reaching a managed database (`tls.ts`).
+The application's database client (`index.ts`), the client factory (`client.ts`), the migration
+runner (`migrate.ts`), Drizzle schemas (`schema/`) and the TLS policy (`tls.ts`).
 
 ## The application contract
 
-The application consumes one variable: `POSTGRES_URL`. Locally it comes from `.env` and
-points at the Docker container; on Vercel it is the connection string the platform
-injects. Application code never chooses between local and production and never reads
-`POSTGRES_URL_PROD` — that choice belongs to the ops CLI in `scripts/ops`.
+The application consumes one variable: `POSTGRES_URL`. Locally it comes from `.env` and points
+at the dev Compose container; in the deployed stack it comes from `deploy/compose.yml`.
+Application code never chooses between environments.
+
+`index.ts` reads `POSTGRES_URL` at import and is the application's client. Everything that must
+choose its own database — the dev CLI, the test harness and the release image's commands —
+calls `createDb(url)` from `client.ts` instead, so nothing needs a subprocess or a modified
+environment to reach another database. `migrateDatabase` in `migrate.ts` is the one migration
+runner (drizzle-orm's migrator); see [`drizzle/README.md`](../../../drizzle/README.md).
 
 ## Verified TLS
 
-`tls.ts` answers one question: how is a connection string dialled securely? Every
-non-local connection — the deployed app, `drizzle.config.ts` and the ops CLI alike — is
-verified against the Supabase root CA with `rejectUnauthorized: true`. There is
-deliberately no switch to skip verification.
+`tls.ts` answers one question: how is a connection string dialled securely? A local database
+(`localhost`, `127.0.0.1`, `[::1]`) is dialled in plain text. Every other connection is verified
+against the Supabase root CA with `rejectUnauthorized: true`, unless its own URL says
+`sslmode=disable`. The deployed stack uses that for its database on the private Compose network
+(`db:5432`), where there is no certificate to verify; the choice is visible wherever the URL is
+configured, and there is no other switch.
 
-Any `sslmode` in the connection string is removed before connecting, because `pg` lets
+Any other `sslmode` in the connection string is removed before connecting, because `pg` lets
 it override explicit `ssl` options, which would silently discard the CA.
 
 ### The committed CA
@@ -39,6 +46,5 @@ drizzle-kit's bundled config, with no file-tracing configuration.
 ## Direct versus pooled connections
 
 Supabase exposes a transaction pooler on port 6543 and a direct connection on port 5432.
-The deployed app can use the pooled string Vercel injects. Migrations cannot run through
-the transaction pooler, so the production URL the ops CLI uses (`POSTGRES_URL_PROD`) must
-be the direct connection.
+Migrations cannot run through the transaction pooler, so any database that is migrated must be
+reached through a direct connection.

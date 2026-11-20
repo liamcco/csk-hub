@@ -8,8 +8,8 @@ import { createChoir, createGroup, createPosition } from "./structure"
 
 /**
  * The structure the tests name: the scheme's Choirs and Sections, the Board and the Position
- * catalogue. Production gets the same from `bun run ops reference-data`, which this feature cannot
- * import; this copy is built through the module's own commands instead.
+ * catalogue. It is deliberately independent of `DEFAULT_ORG_STRUCTURE` (`defaults/`), which Admins'
+ * data may diverge from, and is built through the module's own commands.
  */
 const STRUCTURE: {
   choirs: { name: string; sections: { name: string; voice: Voice }[] }[]
