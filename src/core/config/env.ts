@@ -65,6 +65,6 @@ if (!parsed.success) {
 }
 
 const env = parsed.data
-const isProduction = env.VERCEL_ENV === "production"
+const isProduction = env.ENVIRONMENT === "production"
 
 export { env, isProduction }
