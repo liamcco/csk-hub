@@ -71,6 +71,7 @@ if [[ "${SKIP_CHECKS:-}" != 1 ]]; then
   (
     cd "$checkout"
     bun install --frozen-lockfile
+    bun install --cwd tools/api-client --frozen-lockfile
     bun run lint
     bun run typecheck
     bun run tst

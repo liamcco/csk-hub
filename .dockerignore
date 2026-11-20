@@ -5,8 +5,7 @@
 .next
 node_modules
 # Contract and client generation tooling; not part of the release.
-tools/**
-!tools/api-client/package.json
+tools
 dist
 coverage
 .env*

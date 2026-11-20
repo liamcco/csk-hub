@@ -1,7 +1,2 @@
 [test]
 preload = ["./test/setup.ts"]
-
-[install]
-# Workspaces default to the isolated linker; keep the flat layout the app and its undeclared
-# transitive imports were built on.
-linker = "hoisted"

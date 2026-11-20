@@ -2,9 +2,6 @@
   "name": "csk-hub",
   "version": "0.1.0",
   "private": true,
-  "workspaces": [
-    "tools/api-client"
-  ],
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -17,7 +14,7 @@
     "db:generate": "drizzle-kit generate",
     "db": "bun --conditions=react-server scripts/dev/index.ts",
     "api:contract": "bun --conditions=react-server scripts/api/export-contract.ts",
-    "api:generate": "bun run api:contract && bun run --cwd tools/api-client generate",
+    "api:generate": "bun run api:contract && bun install --cwd tools/api-client --frozen-lockfile && bun run --cwd tools/api-client generate",
     "e2e": "bun run e2e/run.ts",
     "pr": "bun tst && bun lint && bun run build",
     "fallow": "bunx fallow"

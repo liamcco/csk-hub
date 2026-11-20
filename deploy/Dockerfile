@@ -12,9 +12,7 @@ ARG BUN_VERSION=1.4.3
 
 FROM oven/bun:${BUN_VERSION} AS deps
 WORKDIR /app
-COPY package.json bun.lock bunfig.toml ./
-# The client generator is a workspace member; install needs its manifest, not its sources.
-COPY tools/api-client/package.json tools/api-client/
+COPY package.json bun.lock ./
 RUN bun install --frozen-lockfile
 
 FROM deps AS build
