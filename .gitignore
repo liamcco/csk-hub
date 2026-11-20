@@ -51,3 +51,6 @@ next-env.d.ts
 /.vscode/
 # deployed stack configuration
 /deploy/stack.env
+
+# The local Compose stack's generated secrets (deploy/local-stack.sh)
+/deploy/local.env

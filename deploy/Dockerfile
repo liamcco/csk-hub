@@ -1,8 +1,9 @@
 # syntax=docker/dockerfile:1
 #
-# The CSK Hub release image. One Bun image serves both Compose containers:
-#   app      bun server.js          (the default command)
-#   migrate  bun cli.js migrate     (applies pending migrations, then exits)
+# The CSK Hub release image. One Bun image serves every Compose container:
+#   web      bun server.js          (the default command: the Next.js web server)
+#   api      bun api.js             (the standalone Hono API; no Next.js)
+#   migrate  bun cli.js migrate     (applies pending migrations, grants the runtime role, exits)
 # and carries the maintenance CLI (`bun cli.js --help`) for the app container's console.
 #
 # Build from the repository root:  docker build -f deploy/Dockerfile .
@@ -12,6 +13,8 @@ ARG BUN_VERSION=1.4.3
 FROM oven/bun:${BUN_VERSION} AS deps
 WORKDIR /app
 COPY package.json bun.lock ./
+# The client generator is a workspace member; install needs its manifest, not its sources.
+COPY tools/api-client/package.json tools/api-client/
 RUN bun install --frozen-lockfile
 
 FROM deps AS build
@@ -30,6 +33,7 @@ RUN POSTGRES_URL=postgresql://build:build@localhost:5432/build \
     VAPID_PRIVATE_KEY="$(bun -e 'console.log(require("web-push").generateVAPIDKeys().privateKey)')" \
     bun run build
 RUN bun build src/cli/index.ts --target=bun --conditions=react-server --external=pg-native --outfile=dist/cli.js
+RUN bun build src/api/server.ts --target=bun --conditions=react-server --external=pg-native --outfile=dist/api.js
 
 FROM oven/bun:${BUN_VERSION}-slim AS release
 WORKDIR /app
@@ -43,6 +47,7 @@ COPY --from=build /app/.next/static ./.next/static
 COPY --from=build /app/public ./public
 COPY --from=build /app/drizzle ./drizzle
 COPY --from=build /app/dist/cli.js ./cli.js
+COPY --from=build /app/dist/api.js ./api.js
 USER bun
 EXPOSE 3000
 HEALTHCHECK --interval=15s --timeout=5s --start-period=30s --retries=3 \

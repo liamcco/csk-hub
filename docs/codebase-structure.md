@@ -58,8 +58,9 @@ Use `src/shared` only for genuinely cross-feature modules:
 Use `src/core` for infrastructure and app shell modules:
 
 - `src/core/auth`: Better Auth setup, server/client auth objects, plugins, cookie integration, and auth infrastructure tests.
-- `src/core/authz`: application authorization with a server-only entrypoint for fresh actor
-  resolution and enforcement. Pure policies evaluate feature-supplied resource and relationship
+- `src/core/authz`: application authorization. `@/core/authz` holds denial errors and types;
+  `@/core/authz/request` binds fresh actor resolution and enforcement to the Next.js session, so
+  nothing the API imports may use it (the API resolves authority through `src/core/http`). Pure policies evaluate feature-supplied resource and relationship
   attributes; only actor resolution reads the database. It depends on auth and database schemas,
   never features. See
   [authorization adoption](authorization.md) before migrating existing guards.
@@ -71,6 +72,9 @@ Use `src/core` for infrastructure and app shell modules:
   `/api/member-id` paths). Run `bun run api:generate` after changing
   route schemas and commit `contract/`. A feature whose public entrypoint exports screens puts
   its router in an `http/` subfolder with its own `index.ts`, so the API never loads React.
+  The standalone API (`src/api/server.ts`) must not reach Next.js; `src/api/standalone.test.ts`
+  bundles it and fails if it does. Feature operations therefore take the request's resolver or
+  context explicitly instead of defaulting to the Next.js session.
 - `src/core/api-client`: the web application's only way to authoritative behaviour: the generated
   client (`@contract/client`) bound to the server (`getServerApiClient`, `readForScreen`) or the
   browser (`browserApiClient`). Migrated screens never import `@/core/db`, `@/core/authz` or
@@ -165,7 +169,8 @@ Server Components are the default. Use Client Components only for interaction, b
 
 ### Server-side session reads
 
-Protected reads and commands use `@/core/authz`: `requirePermission` establishes authority and
+Protected reads and commands in Next.js code use `@/core/authz/request`; API routes use the
+request's own `resolveRequest`. `requirePermission` establishes authority and
 returns the authenticated actor, while `can` supplies UI hints. Messaging uses `app.access`
 for fresh active identity, then applies its own Conversation access rules. See
 [the adoption guide](authorization.md) for transaction and resource requirements. Never pass cached session claims or submitted actor IDs as authority.

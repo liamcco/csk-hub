@@ -5,11 +5,13 @@
 .next
 node_modules
 # Contract and client generation tooling; not part of the release.
-tools
+tools/**
+!tools/api-client/package.json
 dist
 coverage
 .env*
 !.env.example
 deploy/stack.env
+deploy/local.env
 *.log
 .DS_Store
