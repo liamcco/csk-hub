@@ -85,9 +85,9 @@ async function resolveActivitySession(c: Context<ApiEnv>): Promise<ActivitySessi
 /**
  * Real-time delivery over HTTP, bound to a feature delivery policy: the event stream and
  * acknowledgements. Mount it at `/api/realtime` behind the Hub Origin guard; the proxy in front
- * must neither buffer nor compress it.
+ * must neither buffer nor compress it. Streams end when `shutdown` aborts.
  */
-export function createRealtimeRouter(policy: ActivityDeliveryPolicy) {
+export function createRealtimeRouter(policy: ActivityDeliveryPolicy, shutdown?: AbortSignal) {
   return createRouter()
     .openapi(streamActivityRoute, async (c) => {
       if (!env.REDIS_URL) return c.body(null, 204)
@@ -97,7 +97,7 @@ export function createRealtimeRouter(policy: ActivityDeliveryPolicy) {
         database: c.var.database,
         identity,
         lastEventId: c.req.header("last-event-id"),
-        signal: c.req.raw.signal
+        signal: shutdown ? AbortSignal.any([c.req.raw.signal, shutdown]) : c.req.raw.signal
       })
     })
     .openapi(acknowledgeActivityRoute, async (c) => {

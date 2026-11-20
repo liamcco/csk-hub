@@ -85,7 +85,6 @@ if (!process.env.CSK_ACTIVITY_TEST) {
       sendToAll: push,
       sendToUsers: push
     }))
-    const afterResponse: Array<() => Promise<void>> = []
     const { env } = await import("@/core/config/env")
     const { queueActivity } = await import("@/core/realtime/outbox")
     const { activityStreamKey } = await import("@/core/realtime/broker")
@@ -99,15 +98,17 @@ if (!process.env.CSK_ACTIVITY_TEST) {
       database: (await import("@/core/db")).db,
       authorize: (await import("@/core/authz/request")).requirePermission
     } as unknown as import("@/features/messaging/model/context").MessagingContext
-    const { dispatchActivity, nextActivityDelay, pruneActivity } = await import("@/core/realtime/dispatch")
-    const { deliverPendingActivity } = await import("@/core/realtime/deliver-pending")
-    const { conversationActivityPolicy, scheduleActivityDispatch } = await import("@/features/messaging/activity")
+    const { dispatchActivity, nextActivityDelay, pendingActivityStats, pruneActivity } = await import(
+      "@/core/realtime/dispatch"
+    )
+    const { startActivityWorker } = await import("@/core/realtime/worker")
+    const { conversationActivityPolicy } = await import("@/features/messaging/activity")
     // Streams and acknowledgements go through the real API, signed in through Better Auth.
     const { createApiHarness, testOrigin } = await import("@test/api")
     const harness = createApiHarness(testDatabase)
     const { notifyUsers, searchNotificationRecipients } = await import("@/features/notification-broadcast/service")
     const { createPost, saveDraft, unpublishPost } = await import("@/features/posts/lifecycle")
-    const broadcast = { database: testDatabase.db, scheduleDelivery: scheduleActivityDispatch }
+    const broadcast = { database: testDatabase.db, scheduleDelivery: () => {} }
     const { markPostRead, nextUnreadPostChangeAt } = await import("@/features/posts/unread/service")
 
     afterAll(async () => {
@@ -125,7 +126,6 @@ if (!process.env.CSK_ACTIVITY_TEST) {
       fixtureUsers.length = 0
       fixtureConversations.length = 0
       push.mockReset().mockResolvedValue({ success: true, accepted: 1, failed: 0, failureCategories: {} })
-      afterResponse.length = 0
     })
 
     async function singer() {
@@ -204,6 +204,19 @@ if (!process.env.CSK_ACTIVITY_TEST) {
       return { read, close: () => controller.abort() }
     }
 
+    /** Runs `use` with a supervised worker, as the API process runs one, and always stops it. */
+    async function withWorker(
+      use: (worker: ReturnType<typeof startActivityWorker>) => Promise<unknown>,
+      options?: Parameters<typeof startActivityWorker>[1]
+    ) {
+      const worker = startActivityWorker(conversationActivityPolicy, options)
+      try {
+        await use(worker)
+      } finally {
+        await worker.stop()
+      }
+    }
+
     /** One SSE frame's fields, with `data` parsed as JSON. */
     function parseFrame(text: string) {
       const fields = Object.fromEntries(
@@ -231,8 +244,8 @@ if (!process.env.CSK_ACTIVITY_TEST) {
       return delivery.id
     }
 
-    async function waitUntil(check: () => Promise<boolean>) {
-      const deadline = Date.now() + 2_000
+    async function waitUntil(check: () => Promise<boolean>, timeoutMs = 2_000) {
+      const deadline = Date.now() + timeoutMs
       while (!(await check())) {
         if (Date.now() > deadline) throw new Error("Delivery did not progress before the deadline")
         await Bun.sleep(10)
@@ -619,58 +632,165 @@ if (!process.env.CSK_ACTIVITY_TEST) {
         expect(await nextActivityDelay()).toBeNull()
       })
 
-      test("the response callback publishes immediately and sends push after the eight-second grace", async () => {
-        const { recipient } = await direct()
-        const delivery = await messageDelivery(recipient.userId)
-        if (!delivery.pushAfter) throw new Error("Expected a push deadline")
-        scheduleActivityDispatch((work) => {
-          afterResponse.push(work)
-        })
-        expect((await storedDelivery(delivery.id)).publishedAt).toBeNull()
-        const callback = afterResponse.pop()
-        if (!callback) throw new Error("Expected an after-response callback")
-        const running = callback()
-        try {
+      test("a woken worker publishes immediately and sends push after the eight-second grace", async () => {
+        await withWorker(async (worker) => {
+          const { recipient } = await direct()
+          const delivery = await messageDelivery(recipient.userId)
+          if (!delivery.pushAfter) throw new Error("Expected a push deadline")
+          worker.wake()
           await waitUntil(async () => (await storedDelivery(delivery.id)).publishedAt !== null)
           expect(push).not.toHaveBeenCalled()
-        } finally {
-          await running
-        }
-        const completed = await storedDelivery(delivery.id)
-        // Both timestamps come from Postgres; the container and host clocks can differ.
-        expect(completed.pushCompletedAt?.getTime()).toBeGreaterThanOrEqual(delivery.pushAfter.getTime())
-        expect(push).toHaveBeenCalledTimes(1)
+          await waitUntil(async () => (await storedDelivery(delivery.id)).pushCompletedAt !== null, 12_000)
+          const completed = await storedDelivery(delivery.id)
+          // Both timestamps come from Postgres; the container and host clocks can differ.
+          expect(completed.pushCompletedAt?.getTime()).toBeGreaterThanOrEqual(delivery.pushAfter.getTime())
+          expect(push).toHaveBeenCalledTimes(1)
+        })
       }, 15_000)
 
-      test("acknowledgement during the grace period cancels push in the response callback", async () => {
-        const { recipient } = await direct()
-        const delivery = await messageDelivery(recipient.userId)
-        await testDatabase.db
-          .update(activityDelivery)
-          .set({ pushAfter: sql`now() + interval '400 milliseconds'` })
-          .where(eq(activityDelivery.id, delivery.id))
-        const running = deliverPendingActivity(conversationActivityPolicy)
-        try {
+      test("acknowledgement during the grace period cancels the worker's push", async () => {
+        await withWorker(async (worker) => {
+          const { recipient } = await direct()
+          const delivery = await messageDelivery(recipient.userId)
+          await testDatabase.db
+            .update(activityDelivery)
+            .set({ pushAfter: sql`now() + interval '400 milliseconds'` })
+            .where(eq(activityDelivery.id, delivery.id))
+          worker.wake()
           await waitUntil(async () => (await storedDelivery(delivery.id)).publishedAt !== null)
           expect((await acknowledge(recipient, delivery.id)).status).toBe(204)
-        } finally {
-          await running
-        }
-        expect(push).not.toHaveBeenCalled()
-        expect(await nextActivityDelay()).toBeNull()
+          await Bun.sleep(800)
+          expect(push).not.toHaveBeenCalled()
+          expect(await nextActivityDelay()).toBeNull()
+        })
       })
 
-      test("an expired request leaves pending work for a later dispatch", async () => {
+      test("a starting worker resumes pending work left by an earlier runner, with no request", async () => {
+        const member = await singer()
+        const id = await enqueue(member.userId)
+        await withWorker(async () => {
+          await waitUntil(async () => (await storedDelivery(id)).publishedAt !== null)
+        })
+      })
+
+      test("a worker takes over an abandoned lease once it expires, without being woken", async () => {
         const member = await singer()
         const id = await enqueue(member.userId)
         await testDatabase.db
           .update(activityDelivery)
           .set({ leaseToken: crypto.randomUUID(), leaseUntil: sql`now() + interval '300 milliseconds'` })
           .where(eq(activityDelivery.id, id))
-        await deliverPendingActivity(conversationActivityPolicy, AbortSignal.timeout(50))
-        expect((await storedDelivery(id)).publishedAt).toBeNull()
-        await deliverPendingActivity(conversationActivityPolicy)
-        expect((await storedDelivery(id)).publishedAt).not.toBeNull()
+        await withWorker(async () => {
+          expect((await storedDelivery(id)).publishedAt).toBeNull()
+          await waitUntil(async () => (await storedDelivery(id)).publishedAt !== null)
+        })
+      })
+
+      test("an idle worker notices work committed elsewhere on its next poll", async () => {
+        const member = await singer()
+        await withWorker(
+          async () => {
+            await Bun.sleep(50)
+            const id = await enqueue(member.userId)
+            await waitUntil(async () => (await storedDelivery(id)).publishedAt !== null)
+          },
+          { idlePollMs: 200 }
+        )
+      })
+
+      test("concurrent runners deliver every record exactly once", async () => {
+        const recipients = await Promise.all(Array.from({ length: 4 }, () => singer()))
+        await testDatabase.db.transaction(async (tx) => {
+          for (let round = 0; round < 5; round++) {
+            await queueActivity(
+              tx,
+              recipients.map(({ userId }) => userId),
+              { kind: "notification.created" },
+              { body: `Round ${round}` }
+            )
+          }
+        })
+        await makePushDue()
+        push.mockImplementation(async () => {
+          await Bun.sleep(5)
+          return { success: true, accepted: 1, failed: 0, failureCategories: {} }
+        })
+        await withWorker(() =>
+          withWorker(() =>
+            waitUntil(async () =>
+              (await testDatabase.db.select().from(activityDelivery)).every((row) => row.pushCompletedAt !== null)
+            )
+          )
+        )
+        expect(push).toHaveBeenCalledTimes(20)
+        const published = new Set<string>()
+        let entries = 0
+        for (const { userId } of recipients) {
+          for (const entry of (await redis.xRange(activityStreamKey(userId), "-", "+")) ?? []) {
+            entries++
+            published.add(entry.message.delivery ?? "")
+          }
+        }
+        expect(entries).toBe(20)
+        expect(published.size).toBe(20)
+      })
+
+      test("a failed push is retried after a bounded backoff, then completes", async () => {
+        const recipient = await singer()
+        await testDatabase.db.transaction((tx) =>
+          queueActivity(tx, [recipient.userId], { kind: "notification.created" }, { body: "Retry me" })
+        )
+        await makePushDue()
+        push.mockResolvedValueOnce({
+          success: false,
+          error: "deliveryFailed",
+          accepted: 0,
+          failed: 1,
+          failureCategories: {}
+        })
+        await withWorker(async () => {
+          await waitUntil(async () => push.mock.calls.length === 1)
+          const [failed] = await testDatabase.db.select().from(activityDelivery)
+          expect(failed?.pushCompletedAt).toBeNull()
+          // The first retry waits two seconds; later ones back off to at most a minute.
+          expect(failed?.pushAfter && failed.pushAfter.getTime() - Date.now()).toBeGreaterThan(1_000)
+          await waitUntil(
+            async () => (await testDatabase.db.select().from(activityDelivery))[0]?.pushCompletedAt != null,
+            5_000
+          )
+        })
+        expect(push).toHaveBeenCalledTimes(2)
+      }, 10_000)
+
+      test("a stopped worker leaves no lease behind and claims nothing more", async () => {
+        const member = await singer()
+        const worker = startActivityWorker(conversationActivityPolicy)
+        await worker.stop()
+        const id = await enqueue(member.userId)
+        worker.wake()
+        await Bun.sleep(300)
+        const stored = await storedDelivery(id)
+        expect(stored.publishedAt).toBeNull()
+        expect(stored.leaseToken).toBeNull()
+      })
+
+      test("pending work reports its count and the age of the oldest record", async () => {
+        const member = await singer()
+        const old = await enqueue(member.userId)
+        await enqueue(member.userId)
+        const done = await enqueue(member.userId)
+        await testDatabase.db
+          .update(activityDelivery)
+          .set({ createdAt: sql`now() - interval '5 minutes'` })
+          .where(eq(activityDelivery.id, old))
+        await testDatabase.db
+          .update(activityDelivery)
+          .set({ publishedAt: new Date() })
+          .where(eq(activityDelivery.id, done))
+        const stats = await pendingActivityStats()
+        expect(stats.pending).toBe(2)
+        expect(stats.oldestAgeMs).toBeGreaterThanOrEqual(299_000)
+        expect(stats.oldestAgeMs).toBeLessThan(310_000)
       })
 
       test("retention runs independently of dispatch and preserves recent pending work", async () => {

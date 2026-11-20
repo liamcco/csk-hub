@@ -88,7 +88,7 @@ export function createApi(dependencies: ApiDependencies) {
   // Released before /api/v1; its paths and representations stay frozen for installed clients.
   api.route("/api/member-id", memberIdRouter)
   // Paths fixed by the browser's EventSource; Messaging decides who may receive what.
-  api.route("/api/realtime", createRealtimeRouter(conversationActivityPolicy))
+  api.route("/api/realtime", createRealtimeRouter(conversationActivityPolicy, dependencies.shutdown))
 
   api.notFound((c) => apiError(c, 404, "NOT_FOUND"))
   api.onError(handleApiError)

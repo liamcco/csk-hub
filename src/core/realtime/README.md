@@ -5,8 +5,8 @@ endpoint; browsers never connect to Redis or receive broker credentials. Postgre
 stores Messages, read cursors and a transactional per-User delivery outbox. Recipient
 Redis streams carry only outbox IDs, with approximately 1,000 entries and 24-hour expiry.
 Redis is not the source of truth: pending deliveries and scheduled deadlines live in
-Postgres. Delivery runs after the response in the process that committed the write, without a
-separate worker.
+Postgres. A supervised worker in each API process delivers it, independently of incoming
+requests.
 
 ## Ownership
 
@@ -37,47 +37,43 @@ Messaging/Post workflows. Transport and scheduling tests live beside their core 
 3. Configure `REDIS_URL=redis://localhost:6379` and
    `REDIS_KEY_PREFIX=csk-hub-development` in `.env`. Leave `REDIS_URL` unset to disable
    realtime. Use a different database and prefix in production, preview and development.
-4. Run `bun run dev`. No additional process is required.
+4. Run `bun run dev`. Next.js hosts the API in development and starts one delivery worker with
+   the first API request. The local Compose stack (`deploy/local-stack.sh`) runs it in the
+   standalone API from startup.
 
-## Scheduling and best-effort recovery
+## The delivery worker
 
-A feature saves its data and delivery records in one Postgres transaction. After commit,
-`scheduleActivityDispatch()` attempts delivery after the response. The host decides how that work
-stays alive: Next.js passes `after()`, and the standalone API (a long-running process) lets it run
-in the background.
-Message writes do not wait for delivery. Concurrent callbacks on an instance share one
-30-second processing loop per policy. A new relevant commit wakes the loop if it is waiting
-for a later deadline. Each request registers its own `after()` callback to await that shared
-work; expiry finishes the currently claimed wave. Draft-only Post changes, unchanged read
-cursors and exact Message retries do not schedule delivery. Platform Function duration still
-bounds the entire request, including `after()` work; allow sufficient time for the write,
-the eight-second grace period, and push attempts.
+A feature saves its data and delivery records in one Postgres transaction. After commit, the
+route calls `scheduleDelivery()`, which wakes the process's worker (`startActivityWorker` in
+`worker.ts`). Message writes do not wait for delivery. Draft-only Post changes, unchanged read
+cursors and exact Message retries do not wake it.
+
+The worker starts with the API process and drains pending work at once, so work left by a
+crashed or stopped runner resumes on startup without any request. It then waits for the next
+publication, push, retry or lease-expiry deadline (measured on the database clock), a wake from a
+local commit, or its idle poll (five seconds), which finds work committed by other processes.
 
 Each wave atomically claims up to five rows with `UPDATE ... RETURNING` and a
 `FOR UPDATE SKIP LOCKED` subquery, then processes them concurrently. Conversation changes
-take priority over public fan-out. Up to 50 rows are processed per batch; the response loop
-can run further batches within its window. Ninety-second leases coordinate instances. It waits for the next publication, push, retry or lease-expiry deadline
-within its window. Transient database failures retry with backoff; publication and push
-failures retain their own retry deadlines. Redis publication failures do not prevent due
-Web Push. No Redis wakeup stream, independent worker, durable queue or cron is required.
+take priority over public fan-out. Up to 50 rows are processed per batch. Ninety-second leases
+coordinate any number of runners: a runner never claims a leased row, and an abandoned lease
+becomes claimable when it expires. Transient database failures retry with backoff (one to eight
+seconds). Publication and push failures retain their own retry deadlines, doubling from one
+second to at most a minute per attempt, until the record is delivered or expires. Redis
+publication failures do not prevent due Web Push.
 
-This is best-effort delivery, not a delivery-rate guarantee. If a Function crashes after
-commit, times out, or exhausts its window, pending work stays in Postgres. A subsequent
-activity-producing request can recover eligible work. While the app is idle, nothing retries
-it: live feedback or push may be delayed or missed. Browser reconnect/focus recovery still
-refreshes authoritative state, but does not itself drain the outbox. Stored Messages and
-read cursors are unaffected by notification delivery failures.
+On `SIGTERM` the API ends open event streams (browsers reconnect, to another runner if there is
+one), stops claiming, finishes the current wave, releases its leases, finishes in-flight requests
+and exits. Work that remains stays in Postgres for the next runner.
 
-Retention runs opportunistically at the start of a callback, at most hourly per warm
-instance. Records older than seven days expire, including unfinished deliveries; cleanup
-can be later when the app is idle. `realtime.delivery.expired` reports unfinished records
-removed. Monitor `realtime.dispatch.batch`, `realtime.dispatch.retry`,
-`realtime.dispatch.interrupted`, publication/push retry logs, `realtime.retention.failed`,
-and the age of pending outbox records. Logs do not include message text or credentials.
-
-Independent recovery and dedicated-server process supervision are deferred to
-[issue #134](https://github.com/herr-ek/csk-hub/issues/134). A future runner can reuse
-the outbox, leases, dispatch and deadline logic.
+Retention runs at most hourly per runner: records older than seven days expire, including
+unfinished deliveries. `realtime.delivery.expired` reports unfinished records removed. Every
+minute the worker logs `realtime.worker.pending` with the pending count and the age of the oldest
+pending record, or `realtime.worker.backlog` at warning level once that age passes two minutes.
+Delivery failures log `realtime.publish.retry`, `realtime.push.retry` and
+`realtime.delivery.retry`; batches `realtime.dispatch.batch`; database failures
+`realtime.dispatch.retry`; and lifecycle `realtime.worker.started|stopped`. Logs do not include
+message text or credentials.
 
 ## Deployment
 
@@ -88,20 +84,20 @@ Redis connection. Size connection capacity for concurrent tabs and devices, plus
 publisher connections. Browser delivery uses independent cursors, not a consumer group
 that would divide events between a User's tabs.
 
-Build with `bun run build` to retain the migration check. Configure the application's
-validated environment (`POSTGRES_URL`, `REDIS_URL`, `REDIS_KEY_PREFIX` and VAPID keys).
-The current request-bound dispatcher needs no separate process. Its processing window is
-also bounded by the host's request lifetime. Production Docker/Portainer integration and
-a supervised background dispatcher remain deferred until the hosting PR is merged.
+Configure the application's validated environment (`POSTGRES_URL`, `REDIS_URL`,
+`REDIS_KEY_PREFIX` and VAPID keys). The standalone API (`deploy/compose.yml`, service `api`)
+serves the endpoints and runs the worker; no other process is needed, and more API runners
+share the outbox through leases. The proxy must stream `/api/realtime/*` without buffering or
+compression, with an idle timeout above the 15-second heartbeat (`deploy/Caddyfile`); Bun's own
+idle timeout is set to 60 seconds for the same reason.
 
-The SSE route has a 300-second Function budget and rotates its connection after four
-minutes. Heartbeats occur at most every 15 seconds and native EventSource reconnects
+The stream rotates its connection after four minutes. Heartbeats occur at most every 15 seconds and native EventSource reconnects
 with `Last-Event-ID`. The `ready` event carries a `reset` flag: initial connections and
 invalid, future or trimmed cursors request an authoritative refresh. A retained cursor
 resumes through replay without refreshing an unchanged page. Focus and network recovery
 still refresh the current authorized state.
-Redis failures do not roll back a committed Message: publication retries within the
-callback window, and due offline push can still proceed independently. Slow readers are
+Redis failures do not roll back a committed Message: publication retries with backoff,
+and due offline push can still proceed independently. Slow readers are
 disconnected when the stream buffer exceeds its bounded capacity.
 
 If Redis is unavailable when establishing a stream, the endpoint returns a short valid
@@ -125,7 +121,7 @@ acknowledge on another User's behalf. Redis payloads contain no Message text.
   available. Hidden tabs defer feedback and never acknowledge merely receiving an event.
   Deferred toasts expire at the server-supplied push deadline; returning later still refreshes
   authoritative state without presenting the stale alert.
-- After an eight-second grace period, the response callback sends Web Push if no visible
+- After an eight-second grace period, the worker sends Web Push if no visible
   handling acknowledgement or authoritative read cursor makes it unnecessary. Handling on any
   device suppresses fallback across that User's devices. Web Push still requires an
   active subscription; in-app feedback does not. This grace-and-fallback behavior applies
@@ -138,12 +134,11 @@ acknowledge on another User's behalf. Redis payloads contain no Message text.
   toasts expire eight seconds after creation.
 - Acknowledgement-versus-push races, or a crash after provider acceptance but before
   recording success, can cause a duplicate. The stable notification tag helps browsers
-  replace duplicates. Retries are best-effort within the callback window; provider acceptance
+  replace duplicates. Retries continue until the record expires; provider acceptance
   cannot establish that the operating system displayed a notification.
 - Outbox claims expire after 90 seconds, failed work backs off up to 60 seconds, and
   delivery records expire after seven days. Monitor `realtime.*` logs and pending work
-  during outages. Pending work requires a later activity request to resume after its
-  callback ends; database backups remain separate operational work.
+  during outages; database backups remain separate operational work.
 
 Unread state propagates across tabs/devices, including sending a Message. Post publication,
 editing and unpublication refresh the feed and badges without exposing Draft content.
@@ -154,14 +149,18 @@ new activity offers a link to the current Conversation.
 ## Verification
 
 `bun tst` includes a process-isolated integration suite against a newly created local
-throwaway Postgres database and a unique Redis key prefix. Start both local services to
-run those tests; they skip when either is unavailable. Tests cover atomic enqueue,
-send retries, live SSE/replay, acknowledgement privacy, unread semantics, concurrent
-dispatch, broker failure, Group departure, revoked sessions, Post changes, response callbacks,
-the eight-second push grace, acknowledgement during that grace, and recovery on a later
-dispatch after an earlier processing window expires. Scheduler tests run without local
-services and cover deferred execution, coalescing, wake/query races, retry backoff,
-disabled realtime and budget expiry. Integration tests also cover batch claim leases,
-concurrent delivery bounds, chat priority, direct bulk broadcast push and reset-versus-replay
-handshakes. The service-worker tests run the actual script against rejected or unavailable
+throwaway Postgres database and a unique Redis key prefix, with Web Push replaced by a controlled
+mock. Start both local services to run those tests; they skip when either is unavailable. Streams
+and acknowledgements go through the API with Better Auth sessions. Tests cover atomic enqueue,
+send retries, live SSE/replay, documented frames, acknowledgement privacy, impersonation and
+foreign origins, unread semantics, broker failure, Group departure, revoked sessions, Post
+changes, chat priority, concurrent delivery bounds, direct bulk broadcast push and
+reset-versus-replay handshakes. Worker tests cover recovery on startup, abandoned leases,
+polling for work committed elsewhere, two concurrent runners delivering each record once, the
+eight-second push grace, acknowledgement during that grace, push retry with backoff, stopping
+without leaving leases, and pending-work metrics. Scheduler tests run without local services and
+cover wake/query races, retry backoff, waiting for deadlines, stopping mid-wave and disabled
+realtime. `deploy/local-stack.sh validate` checks streaming, restart and abandonment,
+concurrent runners, acknowledgement suppression and retry through the proxy.
+The service-worker tests run the actual script against rejected or unavailable
 window navigation and verify that a target still opens.
