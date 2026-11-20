@@ -4,6 +4,7 @@ import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { fileURLToPath } from "node:url"
 import { sql } from "drizzle-orm"
+import { Client } from "pg"
 import { createTestDatabase } from "../../test/database"
 
 const ROOT = fileURLToPath(new URL("../..", import.meta.url))
@@ -52,9 +53,15 @@ const database = await createTestDatabase()
 describe.skipIf(!database)("release image migrate", () => {
   const t = database as NonNullable<typeof database>
   const folders: string[] = []
+  const roles: string[] = []
   afterAll(async () => {
     for (const folder of folders) rmSync(folder, { recursive: true, force: true })
     await t.drop()
+    // Roles belong to the whole server, not the dropped database.
+    const admin = new Client({ connectionString: process.env.POSTGRES_URL })
+    await admin.connect()
+    for (const role of roles) await admin.query(`DROP ROLE IF EXISTS "${role}"`)
+    await admin.end()
   })
 
   test("applies pending migrations and exits 0, needing only POSTGRES_URL", async () => {
@@ -74,6 +81,54 @@ describe.skipIf(!database)("release image migrate", () => {
       sql`select count(*)::int as count from drizzle.__drizzle_migrations`
     )
     expect(rows[0]?.count).toBeGreaterThan(0)
+  }, 60_000)
+
+  test("gives the runtime role data access only, and rotates its password on every run", async () => {
+    const role = `csk_hub_runtime_${crypto.randomUUID().replaceAll("-", "").slice(0, 8)}`
+    roles.push(role)
+    function runtimeUrl(password: string) {
+      const url = new URL(t.url)
+      url.username = role
+      url.password = password
+      return url.toString()
+    }
+    async function asRuntime(statement: string) {
+      const client = new Client({ connectionString: runtimeUrl("second-password") })
+      await client.connect()
+      try {
+        return await client.query(statement)
+      } finally {
+        await client.end()
+      }
+    }
+
+    for (const password of ["first-password", "second-password"]) {
+      const { code, stdout } = await runCli(["migrate"], {
+        POSTGRES_URL: t.url,
+        POSTGRES_RUNTIME_URL: runtimeUrl(password)
+      })
+      expect(code).toBe(0)
+      expect(stdout).toContain(role)
+    }
+
+    await asRuntime(
+      `INSERT INTO "location" ("id", "name") VALUES ('00000000-0000-4000-8000-000000000001', 'Runtime role check')`
+    )
+    expect(
+      (await asRuntime(`SELECT "name" FROM "location" WHERE "id" = '00000000-0000-4000-8000-000000000001' FOR UPDATE`))
+        .rows
+    ).toEqual([{ name: "Runtime role check" }])
+    await asRuntime(`DELETE FROM "location" WHERE "id" = '00000000-0000-4000-8000-000000000001'`)
+    for (const statement of [
+      "CREATE TABLE runtime_probe (id int)",
+      'DROP TABLE "location"',
+      'ALTER TABLE "location" ADD COLUMN x int'
+    ]) {
+      await expect(asRuntime(statement)).rejects.toMatchObject({ code: "42501" })
+    }
+    await expect(asRuntime("SELECT count(*) FROM drizzle.__drizzle_migrations")).rejects.toMatchObject({
+      code: "42501"
+    })
   }, 60_000)
 
   test("exits non-zero when a migration fails, so Compose never starts the app", async () => {

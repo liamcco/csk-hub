@@ -21,6 +21,9 @@ const envSchema = z
       .default("csk-hub"),
 
     BETTER_AUTH_URL: z.url().default("http://localhost:3000"),
+    // Where Hub's web server reaches the API, e.g. http://api:3000 by service name. Defaults to the
+    // public origin, which is right when one process serves both.
+    API_INTERNAL_URL: z.url().optional(),
     BETTER_AUTH_SECRET: z.string(),
 
     EMAIL_MODE: z.enum(["log", "smtp"]).default("log"),

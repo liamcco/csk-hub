@@ -5,6 +5,7 @@ import { getBaseURL } from "@/core/auth/base-url"
 import { type Auth, createAuth } from "@/core/auth/create-auth"
 import { createDb, type Db } from "@/core/db/client"
 import { migrateDatabase } from "@/core/db/migrate"
+import { provisionRuntimeRole } from "@/core/db/runtime-role"
 import { bootstrapOrgStructure } from "@/features/org-structure/defaults"
 import { type AdminOutcome, bootstrapAdmin, recoverAdmin } from "./admin"
 
@@ -21,7 +22,7 @@ import { type AdminOutcome, bootstrapAdmin, recoverAdmin } from "./admin"
  */
 
 const USAGE = `Usage:
-  bun cli.js migrate                                         apply pending migrations and exit
+  bun cli.js migrate                                         apply pending migrations, grant the runtime role, exit
   bun cli.js org bootstrap                                   create the default org structure in a new environment
   bun cli.js admin bootstrap --email <email> --name <name>   invite an Admin, or resend their activation or recovery email
   bun cli.js admin recover --email <email>                   send a password-reset email to an existing Admin`
@@ -63,8 +64,11 @@ async function main(argv: string[]): Promise<number> {
 }
 
 /**
- * Apply pending migrations and exit: the Compose `migrate` service. It needs only POSTGRES_URL, so
- * it never loads the rest of the application's configuration.
+ * Apply pending migrations and exit: the Compose `migrate` service. It needs only POSTGRES_URL (a
+ * role that owns the schema), so it never loads the rest of the application's configuration.
+ *
+ * With POSTGRES_RUNTIME_URL set, it then creates or updates that URL's role with data-only access,
+ * so the API and web containers never connect with schema privileges.
  */
 async function migrate(): Promise<number> {
   const url = process.env.POSTGRES_URL
@@ -73,6 +77,11 @@ async function migrate(): Promise<number> {
   try {
     await migrateDatabase(database, { migrationsFolder: process.env.MIGRATIONS_FOLDER ?? "drizzle" })
     console.log("Migrations applied; the database is up to date.")
+    const runtimeUrl = process.env.POSTGRES_RUNTIME_URL
+    if (runtimeUrl) {
+      const role = await provisionRuntimeRole(database, runtimeUrl)
+      console.log(`Runtime role ${role} has data access only.`)
+    }
     return 0
   } catch (error) {
     console.error("✖ Migration failed; the app must not start on this database.")
