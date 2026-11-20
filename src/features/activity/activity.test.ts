@@ -44,7 +44,7 @@ if (!process.env.CSK_ACTIVITY_TEST) {
   if (!database || !redisAvailable) {
     if (redis.isOpen) redis.destroy()
     await database?.drop()
-    test.skip("requires local PostgreSQL and Redis (docker compose up -d)", () => {})
+    test.skip("requires local PostgreSQL and Redis (docker compose -f deploy/compose.dev.yml up -d)", () => {})
   } else {
     const testDatabase = database
     const fixtureUsers: string[] = []

@@ -55,21 +55,20 @@ Prerequisites: [Bun](https://bun.sh/), Docker, and OpenSSL.
    ```
 
    Put the generated value in `BETTER_AUTH_SECRET`. `POSTGRES_URL` already
-   points at the PostgreSQL container defined in `docker-compose.yml`, and
+   points at the PostgreSQL container defined in `deploy/compose.dev.yml`, and
    `EMAIL_MODE=log` writes auth emails to the server log during local
-   development. Leave `POSTGRES_URL_PROD` blank unless you administer
-   production.
+   development.
 
-3. Start PostgreSQL:
+3. Start PostgreSQL and Redis:
 
    ```bash
-   docker compose up -d
+   docker compose -f deploy/compose.dev.yml up -d
    ```
 
 4. Apply the existing database migrations:
 
    ```bash
-   bun run ops migrate
+   bun run db migrate
    ```
 
 5. Start the development server:
@@ -80,39 +79,29 @@ Prerequisites: [Bun](https://bun.sh/), Docker, and OpenSSL.
 
 Open [http://localhost:3000](http://localhost:3000).
 
-### Local admin account
+### Local accounts and demo data
 
-The development seed script currently creates `admin@example.com` with the
-password `password`:
+`bun run db seed-users` adds 100 named, verified example Users with the password `password`:
+`singer-001@example.com` through `singer-100@example.com`. The first three are Admins. These
+are local-development conveniences only; the dev CLI refuses any database that is not local.
 
-```bash
-bun run ops seed-admin
-```
-
-`bun run ops seed-users` adds 100 named, verified example Users with the same password:
-`singer-001@example.com` through `singer-100@example.com`. The first three are Admins.
-
-Both are local-development conveniences only. Change the password immediately,
-and do not use these credentials in a deployed environment. Seeding refuses to
-run against production.
-
-`bun run ops reference-data` creates the Choirs MK, DK and KK with their Sections,
-Styret and the Positions; run it once after migrating (it also runs against production
-with `--prod`). `bun run ops reset` starts the local database over: it erases it, migrates
-it from scratch and creates the reference data.
+`bun run db org-bootstrap` creates the default Choirs MK, DK and KK with their Sections,
+Styret, the Gigmästeri and the Positions on a database that has none. `bun run db reset`
+starts the local database over: it erases it, migrates it from scratch and creates the
+default org structure.
 
 For a populated development environment after migrating, run:
 
 ```bash
-bun run ops seed-demo
+bun run db seed-demo
 ```
 
-This creates the reference data, 100 singers split evenly across the three Choirs and their
+This creates the default org structure, 100 singers split evenly across the three Choirs and their
 Sections, active and archived groups, dated Memberships and Position handovers, Voice
 capabilities, 24 published example Posts and example Events from the coming week on. It is
 safe to repeat and preserves existing credentials and edited Posts. Existing Users are
 retained, so a populated database can have more than 100 Users. The individual `seed-users`, `seed-groups`, `seed-posts` and `seed-events`
-commands are also available; see [local demo data](scripts/ops/README.md#local-demo-data).
+commands are also available; see [local demo data](scripts/dev/README.md#local-demo-data).
 
 ## Routes
 
@@ -146,16 +135,17 @@ apply it:
 ```bash
 bun run auth:generate
 bun run db:generate
-bun run ops migrate
+bun run db migrate
 ```
 
 ## Database operations
 
-Use `bun run ops` for all database operations: migration status, migrations,
-Drizzle Studio and local seeding. It targets the local database unless you pass
-`--prod`. See [`scripts/ops/README.md`](scripts/ops/README.md) for commands and
-production safeguards, and [`src/core/db/README.md`](src/core/db/README.md) for
-how the application connects.
+`bun run db` is the local development database CLI: migration status, migrations,
+Drizzle Studio, reset and seeding. It refuses any database that is not local; see
+[`scripts/dev/README.md`](scripts/dev/README.md). Deployed environments migrate on every
+deploy and run their maintenance commands (org bootstrap, Admin bootstrap and recovery) in
+the app container; see [`deploy/README.md`](deploy/README.md). How the application connects
+is in [`src/core/db/README.md`](src/core/db/README.md).
 
 ## Email configuration
 
@@ -184,7 +174,7 @@ bun run typecheck   # TypeScript checks
 bun run lint        # Biome checks
 bun run build       # production build
 bun run pr          # tests, lint, and build
-bun run ops         # database status and guarded database operations
+bun run db          # local database status, migrations, reset and seeds
 ```
 
 See [`GLOSSARY.md`](GLOSSARY.md) for project context and the

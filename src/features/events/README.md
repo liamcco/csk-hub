@@ -10,8 +10,8 @@ Responses, Registrations and Attendance come later.
 ## The write path
 
 Application code writes the tables in `src/core/db/schema/events.ts` only through this module.
-This is a convention, not a test. `bun run ops seed-events` is the deliberate exception: it writes
-the tables directly, so that scripts never depend on a feature, and keeps these rules by hand.
+This is a convention, not a test. `bun run db seed-events` is the deliberate exception: it writes
+the tables directly rather than through this module, and keeps these rules by hand.
 
 The rules below are tagged [app] in the scheme. They are not database constraints, so going
 around this module breaks them silently:

@@ -26,8 +26,10 @@ export function isLocalDatabase(url: string): boolean {
 /**
  * Pair a connection string with the TLS options to dial it.
  *
- * Anything that is not a local database is verified against the Supabase root CA, and
- * there is deliberately no switch to skip verification.
+ * Anything that is not a local database is verified against the Supabase root CA. The one
+ * exception is a URL that says `sslmode=disable` itself: the self-hosted stack reaches its
+ * database over a private Compose network, where there is no certificate to verify. The choice
+ * is written in the connection string, so it is visible wherever that string is configured.
  *
  * `sslmode` is stripped deliberately. `pg` treats a `sslmode` in the connection string as
  * authoritative and ignores explicit `ssl` options, so a Supabase URL — they carry
@@ -36,10 +38,11 @@ export function isLocalDatabase(url: string): boolean {
  */
 export function secureConnection(url: string): Connection {
   const parsed = new URL(url)
+  const plainText = parsed.searchParams.get("sslmode") === "disable"
   parsed.searchParams.delete("sslmode")
   const connectionString = parsed.toString()
 
-  if (isLocalDatabase(url)) return { connectionString }
+  if (plainText || isLocalDatabase(url)) return { connectionString }
 
   return { connectionString, ssl: { ca: SUPABASE_ROOT_CA_2021, rejectUnauthorized: true } }
 }

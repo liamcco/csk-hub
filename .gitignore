@@ -49,3 +49,5 @@ next-env.d.ts
 /.claude/
 
 /.vscode/
+# deployed stack configuration
+/deploy/stack.env

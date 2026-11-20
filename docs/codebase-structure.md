@@ -137,7 +137,7 @@ When a model decision is hard to reverse or establishes an important domain rule
 
 Database infrastructure — the client, schemas and TLS policy — belongs in `src/core/db`. Application code consumes `POSTGRES_URL` and never chooses between local and production; see `src/core/db/README.md`.
 
-Operational tooling — migrations, Studio, seeding and anything that can reach production — belongs in `scripts/ops`, which is the only code that selects a database target; see `scripts/ops/README.md`.
+Local database tooling — migrations, Studio, reset and seeding — belongs in the dev CLI in `scripts/dev`, which refuses any database that is not local; see `scripts/dev/README.md`. Commands that run in a deployed environment (migrate, org bootstrap, Admin bootstrap and recovery) are application code in `src/cli` and ship in the release image. Packaging and hosting belong in `deploy/`; see `deploy/README.md` and ADR 0012.
 
 ## Next.js And React
 
