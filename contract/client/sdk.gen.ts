@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { GetCurrentActorData, GetCurrentActorErrors, GetCurrentActorResponses } from './types.gen';
+import type { GetCurrentActorData, GetCurrentActorErrors, GetCurrentActorResponses, GetMemberIdSessionData, GetMemberIdSessionErrors, GetMemberIdSessionResponses, IssueMemberIdData, IssueMemberIdErrors, IssueMemberIdResponses, VerifyMemberIdData, VerifyMemberIdErrors, VerifyMemberIdResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -22,3 +22,29 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
  * The signed-in, active User behind this request, freshly resolved.
  */
 export const getCurrentActor = <ThrowOnError extends boolean = false>(options?: Options<GetCurrentActorData, ThrowOnError>): RequestResult<GetCurrentActorResponses, GetCurrentActorErrors, ThrowOnError> => (options?.client ?? client).get<GetCurrentActorResponses, GetCurrentActorErrors, ThrowOnError>({ url: '/api/v1/me', ...options });
+
+/**
+ * The signed-in User's own Member ID profile and whether they may verify others.
+ */
+export const getMemberIdSession = <ThrowOnError extends boolean = false>(options?: Options<GetMemberIdSessionData, ThrowOnError>): RequestResult<GetMemberIdSessionResponses, GetMemberIdSessionErrors, ThrowOnError> => (options?.client ?? client).get<GetMemberIdSessionResponses, GetMemberIdSessionErrors, ThrowOnError>({ url: '/api/member-id/session', ...options });
+
+/**
+ * Issues a short-lived Member ID code for the caller's own, non-impersonated session.
+ *
+ * Any request body is ignored.
+ */
+export const issueMemberId = <ThrowOnError extends boolean = false>(options?: Options<IssueMemberIdData, ThrowOnError>): RequestResult<IssueMemberIdResponses, IssueMemberIdErrors, ThrowOnError> => (options?.client ?? client).post<IssueMemberIdResponses, IssueMemberIdErrors, ThrowOnError>({ url: '/api/member-id/issue', ...options });
+
+/**
+ * Admin-only visual verification of a member's current code.
+ *
+ * Rechecks the subject's stored, unexpired, non-impersonated session and active account. A missing subject is indistinguishable from an invalid code.
+ */
+export const verifyMemberId = <ThrowOnError extends boolean = false>(options: Options<VerifyMemberIdData, ThrowOnError>): RequestResult<VerifyMemberIdResponses, VerifyMemberIdErrors, ThrowOnError> => (options.client ?? client).post<VerifyMemberIdResponses, VerifyMemberIdErrors, ThrowOnError>({
+    url: '/api/member-id/verify',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});

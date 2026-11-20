@@ -1,4 +1,5 @@
 import { type ApiDependencies, apiError, createRouter, handleApiError } from "@/core/http"
+import { memberIdRouter } from "@/features/member-id"
 import { currentActorRouter } from "./current-actor"
 
 const openApiInfo = {
@@ -19,8 +20,14 @@ export function createApi(dependencies: ApiDependencies) {
 
   api.on(["GET", "POST"], "/api/auth/*", (c) => dependencies.handleAuth(c.req.raw))
 
-  api.use("/api/v1/*", async (c, next) => {
+  api.use("/api/*", async (c, next) => {
     c.set("resolveRequest", () => dependencies.resolveRequest(c.req.raw.headers))
+    c.set("database", dependencies.database)
+    c.set("secret", dependencies.secret)
+    await next()
+  })
+
+  api.use("/api/v1/*", async (c, next) => {
     await next()
     // Every operation is personalised by the caller's session; nothing may be shared-cached.
     c.header("Cache-Control", "private, no-store")
@@ -28,6 +35,8 @@ export function createApi(dependencies: ApiDependencies) {
 
   const v1 = createRouter().route("/", currentActorRouter)
   api.route("/api/v1", v1)
+  // Released before /api/v1; its paths and representations stay frozen for installed clients.
+  api.route("/api/member-id", memberIdRouter)
 
   api.notFound((c) => apiError(c, 404, "NOT_FOUND"))
   api.onError(handleApiError)

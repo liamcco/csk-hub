@@ -9,6 +9,7 @@ import { createApi } from "./app"
 const database = await createTestDatabase()
 const origin = "http://localhost:3000"
 const password = "auth-boundary-test-password"
+const secret = "auth-boundary-disposable-test-secret"
 
 describe.skipIf(!database)("API auth boundary over HTTP", () => {
   const t = database as NonNullable<typeof database>
@@ -18,11 +19,11 @@ describe.skipIf(!database)("API auth boundary over HTTP", () => {
     database: t.db,
     baseURL: origin,
     production: false,
-    secret: "auth-boundary-disposable-test-secret",
+    secret,
     // Better Auth otherwise skips origin checks in NODE_ENV=test.
     advanced: { disableOriginCheck: false }
   })
-  const api = createApi(createApiDependencies({ auth, database: t.db }))
+  const api = createApi(createApiDependencies({ auth, database: t.db, secret }))
 
   function request(path: string, init: { method?: string; body?: object; headers?: Record<string, string> } = {}) {
     return api.request(`${origin}${path}`, {

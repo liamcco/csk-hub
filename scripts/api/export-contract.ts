@@ -5,6 +5,7 @@
 import { mkdir, writeFile } from "node:fs/promises"
 import { dirname } from "node:path"
 import { createApi, getApiContract } from "@/api/app"
+import type { Database } from "@/core/db"
 
 const output = "contract/openapi.json"
 await mkdir(dirname(output), { recursive: true })
@@ -13,6 +14,13 @@ function unavailable(): never {
   throw new Error("The contract export never handles requests")
 }
 
-const contract = getApiContract(createApi({ handleAuth: unavailable, resolveRequest: unavailable }))
+const contract = getApiContract(
+  createApi({
+    handleAuth: unavailable,
+    resolveRequest: unavailable,
+    database: new Proxy({} as Database, { get: unavailable }),
+    secret: "unused"
+  })
+)
 await writeFile(output, `${JSON.stringify(contract, null, 2)}\n`)
 console.log(`Wrote ${output}`)

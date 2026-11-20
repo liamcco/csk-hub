@@ -1,1 +1,1 @@
-export { issueMemberIdResponse, memberIdSessionResponse, verifyMemberIdResponse } from "./http"
+export { memberIdRouter } from "./routes"
