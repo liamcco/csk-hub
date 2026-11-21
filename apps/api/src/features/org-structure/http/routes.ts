@@ -1,15 +1,11 @@
 import { logger } from "@csk-hub/shared/core/logging"
-import {
-  ORG_STRUCTURE_VIOLATIONS,
-  type OrgStructureResult,
-  type OrgStructureViolation
-} from "@csk-hub/shared/features/org-structure/model"
+import { ORG_STRUCTURE_VIOLATIONS, type OrgStructureResult } from "@csk-hub/shared/features/org-structure/model"
 import { getErrorCode, getErrorName } from "@csk-hub/shared/shared/errors"
 import { createRoute, z } from "@hono/zod-openapi"
 import type { Context } from "hono"
 import { groupType } from "@/core/db/schema/org-structure"
 import { voice } from "@/core/db/schema/voice"
-import { type ApiEnv, createRouter, errorResponses } from "@/core/http"
+import { type ApiEnv, createRouter, domainErrorCode, errorResponses, jsonBody, jsonResponse } from "@/core/http"
 import { changeVoice, endMembership, placeSingerInSection, startMembership } from "../membership"
 import type { OrgStructureTransaction } from "../operation"
 import { endPositionHolding, replacePositionHolder } from "../positions"
@@ -20,22 +16,9 @@ import { getChoirIdOf, getGroupDetail } from "../ui/detail/query"
 import { fields } from "../ui/fields"
 import { getGroupsOverview } from "../ui/groups/query"
 
-function json<T extends z.ZodType>(description: string, schema: T) {
-  return { description, content: { "application/json": { schema } } }
-}
-
-function body<T extends z.ZodType>(schema: T) {
-  return { body: { required: true, content: { "application/json": { schema } } } }
-}
-
-/** `group-name-taken` travels as `GROUP_NAME_TAKEN`; clients map it back to translate it. */
-function violationCode(violation: OrgStructureViolation) {
-  return violation.toUpperCase().replaceAll("-", "_")
-}
-
 const OrgStructureErrorSchema = z
   .object({
-    code: z.enum(ORG_STRUCTURE_VIOLATIONS.map(violationCode) as [string, ...string[]]).openapi({
+    code: z.enum(ORG_STRUCTURE_VIOLATIONS.map(domainErrorCode) as [string, ...string[]]).openapi({
       description: "The organisation rule a command broke. Tolerate unknown codes."
     })
   })
@@ -43,7 +26,9 @@ const OrgStructureErrorSchema = z
 
 const GroupTypeSchema = z.enum(groupType.enumValues)
 const VoiceSchema = z.enum(voice.enumValues)
-const date = () => z.string().openapi({ format: "date" })
+function date() {
+  return z.string().openapi({ format: "date" })
+}
 const Done = z.object({ id: z.string() }).openapi("OrgStructureCommandResult")
 
 const GroupSummarySchema = z
@@ -116,18 +101,25 @@ const positionInput = z
   .object({ name: fields.name, groupTypes: z.array(GroupTypeSchema), groupIds: z.array(fields.id) })
   .openapi("PositionInput")
 
-const commandResponses = (success: 200 | 201) => ({
-  [success]: json("Done.", Done),
-  400: json("The command broke an organisation rule, or the request failed validation.", OrgStructureErrorSchema),
-  401: errorResponses[401],
-  403: errorResponses[403]
-})
+function commandResponses(success: 200 | 201) {
+  return {
+    [success]: jsonResponse("Done.", Done),
+    400: jsonResponse(
+      "The command broke an organisation rule, or the request failed validation.",
+      OrgStructureErrorSchema
+    ),
+    401: errorResponses[401],
+    403: errorResponses[403]
+  }
+}
 
-const readResponses = <T extends z.ZodType>(description: string, schema: T) => ({
-  200: json(description, schema),
-  401: errorResponses[401],
-  403: errorResponses[403]
-})
+function readResponses<T extends z.ZodType>(description: string, schema: T) {
+  return {
+    200: jsonResponse(description, schema),
+    401: errorResponses[401],
+    403: errorResponses[403]
+  }
+}
 
 function command<P extends z.ZodObject, B extends z.ZodType>(
   method: "post" | "put",
@@ -144,9 +136,9 @@ function command<P extends z.ZodObject, B extends z.ZodType>(
     operationId,
     summary,
     tags: ["org-structure"],
-    request: { ...(params ? { params } : {}), ...(input ? body(input) : {}) } as {
+    request: { ...(params ? { params } : {}), ...(input ? jsonBody(input) : {}) } as {
       params: P
-      body: ReturnType<typeof body<B>>["body"]
+      body: ReturnType<typeof jsonBody<B>>["body"]
     },
     responses: commandResponses(success)
   })
@@ -325,11 +317,13 @@ async function run(
     })
     throw error
   }
-  if (!result.success) return c.json({ code: violationCode(result.error) }, 400)
+  if (!result.success) return c.json({ code: domainErrorCode(result.error) }, 400)
   return c.json({ id: id(result.data) }, success)
 }
 
-const createdId = (data: unknown) => (data as { id: string }).id
+function createdId(data: unknown) {
+  return (data as { id: string }).id
+}
 
 /** Groups, Memberships and Positions administration, mounted under `/api/v1`. */
 export const orgStructureRouter = createRouter()

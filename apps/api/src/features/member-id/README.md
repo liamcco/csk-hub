@@ -6,21 +6,22 @@ Missing photos and accounts without Choir affiliations are allowed.
 
 ## HTTP contract
 
-The endpoints are a Hono router (`routes.ts`) mounted by `src/api` at `/api/member-id`, outside
+The endpoints are a Hono router (`http/routes.ts`) mounted by `src/api` at `/api/member-id`, outside
 `/api/v1`. Their schemas are published in `contract/openapi.json` with the generated client
 (`getMemberIdSession`, `issueMemberId`, `verifyMemberId`), but the representations below predate
 the `/api/v1` conventions and stay frozen, including Unix-millisecond timestamps and these codes.
 
-Use the existing Better Auth `/api/auth` endpoints to sign in and retain cookies. Cookie-bearing
-POST requests require an `Origin` header matching Hub's configured origin. Signup remains disabled.
+Use the existing Better Auth `/api/auth` endpoints to sign in and retain cookies. Signup remains
+disabled. These endpoints sit outside the `/api/v1` `Origin` guard, so POSTs need no `Origin`
+header; Better Auth's `SameSite=Lax` session cookie keeps cross-site browser POSTs unauthenticated.
 All member-ID responses use `Cache-Control: no-store, private`. Error bodies contain a stable `code`;
 clients own their presentation and translation.
 
 | Endpoint | Request | Response |
 | --- | --- | --- |
-| `GET /api/member-id/session` | Active, non-impersonated session | `{ member, canVerify }` |
-| `POST /api/member-id/issue` | Same session; no body required | `{ token, issuedAt, expiresAt, rotateAfterMs }` |
-| `POST /api/member-id/verify` | Active, non-impersonated Admin session; JSON `{ token }` | `{ member, verifiedAt }` |
+| `GET /api/member-id/session` | Active session (impersonated sessions included) | `{ member, canVerify }` |
+| `POST /api/member-id/issue` | Active, non-impersonated session; no body required | `{ token, issuedAt, expiresAt, rotateAfterMs }` |
+| `POST /api/member-id/verify` | Active Admin session; JSON `{ token }` | `{ member, verifiedAt }` |
 
 `member` is `{ id, name, image, accountStatus: "active", choirs: [{ id, name }] }`.
 `image` may be null. Choirs use org-structure's existing current/open-ended Membership semantics

@@ -4,7 +4,7 @@ import { accessRoleNames } from "@csk-hub/shared/shared/roles"
 import { validationMessageIds } from "@csk-hub/shared/shared/schemas"
 import { createRoute, z } from "@hono/zod-openapi"
 import type { Context } from "hono"
-import { type ApiEnv, createRouter, errorResponses } from "@/core/http"
+import { type ApiEnv, createRouter, errorResponses, jsonBody, jsonResponse } from "@/core/http"
 import {
   activateUserCommand,
   changeUserRoleCommand,
@@ -16,14 +16,6 @@ import {
 } from "../commands"
 import { findExistingEmails, inviteUser, inviteUsers } from "../invite-user"
 import { listUsers } from "../service"
-
-function json<T extends z.ZodType>(description: string, schema: T) {
-  return { description, content: { "application/json": { schema } } }
-}
-
-function body<T extends z.ZodType>(schema: T) {
-  return { body: { required: true, content: { "application/json": { schema } } } }
-}
 
 const UserCommandErrorSchema = z
   .object({
@@ -68,12 +60,12 @@ const Done = z.object({ id: z.string() }).openapi("UserCommandResult")
 const userParams = z.object({ userId: z.string().min(1) })
 
 const commandResponses = {
-  200: json("Done.", Done),
-  400: json("The command broke a rule, or the request failed validation.", UserCommandErrorSchema),
+  200: jsonResponse("Done.", Done),
+  400: jsonResponse("The command broke a rule, or the request failed validation.", UserCommandErrorSchema),
   401: errorResponses[401],
   403: errorResponses[403],
-  404: json("`USER_NOT_FOUND`: no such User.", UserCommandErrorSchema),
-  500: json("`UNAVAILABLE`: Better Auth could not complete the change.", UserCommandErrorSchema)
+  404: jsonResponse("`USER_NOT_FOUND`: no such User.", UserCommandErrorSchema),
+  500: jsonResponse("`UNAVAILABLE`: Better Auth could not complete the change.", UserCommandErrorSchema)
 }
 
 function command(path: string, operationId: string, summary: string) {
@@ -96,7 +88,7 @@ const routes = {
     summary: "Every User with their activation and status, by name. Admins only.",
     tags: ["users"],
     responses: {
-      200: json("Users.", z.object({ items: z.array(UserSchema) }).openapi("AdministeredUsers")),
+      200: jsonResponse("Users.", z.object({ items: z.array(UserSchema) }).openapi("AdministeredUsers")),
       401: errorResponses[401],
       403: errorResponses[403]
     }
@@ -107,17 +99,17 @@ const routes = {
     operationId: "inviteUser",
     summary: "Creates a User without a password and emails the magic link that activates them. Admins only.",
     tags: ["users"],
-    request: body(InviteeSchema),
+    request: jsonBody(InviteeSchema),
     responses: {
-      201: json(
+      201: jsonResponse(
         "Created. `email-failed` means the User exists but the invitation email could not be sent.",
         z.object({ id: z.string(), delivery: z.enum(["sent", "email-failed"]) }).openapi("InvitedUser")
       ),
-      400: json("The name or email is missing or malformed.", InviteErrorSchema),
+      400: jsonResponse("The name or email is missing or malformed.", InviteErrorSchema),
       401: errorResponses[401],
       403: errorResponses[403],
-      409: json("`EMAIL_EXISTS`: a User already has this email.", InviteErrorSchema),
-      500: json("`UNAVAILABLE`: the User could not be created.", InviteErrorSchema)
+      409: jsonResponse("`EMAIL_EXISTS`: a User already has this email.", InviteErrorSchema),
+      500: jsonResponse("`UNAVAILABLE`: the User could not be created.", InviteErrorSchema)
     }
   }),
   findExistingUserEmails: createRoute({
@@ -127,9 +119,9 @@ const routes = {
     summary: "Which of these emails already belong to a User, for reviewing an import. Admins only.",
     description: "A read sent as POST so the emails stay out of URLs and logs.",
     tags: ["users"],
-    request: body(z.object({ emails: z.array(z.string().max(320)).max(MAX_IMPORT_USERS * 2) })),
+    request: jsonBody(z.object({ emails: z.array(z.string().max(320)).max(MAX_IMPORT_USERS * 2) })),
     responses: {
-      200: json("The taken emails, lower-cased.", z.object({ emails: z.array(z.string()) })),
+      200: jsonResponse("The taken emails, lower-cased.", z.object({ emails: z.array(z.string()) })),
       400: errorResponses[400],
       401: errorResponses[401],
       403: errorResponses[403]
@@ -141,7 +133,7 @@ const routes = {
     operationId: "importUsers",
     summary: "Invites the reviewed rows of an import, reporting each row's outcome. Admins only.",
     tags: ["users"],
-    request: body(
+    request: jsonBody(
       z
         .object({
           users: z
@@ -152,7 +144,7 @@ const routes = {
         .openapi("UserImport")
     ),
     responses: {
-      200: json(
+      200: jsonResponse(
         "Each row's outcome.",
         z
           .object({
@@ -179,7 +171,7 @@ const routes = {
     operationId: "eraseUser",
     summary: "Erases an inactive User. The confirmation must read `delete <name>`.",
     tags: ["users"],
-    request: { params: userParams, ...body(z.object({ confirmation: z.string().max(400).optional() })) },
+    request: { params: userParams, ...jsonBody(z.object({ confirmation: z.string().max(400).optional() })) },
     responses: commandResponses
   }),
   resendInvitation: command(
@@ -193,7 +185,7 @@ const routes = {
     operationId: "changeUserRoles",
     summary: "Sets a User's roles; every User keeps `user`. Never the caller, and never demotes the last active Admin.",
     tags: ["users"],
-    request: { params: userParams, ...body(z.object({ roles: z.array(z.enum(accessRoleNames)).min(1) })) },
+    request: { params: userParams, ...jsonBody(z.object({ roles: z.array(z.enum(accessRoleNames)).min(1) })) },
     responses: commandResponses
   })
 }

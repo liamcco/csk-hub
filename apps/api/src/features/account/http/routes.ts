@@ -4,21 +4,15 @@ import { getErrorCode, getErrorName, getErrorStatus } from "@csk-hub/shared/shar
 import { validationMessageIds } from "@csk-hub/shared/shared/schemas"
 import { createRoute, z } from "@hono/zod-openapi"
 import type { Context } from "hono"
-import { type ApiEnv, createRouter, errorResponses } from "@/core/http"
+import { type ApiEnv, createRouter, errorResponses, jsonBody, jsonResponse } from "@/core/http"
 import { hasActiveSubscription, sendToUser, subscribe, unsubscribe } from "@/core/notifications"
 import { InvalidNotificationSubscriptionError } from "@/core/notifications/subscription-validation"
 import { updateUserPreferences } from "@/core/preferences"
 import { activationSchema } from "../activation/schemas"
 
-function json<T extends z.ZodType>(description: string, schema: T) {
-  return { description, content: { "application/json": { schema } } }
+function noContent(description: string) {
+  return { description }
 }
-
-function body<T extends z.ZodType>(schema: T) {
-  return { body: { required: true, content: { "application/json": { schema } } } }
-}
-
-const noContent = (description: string) => ({ description })
 
 const SubscriptionErrorSchema = z
   .object({
@@ -76,7 +70,7 @@ const routes = {
     operationId: "updateLocalePreference",
     summary: "Saves the caller's locale preference, keeping their other preferences.",
     tags: ["account"],
-    request: body(z.object({ locale: z.enum(locales) }).openapi("LocalePreference")),
+    request: jsonBody(z.object({ locale: z.enum(locales) }).openapi("LocalePreference")),
     responses: { 204: noContent("Saved."), 400: errorResponses[400], 401: errorResponses[401] }
   }),
   getPushSubscriptionStatus: createRoute({
@@ -88,9 +82,9 @@ const routes = {
       "A read sent as POST so the endpoint, a bearer-like secret, stays out of URLs and logs. Another User's " +
       "binding reads as `unbound`; an unsupported endpoint reads as `unsupported` so the browser can drop it.",
     tags: ["account"],
-    request: body(EndpointSchema),
+    request: jsonBody(EndpointSchema),
     responses: {
-      200: json(
+      200: jsonResponse(
         "The binding.",
         z.object({ binding: z.enum(["bound", "unbound", "unsupported"]) }).openapi("PushSubscriptionStatus")
       ),
@@ -104,10 +98,13 @@ const routes = {
     operationId: "registerPushSubscription",
     summary: "Binds a browser push subscription to the caller, taking it over from any earlier owner.",
     tags: ["account"],
-    request: body(PushSubscriptionSchema),
+    request: jsonBody(PushSubscriptionSchema),
     responses: {
       204: noContent("Bound."),
-      400: json("Not a supported push subscription, or the request failed validation.", SubscriptionErrorSchema),
+      400: jsonResponse(
+        "Not a supported push subscription, or the request failed validation.",
+        SubscriptionErrorSchema
+      ),
       401: errorResponses[401]
     }
   }),
@@ -117,10 +114,10 @@ const routes = {
     operationId: "removePushSubscription",
     summary: "Removes the caller's own binding for an endpoint, as on disabling notifications or signing out.",
     tags: ["account"],
-    request: body(EndpointSchema),
+    request: jsonBody(EndpointSchema),
     responses: {
-      200: json("Whether a binding of the caller's was removed.", z.object({ removed: z.boolean() })),
-      400: json("Not a supported push endpoint, or the request failed validation.", SubscriptionErrorSchema),
+      200: jsonResponse("Whether a binding of the caller's was removed.", z.object({ removed: z.boolean() })),
+      400: jsonResponse("Not a supported push endpoint, or the request failed validation.", SubscriptionErrorSchema),
       401: errorResponses[401]
     }
   }),
@@ -130,9 +127,9 @@ const routes = {
     operationId: "sendTestPushNotification",
     summary: "Sends a test notification to the caller's own active subscriptions.",
     tags: ["account"],
-    request: body(z.object({ message: z.string().trim().min(1).max(500) })),
+    request: jsonBody(z.object({ message: z.string().trim().min(1).max(500) })),
     responses: {
-      200: json("How the push providers answered.", DeliveryResultSchema),
+      200: jsonResponse("How the push providers answered.", DeliveryResultSchema),
       400: errorResponses[400],
       401: errorResponses[401]
     }
@@ -143,11 +140,11 @@ const routes = {
     operationId: "activateAccount",
     summary: "Sets an invited User's first password from the session their magic link opened.",
     tags: ["account"],
-    request: body(z.object({ password: z.string(), confirmPassword: z.string() }).openapi("Activation")),
+    request: jsonBody(z.object({ password: z.string(), confirmPassword: z.string() }).openapi("Activation")),
     responses: {
       204: noContent("Activated."),
-      400: json("The passwords break the password policy.", ActivationErrorSchema),
-      401: json("`INVALID_LINK`: no valid magic-link session.", ActivationErrorSchema)
+      400: jsonResponse("The passwords break the password policy.", ActivationErrorSchema),
+      401: jsonResponse("`INVALID_LINK`: no valid magic-link session.", ActivationErrorSchema)
     }
   })
 }

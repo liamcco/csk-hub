@@ -2,7 +2,15 @@ import { groupMemberIds } from "@csk-hub/shared/features/messaging/model/group-c
 import { MessagingAccessError, type MessagingErrorKind } from "@csk-hub/shared/features/messaging/model/messaging-error"
 import { createRoute, z } from "@hono/zod-openapi"
 import type { Context } from "hono"
-import { type ApiEnv, createRouter, errorResponses } from "@/core/http"
+import {
+  type ApiEnv,
+  createRouter,
+  domainErrorCode,
+  errorResponses,
+  instant,
+  jsonBody,
+  jsonResponse
+} from "@/core/http"
 import {
   addGroupMembers,
   createGroupConversation,
@@ -37,14 +45,9 @@ const messagingErrorKinds = [
   "read-position-invalid"
 ] as const satisfies readonly MessagingErrorKind[]
 
-/** `blank-message` travels as `BLANK_MESSAGE`; clients map it back to translate it. */
-function messagingCode(kind: MessagingErrorKind) {
-  return kind.toUpperCase().replaceAll("-", "_") as Uppercase<string>
-}
-
 const MessagingErrorSchema = z
   .object({
-    code: z.enum(messagingErrorKinds.map(messagingCode) as [string, ...string[]]).openapi({
+    code: z.enum(messagingErrorKinds.map(domainErrorCode) as [string, ...string[]]).openapi({
       description: "Stable Messaging failure code. Clients must tolerate unknown codes."
     })
   })
@@ -77,22 +80,12 @@ function failures<Status extends 400 | 403 | 404 | 409>(...statuses: Status[]) {
       {
         description: `Messaging codes: ${messagingErrorKinds
           .filter((kind) => statusOf[kind] === status)
-          .map((kind) => `\`${messagingCode(kind)}\``)
+          .map((kind) => `\`${domainErrorCode(kind)}\``)
           .join(", ")}.`,
         content: { "application/json": { schema: MessagingErrorSchema } }
       }
     ])
   ) as Record<Status, { description: string; content: { "application/json": { schema: typeof MessagingErrorSchema } } }>
-}
-
-const instant = () => z.string().openapi({ format: "date-time" })
-
-function json<T extends z.ZodType>(description: string, schema: T) {
-  return { description, content: { "application/json": { schema } } }
-}
-
-function body<T extends z.ZodType>(schema: T) {
-  return { body: { required: true, content: { "application/json": { schema } } } }
 }
 
 const InboxSchema = z
@@ -154,7 +147,7 @@ const routes = {
     summary: "The caller's Direct and Group Conversations, most recent first.",
     description: "A departed member keeps the history retained for them, read-only.",
     tags: ["messaging"],
-    responses: { 200: json("The inbox.", InboxSchema), 401: errorResponses[401] }
+    responses: { 200: jsonResponse("The inbox.", InboxSchema), 401: errorResponses[401] }
   }),
   getConversationUnread: createRoute({
     method: "get",
@@ -163,7 +156,7 @@ const routes = {
     summary: "How many of the caller's Conversations hold an unread Message.",
     tags: ["messaging"],
     responses: {
-      200: json("The unread count.", z.object({ count: z.int() }).openapi("ConversationUnread")),
+      200: jsonResponse("The unread count.", z.object({ count: z.int() }).openapi("ConversationUnread")),
       401: errorResponses[401]
     }
   }),
@@ -175,7 +168,7 @@ const routes = {
     tags: ["messaging"],
     request: { query: z.object({ query: z.string().max(200).default("") }) },
     responses: {
-      200: json(
+      200: jsonResponse(
         "Up to 20 members.",
         z
           .object({ items: z.array(z.object({ id: z.string(), name: z.string(), username: z.string().nullable() })) })
@@ -196,7 +189,7 @@ const routes = {
       query: z.object({ before: z.coerce.number().int().min(1).optional().openapi({ type: "integer" }) })
     },
     responses: {
-      200: json("The Conversation page.", ConversationPageSchema),
+      200: jsonResponse("The Conversation page.", ConversationPageSchema),
       400: errorResponses[400],
       401: errorResponses[401],
       ...failures(403, 404)
@@ -210,7 +203,7 @@ const routes = {
     description:
       "Retrying with the same `idempotencyKey` returns the original Conversation instead of creating another.",
     tags: ["messaging"],
-    request: body(
+    request: jsonBody(
       z.object({
         memberIds: z.array(z.string()).min(1),
         text: z.string().optional().openapi({ description: "The first Message; required for a Direct Conversation." }),
@@ -219,7 +212,7 @@ const routes = {
       })
     ),
     responses: {
-      200: json("The Conversation.", ConversationRefSchema),
+      200: jsonResponse("The Conversation.", ConversationRefSchema),
       401: errorResponses[401],
       ...failures(400, 403, 404, 409)
     }
@@ -231,9 +224,9 @@ const routes = {
     summary: "Appends a Message. Retrying with the same `idempotencyKey` returns the original Message.",
     description: "Reusing a key for different text is `IDEMPOTENCY_KEY_REUSED`.",
     tags: ["messaging"],
-    request: { params: conversationParams, ...body(z.object({ text: z.string(), idempotencyKey: z.string() })) },
+    request: { params: conversationParams, ...jsonBody(z.object({ text: z.string(), idempotencyKey: z.string() })) },
     responses: {
-      200: json(
+      200: jsonResponse(
         "The Message; `created` is false for a retry.",
         z
           .object({ conversationId: z.string(), id: z.string(), sequence: z.int(), created: z.boolean() })
@@ -249,9 +242,12 @@ const routes = {
     operationId: "markConversationRead",
     summary: "Advances the caller's read cursor to a Message they were shown.",
     tags: ["messaging"],
-    request: { params: conversationParams, ...body(z.object({ sequence: z.int(), token: z.string() })) },
+    request: { params: conversationParams, ...jsonBody(z.object({ sequence: z.int(), token: z.string() })) },
     responses: {
-      200: json("Whether the cursor moved.", z.object({ changed: z.boolean() }).openapi("ConversationReadResult")),
+      200: jsonResponse(
+        "Whether the cursor moved.",
+        z.object({ changed: z.boolean() }).openapi("ConversationReadResult")
+      ),
       401: errorResponses[401],
       ...failures(400, 403)
     }
@@ -262,9 +258,9 @@ const routes = {
     operationId: "addGroupMembers",
     summary: "Adds members to a Group Conversation the caller belongs to.",
     tags: ["messaging"],
-    request: { params: conversationParams, ...body(z.object({ memberIds: z.array(z.string()).min(1) })) },
+    request: { params: conversationParams, ...jsonBody(z.object({ memberIds: z.array(z.string()).min(1) })) },
     responses: {
-      200: json("The Conversation.", ConversationRefSchema),
+      200: jsonResponse("The Conversation.", ConversationRefSchema),
       401: errorResponses[401],
       ...failures(400, 403, 404, 409)
     }
@@ -275,9 +271,9 @@ const routes = {
     operationId: "renameGroupConversation",
     summary: "Renames a Group Conversation the caller belongs to.",
     tags: ["messaging"],
-    request: { params: conversationParams, ...body(z.object({ name: z.string() })) },
+    request: { params: conversationParams, ...jsonBody(z.object({ name: z.string() })) },
     responses: {
-      200: json("The Conversation.", ConversationRefSchema),
+      200: jsonResponse("The Conversation.", ConversationRefSchema),
       401: errorResponses[401],
       ...failures(400, 403, 404)
     }
@@ -290,7 +286,7 @@ const routes = {
     tags: ["messaging"],
     request: { params: conversationParams },
     responses: {
-      200: json("The Conversation.", ConversationRefSchema),
+      200: jsonResponse("The Conversation.", ConversationRefSchema),
       401: errorResponses[401],
       ...failures(403, 404)
     }
@@ -417,6 +413,6 @@ messagingRouter.openapi(routes.leaveGroupConversation, async (c) => {
 })
 
 messagingRouter.onError((error, c) => {
-  if (error instanceof MessagingAccessError) return c.json({ code: messagingCode(error.kind) }, statusOf[error.kind])
+  if (error instanceof MessagingAccessError) return c.json({ code: domainErrorCode(error.kind) }, statusOf[error.kind])
   throw error
 })

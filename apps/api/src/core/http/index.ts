@@ -1,5 +1,6 @@
 export { createApiDependencies } from "./dependencies"
 export type { ApiErrorCode } from "./errors"
 export { ApiErrorSchema, apiErrorCodes, errorResponses, ValidationErrorSchema } from "./errors"
+export { domainErrorCode, instant, jsonBody, jsonResponse } from "./openapi"
 export type { ApiDependencies, ApiEnv, AuthApi, ResolvedRequest } from "./request-context"
 export { type ApiRouter, apiError, createRouter, handleApiError } from "./router"

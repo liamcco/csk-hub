@@ -3,7 +3,7 @@ import { postDocument } from "@csk-hub/shared/features/posts/post-document"
 import { createRoute, z } from "@hono/zod-openapi"
 import type { Context } from "hono"
 import type { RequestAuthorization } from "@/core/authz/authorization"
-import { type ApiEnv, createRouter, errorResponses } from "@/core/http"
+import { type ApiEnv, createRouter, errorResponses, instant, jsonBody, jsonResponse } from "@/core/http"
 import {
   createPostCommand,
   discardDraftCommand,
@@ -26,8 +26,6 @@ import { countUnreadPosts, listUnreadPostIds, markPostRead, nextUnreadPostChange
 const RichTextDocumentSchema = z.record(z.string(), z.unknown()).openapi("RichTextDocument", {
   description: "The editor's document (ProseMirror JSON), restricted to what a Post body may contain."
 })
-
-const instant = () => z.string().openapi({ format: "date-time" })
 
 const PublishedPostSchema = z
   .object({
@@ -88,14 +86,6 @@ const SavedPostSchema = z.object({ id: z.string() }).openapi("SavedPost")
 
 const postIdParams = z.object({ postId: z.string() })
 
-function json<T extends z.ZodType>(description: string, schema: T) {
-  return { description, content: { "application/json": { schema } } }
-}
-
-function body<T extends z.ZodType>(schema: T) {
-  return { body: { required: true, content: { "application/json": { schema } } } }
-}
-
 const writeFailures = {
   400: errorResponses[400],
   401: errorResponses[401],
@@ -111,7 +101,7 @@ const routes = {
     operationId: "listNewsFeed",
     summary: "The whole News feed, newest first, with the caller's unread marks.",
     tags: ["posts"],
-    responses: { 200: json("The feed.", NewsFeedSchema), 401: errorResponses[401] }
+    responses: { 200: jsonResponse("The feed.", NewsFeedSchema), 401: errorResponses[401] }
   }),
   listLatestPosts: createRoute({
     method: "get",
@@ -120,7 +110,11 @@ const routes = {
     summary: "The newest published Posts without their bodies, for overviews.",
     tags: ["posts"],
     request: { query: z.object({ limit: z.coerce.number().int().min(1).max(20).default(3) }) },
-    responses: { 200: json("The newest Posts.", LatestPostsSchema), 400: errorResponses[400], 401: errorResponses[401] }
+    responses: {
+      200: jsonResponse("The newest Posts.", LatestPostsSchema),
+      400: errorResponses[400],
+      401: errorResponses[401]
+    }
   }),
   listOwnDrafts: createRoute({
     method: "get",
@@ -128,7 +122,7 @@ const routes = {
     operationId: "listOwnDrafts",
     summary: "The caller's own Drafts, most recently saved first. Never anyone else's.",
     tags: ["posts"],
-    responses: { 200: json("The caller's Drafts.", OwnDraftsSchema), 401: errorResponses[401] }
+    responses: { 200: jsonResponse("The caller's Drafts.", OwnDraftsSchema), 401: errorResponses[401] }
   }),
   getPostUnread: createRoute({
     method: "get",
@@ -136,7 +130,7 @@ const routes = {
     operationId: "getPostUnread",
     summary: "The caller's unread Post count and when it next changes by itself.",
     tags: ["posts"],
-    responses: { 200: json("Unread state.", PostUnreadSchema), 401: errorResponses[401] }
+    responses: { 200: jsonResponse("Unread state.", PostUnreadSchema), 401: errorResponses[401] }
   }),
   getPost: createRoute({
     method: "get",
@@ -146,7 +140,7 @@ const routes = {
     description: "Drafts, Recalled Posts and discarded Posts are 404, even to their author.",
     tags: ["posts"],
     request: { params: postIdParams },
-    responses: { 200: json("The Post.", PostViewSchema), 401: errorResponses[401], 404: errorResponses[404] }
+    responses: { 200: jsonResponse("The Post.", PostViewSchema), 401: errorResponses[401], 404: errorResponses[404] }
   }),
   getEditablePost: createRoute({
     method: "get",
@@ -156,7 +150,11 @@ const routes = {
     description: "Another author's Draft is 404, including to Admins.",
     tags: ["posts"],
     request: { params: postIdParams },
-    responses: { 200: json("The Post.", EditablePostSchema), 401: errorResponses[401], 404: errorResponses[404] }
+    responses: {
+      200: jsonResponse("The Post.", EditablePostSchema),
+      401: errorResponses[401],
+      404: errorResponses[404]
+    }
   }),
   createPost: createRoute({
     method: "post",
@@ -164,8 +162,8 @@ const routes = {
     operationId: "createPost",
     summary: "Writes a new Post, published at once or kept as the caller's Draft.",
     tags: ["posts"],
-    request: body(PostContentSchema.extend({ publish: z.boolean() })),
-    responses: { 201: json("The new Post.", SavedPostSchema), ...writeFailures }
+    request: jsonBody(PostContentSchema.extend({ publish: z.boolean() })),
+    responses: { 201: jsonResponse("The new Post.", SavedPostSchema), ...writeFailures }
   }),
   saveDraft: createRoute({
     method: "put",
@@ -173,8 +171,8 @@ const routes = {
     operationId: "saveDraft",
     summary: "Saves the caller's own Draft, and publishes it when `publish` is true.",
     tags: ["posts"],
-    request: { params: postIdParams, ...body(PostContentSchema.extend({ publish: z.boolean() })) },
-    responses: { 200: json("The saved Post.", SavedPostSchema), ...writeFailures }
+    request: { params: postIdParams, ...jsonBody(PostContentSchema.extend({ publish: z.boolean() })) },
+    responses: { 200: jsonResponse("The saved Post.", SavedPostSchema), ...writeFailures }
   }),
   editPublishedPost: createRoute({
     method: "put",
@@ -182,8 +180,8 @@ const routes = {
     operationId: "editPublishedPost",
     summary: "Changes a published Post in place; marked edited only when something changed.",
     tags: ["posts"],
-    request: { params: postIdParams, ...body(PostContentSchema) },
-    responses: { 200: json("The saved Post.", SavedPostSchema), ...writeFailures }
+    request: { params: postIdParams, ...jsonBody(PostContentSchema) },
+    responses: { 200: jsonResponse("The saved Post.", SavedPostSchema), ...writeFailures }
   }),
   recallPost: createRoute({
     method: "post",
@@ -193,7 +191,7 @@ const routes = {
     tags: ["posts"],
     request: { params: postIdParams },
     responses: {
-      200: json(
+      200: jsonResponse(
         "Whose Drafts received the Post.",
         z.object({ id: z.string(), unpublishedTo: z.enum(["own", "author"]) }).openapi("RecalledPost")
       ),
@@ -217,7 +215,7 @@ const routes = {
     tags: ["posts"],
     request: { params: postIdParams },
     responses: {
-      200: json(
+      200: jsonResponse(
         "Whether this was the first time, so a client can skip refreshing unchanged badges.",
         z.object({ changed: z.boolean() }).openapi("PostReadResult")
       ),
