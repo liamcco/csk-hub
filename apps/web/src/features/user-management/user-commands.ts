@@ -11,43 +11,35 @@ import {
 import type { ImportCsvError, ImportUserSkipped } from "@csk-hub/shared/features/user-management/import/schemas"
 import { accessRoleNames } from "@csk-hub/shared/shared/roles"
 import { browserApiClient as client } from "@/core/api-client/browser"
-import { errorCode } from "@/core/api-client/result"
-import type { UserCommandState } from "./command-state"
+import { type ApiResult, errorCode } from "@/core/api-client/result"
+import { formText as text } from "@/shared/forms/form-data"
+import type { UserCommandError, UserCommandState } from "./command-state"
 
 type UserAction = Extract<UserCommandState, { status: "success" }>["action"]
-type Outcome = { data?: unknown; error?: unknown }
 
-const UNAVAILABLE = "Unable to complete that user action right now. Please try again."
-
-/** The messages the admin screen shows for each refusal, as before the API. */
-const REFUSALS: Record<string, string | Partial<Record<UserAction, string>>> = {
-  USER_NOT_FOUND: "That user could not be found.",
-  ALREADY_ACTIVE: "That user is already active.",
-  ALREADY_INACTIVE: "That user is already inactive.",
+/** The message the admin screen shows for each refusal code. */
+const REFUSALS: Record<string, UserCommandError | Partial<Record<UserAction, UserCommandError>>> = {
+  USER_NOT_FOUND: "userNotFound",
+  ALREADY_ACTIVE: "alreadyActive",
+  ALREADY_INACTIVE: "alreadyInactive",
   CANNOT_CHANGE_SELF: {
-    deactivate: "You cannot deactivate your own account.",
-    delete: "You cannot erase your own account.",
-    role: "You cannot change your own role."
+    deactivate: "cannotDeactivateSelf",
+    delete: "cannotEraseSelf",
+    role: "cannotChangeOwnRole"
   },
   LAST_ADMIN: {
-    deactivate: "You cannot deactivate the final remaining admin.",
-    delete: "You cannot erase the final remaining admin.",
-    role: "You cannot demote the final remaining admin."
+    deactivate: "cannotDeactivateLastAdmin",
+    delete: "cannotEraseLastAdmin",
+    role: "cannotDemoteLastAdmin"
   },
-  DEACTIVATE_FIRST: "Deactivate the user before deleting them.",
-  CONFIRMATION_MISMATCH: "Type the deletion confirmation exactly to erase this user.",
-  ALREADY_ACTIVATED: "That user has already completed account activation."
+  DEACTIVATE_FIRST: "deactivateFirst",
+  CONFIRMATION_MISMATCH: "confirmationMismatch",
+  ALREADY_ACTIVATED: "alreadyActivated"
 }
 
-function refusal(action: UserAction, code: string | null) {
-  const message = code ? REFUSALS[code] : undefined
-  const text = typeof message === "object" ? message[action] : message
-  return text ?? UNAVAILABLE
-}
-
-function text(formData: FormData, name: string) {
-  const value = formData.get(name)
-  return typeof value === "string" ? value : ""
+function refusal(action: UserAction, code: string | null): UserCommandError {
+  const error = code ? REFUSALS[code] : undefined
+  return (typeof error === "object" ? error[action] : error) ?? "unavailable"
 }
 
 function roles(formData: FormData) {
@@ -56,7 +48,7 @@ function roles(formData: FormData) {
     .filter((role): role is (typeof accessRoleNames)[number] => accessRoleNames.includes(role as never))
 }
 
-function send(action: UserAction, formData: FormData): Promise<Outcome> {
+function send(action: UserAction, formData: FormData): Promise<ApiResult<unknown>> {
   const path = { userId: text(formData, "userId") }
   switch (action) {
     case "activate":
@@ -80,7 +72,7 @@ export function userCommand(action: UserAction) {
       if (data) return { status: "success", action }
       return { status: "error", error: refusal(action, errorCode(error)) }
     } catch {
-      return { status: "error", error: UNAVAILABLE }
+      return { status: "error", error: "unavailable" }
     }
   }
 }

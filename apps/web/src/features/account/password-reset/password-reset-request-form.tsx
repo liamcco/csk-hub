@@ -1,5 +1,3 @@
-"use client"
-
 import { ROUTES } from "@csk-hub/shared/core/navigation/site"
 import { useForm, useSelector } from "@tanstack/react-form"
 import type { SubmitEvent } from "react"

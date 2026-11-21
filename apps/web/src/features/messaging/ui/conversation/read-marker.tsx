@@ -1,5 +1,3 @@
-"use client"
-
 import { markConversationRead } from "@csk-hub/contract/client"
 import { useEffect } from "react"
 import { browserApiClient } from "@/core/api-client/browser"

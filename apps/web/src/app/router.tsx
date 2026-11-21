@@ -146,35 +146,37 @@ function page(parent: typeof appLayout | typeof publicLayout, { path, screen, lo
   )
 }
 
-const eventsAdminPages = (prefix: "/events/manage" | "/admin/events", gate: boolean): Page[] => [
-  {
-    path: prefix,
-    screen: () => import("./pages/events").then((m) => m.managedEvents),
-    loader: async ({ context, location, search }) => {
-      if (gate) await requireCapability(context, location, "administerEvents")
-      await load(context, location, managedEventsQuery(eventListFilters(search)))
+function eventsAdminPages(prefix: "/events/manage" | "/admin/events", gate: boolean): Page[] {
+  return [
+    {
+      path: prefix,
+      screen: () => import("./pages/events").then((m) => m.managedEvents),
+      loader: async ({ context, location, search }) => {
+        if (gate) await requireCapability(context, location, "administerEvents")
+        await load(context, location, managedEventsQuery(eventListFilters(search)))
+      }
+    },
+    {
+      path: `${prefix}/new`,
+      screen: () => import("./pages/events").then((m) => m.newEvent),
+      loader: async ({ context, location }) => {
+        if (gate) await requireCapability(context, location, "administerEvents")
+        await load(context, location, eventFormOptionsQuery)
+        if (!context.queryClient.getQueryData(eventFormOptionsQuery.queryKey)?.canCreate) throw notFound()
+      }
+    },
+    {
+      path: `${prefix}/$eventId`,
+      screen: () => import("./pages/events").then((m) => m.eventEditor),
+      loader: async ({ context, location, params }) => {
+        // Authorize before validating the address, so non-Admins get the same answer for any Event.
+        if (gate) await requireCapability(context, location, "administerEvents")
+        requireUuid(params.eventId)
+        await load(context, location, eventEditorQuery(params.eventId))
+      }
     }
-  },
-  {
-    path: `${prefix}/new`,
-    screen: () => import("./pages/events").then((m) => m.newEvent),
-    loader: async ({ context, location }) => {
-      if (gate) await requireCapability(context, location, "administerEvents")
-      await load(context, location, eventFormOptionsQuery)
-      if (!context.queryClient.getQueryData(eventFormOptionsQuery.queryKey)?.canCreate) throw notFound()
-    }
-  },
-  {
-    path: `${prefix}/$eventId`,
-    screen: () => import("./pages/events").then((m) => m.eventEditor),
-    loader: async ({ context, location, params }) => {
-      // Authorize before validating the address, so non-Admins get the same answer for any Event.
-      if (gate) await requireCapability(context, location, "administerEvents")
-      requireUuid(params.eventId)
-      await load(context, location, eventEditorQuery(params.eventId))
-    }
-  }
-]
+  ]
+}
 
 const signedInPages: Page[] = [
   {

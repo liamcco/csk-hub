@@ -1,5 +1,3 @@
-"use client"
-
 import { getPostLoginPath, twoFactorPath } from "@csk-hub/shared/core/navigation/navigation-utils"
 import { ROUTES } from "@csk-hub/shared/core/navigation/site"
 import { useState } from "react"

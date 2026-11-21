@@ -1,5 +1,3 @@
-"use client"
-
 import { LoaderCircle } from "lucide-react"
 import { useCallback, useEffect, useRef, useState, useTransition } from "react"
 import { useTranslations } from "@/core/i18n/translations"

@@ -1,5 +1,3 @@
-"use client"
-
 import { eventDocument } from "@csk-hub/shared/features/events/event-document"
 import {
   collectsParticipation,

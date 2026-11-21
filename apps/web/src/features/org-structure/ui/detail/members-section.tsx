@@ -1,5 +1,3 @@
-"use client"
-
 import { compareVoices, type Voice } from "@csk-hub/shared/features/voice/model"
 import { useTranslations } from "@/core/i18n/translations"
 import { InputField, SelectField } from "@/shared/forms/fields"

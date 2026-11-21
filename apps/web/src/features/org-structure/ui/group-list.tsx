@@ -1,5 +1,3 @@
-"use client"
-
 import { ChevronDownIcon, ChevronUpIcon } from "lucide-react"
 import { useId } from "react"
 import { useTranslations } from "@/core/i18n/translations"

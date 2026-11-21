@@ -1,5 +1,3 @@
-"use client"
-
 import { useTranslations } from "@/core/i18n/translations"
 import { InputField } from "@/shared/forms/fields"
 import { Alert, AlertDescription } from "@/shared/ui/base/alert"

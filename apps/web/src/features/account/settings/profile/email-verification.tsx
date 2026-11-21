@@ -1,5 +1,3 @@
-"use client"
-
 import { CircleCheckIcon, TriangleAlertIcon } from "lucide-react"
 import { useState } from "react"
 import { useTranslations } from "@/core/i18n/translations"

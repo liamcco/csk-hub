@@ -1,5 +1,3 @@
-"use client"
-
 import { useEffect, useTransition } from "react"
 import { useAppRouter } from "@/core/navigation/router"
 

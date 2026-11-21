@@ -1,5 +1,3 @@
-"use client"
-
 import type { Locale } from "@csk-hub/shared/core/i18n/locales"
 import { useState } from "react"
 import { useTranslations } from "@/core/i18n/translations"

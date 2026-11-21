@@ -1,5 +1,3 @@
-"use client"
-
 import type { GroupType } from "@csk-hub/shared/features/org-structure/model"
 import { NAME_MAX_LENGTH } from "@csk-hub/shared/features/org-structure/ui/limits"
 import { useTranslations } from "@/core/i18n/translations"

@@ -1,5 +1,3 @@
-"use client"
-
 import { CircleCheckIcon, CircleXIcon, Loader2Icon } from "lucide-react"
 import { useTranslations } from "@/core/i18n/translations"
 import { Alert, AlertDescription } from "@/shared/ui/base/alert"

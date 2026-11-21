@@ -1,5 +1,3 @@
-"use client"
-
 import { type ComponentProps, type ReactNode, useId } from "react"
 import { Field, FieldDescription, FieldError, FieldLabel } from "@/shared/ui/base/field"
 import { Input } from "@/shared/ui/base/input"

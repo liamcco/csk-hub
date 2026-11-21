@@ -1,5 +1,3 @@
-"use client"
-
 import { MAX_GROUP_NAME_LENGTH } from "@csk-hub/shared/features/messaging/model/group-conversation"
 import { useActionState, useEffect, useRef, useState } from "react"
 import { useTranslations } from "@/core/i18n/translations"

@@ -2,6 +2,7 @@ import { activateAccount as activate } from "@csk-hub/contract/client"
 import { ROUTES } from "@csk-hub/shared/core/navigation/site"
 import { browserApiClient } from "@/core/api-client/browser"
 import { errorCode } from "@/core/api-client/result"
+import { formText } from "@/shared/forms/form-data"
 
 type ActivationFailure =
   | "password-required"
@@ -24,17 +25,12 @@ const FAILURES: Record<string, ActivationFailure> = {
   INVALID_LINK: "invalid-link"
 }
 
-function text(formData: FormData, name: string) {
-  const value = formData.get(name)
-  return typeof value === "string" ? value : ""
-}
-
 /** Sets the invited User's first password through the API, from the session their magic link opened. */
 export async function activateAccount(_state: ActivationState, formData: FormData): Promise<ActivationState> {
   try {
     const { error, response } = await activate({
       client: browserApiClient,
-      body: { password: text(formData, "password"), confirmPassword: text(formData, "confirmPassword") }
+      body: { password: formText(formData, "password"), confirmPassword: formText(formData, "confirmPassword") }
     })
     if (response?.ok) return { status: "success", redirectTo: ROUTES.home }
     return { status: "error", kind: FAILURES[errorCode(error) ?? ""] ?? "unavailable" }

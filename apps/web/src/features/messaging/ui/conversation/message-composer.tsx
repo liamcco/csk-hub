@@ -1,5 +1,3 @@
-"use client"
-
 import { conversationPath } from "@csk-hub/shared/core/navigation/navigation-utils"
 import { MAX_MESSAGE_BODY_LENGTH } from "@csk-hub/shared/features/messaging/model/message-body"
 import { ArrowUpIcon } from "lucide-react"

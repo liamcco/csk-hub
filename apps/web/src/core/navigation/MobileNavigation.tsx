@@ -1,5 +1,3 @@
-"use client"
-
 import { app } from "@csk-hub/shared/core/config/app"
 import { MenuIcon, XIcon } from "lucide-react"
 import { type ReactNode, useState } from "react"

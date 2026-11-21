@@ -1,5 +1,3 @@
-"use client"
-
 import type { DocumentSchema, RichTextDocument } from "@csk-hub/shared/features/rich-text/document"
 import { Placeholder } from "@tiptap/extensions"
 import { EditorContent, useEditor } from "@tiptap/react"

@@ -1,5 +1,3 @@
-"use client"
-
 import { ROUTES } from "@csk-hub/shared/core/navigation/site"
 import { LogOutIcon, SettingsIcon, UserRoundIcon } from "lucide-react"
 import { useState } from "react"

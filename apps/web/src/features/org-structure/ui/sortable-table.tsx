@@ -1,5 +1,3 @@
-"use client"
-
 import { ChevronDownIcon, ChevronsUpDownIcon, ChevronUpIcon } from "lucide-react"
 import { type ReactNode, useState } from "react"
 import { TableHead } from "@/shared/ui/base/table"

@@ -1,5 +1,3 @@
-"use client"
-
 import {
   archiveLocation,
   changeEventStatus,
@@ -12,8 +10,9 @@ import {
 import { readEventForm } from "@csk-hub/shared/features/events/ui/editor/form-input"
 import { useCallback } from "react"
 import { browserApiClient } from "@/core/api-client/browser"
-import { errorCode } from "@/core/api-client/result"
+import { type ApiResult, errorCode, errorKind } from "@/core/api-client/result"
 import { useAppRouter } from "@/core/navigation/router"
+import { formField, formText as text } from "@/shared/forms/form-data"
 import { type EventCommandError, type EventCommandState, eventManagementPath } from "./command-state"
 
 /** Which Events or Locations command a form runs through the API. */
@@ -26,29 +25,24 @@ export type EventCommand =
   | { kind: "updateLocation" }
   | { kind: "archiveLocation" }
 
-type Outcome = { data?: { id: string }; error?: unknown; response?: Response }
+type Outcome = ApiResult<{ id: string }>
 
 const client = browserApiClient
 
-function text(formData: FormData, name: string) {
-  const raw = formData.get(name)
-  return typeof raw === "string" ? raw : ""
-}
-
 function readLocation(formData: FormData) {
-  const optional = (name: string) => {
-    const raw = formData.get(name)
-    return typeof raw === "string" ? raw : undefined
+  return {
+    name: text(formData, "name"),
+    address: formField(formData, "address"),
+    mapUrl: formField(formData, "mapUrl")
   }
-  return { name: text(formData, "name"), address: optional("address"), mapUrl: optional("mapUrl") }
 }
 
-function send(command: EventCommand, formData: FormData): Promise<Outcome> {
+function sendEventCommand(command: EventCommand, formData: FormData): Promise<Outcome> {
   switch (command.kind) {
     case "createEvent":
-      return createEvent({ client, body: readEventForm(formData) as never })
+      return createEvent({ client, body: readEventForm(formData) })
     case "updateEvent":
-      return updateEvent({ client, path: { eventId: command.eventId }, body: readEventForm(formData) as never })
+      return updateEvent({ client, path: { eventId: command.eventId }, body: readEventForm(formData) })
     case "changeEventStatus":
       return changeEventStatus({
         client,
@@ -71,13 +65,13 @@ function send(command: EventCommand, formData: FormData): Promise<Outcome> {
 }
 
 /** Maps the API's `TITLE_REQUIRED` back to the `title-required` the screens translate. */
-function failure({ error, response }: Outcome): EventCommandError {
+function eventCommandError({ error, response }: Outcome): EventCommandError {
   const status = response?.status
   if (status === 401 || status === 403) return "access-denied"
   if (status !== 400 && status !== 404) return "unexpected"
   const code = errorCode(error)
   if (!code || code === "VALIDATION_FAILED" || code === "NOT_FOUND") return "invalid-input"
-  return code.toLowerCase().replaceAll("_", "-") as EventCommandError
+  return errorKind(error) as EventCommandError
 }
 
 /**
@@ -91,11 +85,11 @@ export function useEventCommand(command: EventCommand) {
     async (_state: EventCommandState, formData: FormData): Promise<EventCommandState> => {
       let outcome: Outcome
       try {
-        outcome = await send(command, formData)
+        outcome = await sendEventCommand(command, formData)
       } catch {
         return { status: "error", error: "unexpected" }
       }
-      if (!outcome.data) return { status: "error", error: failure(outcome) }
+      if (!outcome.data) return { status: "error", error: eventCommandError(outcome) }
       if (command.kind === "createEvent") router.push(eventManagementPath(outcome.data.id))
       else if (command.kind === "updateEvent") router.refresh()
       return { status: "success", completedAt: Date.now() }

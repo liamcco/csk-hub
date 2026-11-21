@@ -1,5 +1,3 @@
-"use client"
-
 import { validationMessageIds } from "@csk-hub/shared/shared/schemas"
 import { useTranslations } from "@/core/i18n/translations"
 import type { ValidationFormatter } from "@/shared/forms/validation-messages"

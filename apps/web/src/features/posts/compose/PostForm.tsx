@@ -1,5 +1,3 @@
-"use client"
-
 import { POST_TITLE_MAX_LENGTH } from "@csk-hub/shared/features/posts/compose/schemas"
 import { postDocument } from "@csk-hub/shared/features/posts/post-document"
 import { type FormEvent, useState, useTransition } from "react"

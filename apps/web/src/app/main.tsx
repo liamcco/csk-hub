@@ -6,15 +6,21 @@ import { RouterProvider } from "@tanstack/react-router"
 import { ThemeProvider } from "@wrksz/themes"
 import { StrictMode } from "react"
 import { createRoot } from "react-dom/client"
+import { browserApiClient, reloadSessionOnUnauthenticatedCommand } from "@/core/api-client/browser"
 import { reloadSession } from "@/core/auth/session"
 import { I18nProvider, initialBrowserLocale, loadMessages } from "@/core/i18n/client"
 import { Toaster } from "@/shared/ui/base/toast"
 import { createQueryClient } from "./query-client"
 import { createAppRouter } from "./router"
 
-// A read on screen answering 401: reload the session and let the router re-check the page's access.
-const queryClient = createQueryClient(() => void reloadSession(queryClient).then(() => router.invalidate()))
+// A read on screen or a command answering 401: reload the session and let the router re-check the
+// page's access.
+function onUnauthenticated() {
+  void reloadSession(queryClient).then(() => router.invalidate())
+}
+const queryClient = createQueryClient(onUnauthenticated)
 const router = createAppRouter(queryClient)
+reloadSessionOnUnauthenticatedCommand(browserApiClient, onUnauthenticated)
 
 const locale = initialBrowserLocale()
 document.documentElement.lang = locale

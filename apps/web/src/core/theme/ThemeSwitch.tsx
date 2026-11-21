@@ -1,5 +1,3 @@
-"use client"
-
 import { Select as SelectPrimitive } from "@base-ui/react/select"
 import { useHydrated, useTheme } from "@wrksz/themes/client"
 import { Monitor, Moon, Sun } from "lucide-react"

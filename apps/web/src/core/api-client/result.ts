@@ -23,6 +23,14 @@ export function errorCode(error: unknown): string | null {
 }
 
 /**
+ * The feature failure kind an API error code names, for translating it: `GROUP_NAME_TAKEN` is
+ * `group-name-taken`. Null when the body carries no code. Callers decide which kinds they know.
+ */
+export function errorKind(error: unknown): string | null {
+  return errorCode(error)?.toLowerCase().replaceAll("_", "-") ?? null
+}
+
+/**
  * Unwraps a read for a query: the data, or an `ApiRequestError` carrying the status, which the
  * router turns into the login redirect (401) or the not-found screen (403 and 404).
  */

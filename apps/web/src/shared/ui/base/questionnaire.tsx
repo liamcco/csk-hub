@@ -1,5 +1,3 @@
-"use client"
-
 import { Questionnaire as QuestionnairePrimitive } from "@shadcn/react/questionnaire"
 import { CheckIcon } from "lucide-react"
 import type * as React from "react"

@@ -1,5 +1,3 @@
-"use client"
-
 import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react"
 
 const STORAGE_PREFIX = "csk-hub.unsaved."

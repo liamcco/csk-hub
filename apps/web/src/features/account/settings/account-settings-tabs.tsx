@@ -1,5 +1,3 @@
-"use client"
-
 import type { ReactNode } from "react"
 import { useTranslations } from "@/core/i18n/translations"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/base/tabs"

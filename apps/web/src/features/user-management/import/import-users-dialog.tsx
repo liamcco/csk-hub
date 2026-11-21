@@ -1,5 +1,3 @@
-"use client"
-
 import {
   type ImportUserRow,
   MAX_IMPORT_FILE_SIZE_BYTES,

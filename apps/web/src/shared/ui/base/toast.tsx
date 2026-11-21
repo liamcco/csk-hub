@@ -1,5 +1,3 @@
-"use client"
-
 import { Toast as ToastPrimitive } from "@base-ui/react/toast"
 import { CircleCheckIcon, InfoIcon, Loader2Icon, OctagonXIcon, TriangleAlertIcon, XIcon } from "lucide-react"
 import type * as React from "react"

@@ -1,5 +1,3 @@
-"use client"
-
 import { ROUTES } from "@csk-hub/shared/core/navigation/site"
 import { useCallback, useEffect, useState } from "react"
 import { authClient } from "@/core/auth/auth-client"
