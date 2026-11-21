@@ -62,6 +62,7 @@ export async function inviteUser({ authApi, headers }: Inviter, input: InviteUse
     return { kind: "sent", id }
   } catch (error) {
     logger.error("admin.users.invite-dispatch-failed", {
+      email: input.email,
       errorCode: getErrorCode(error),
       errorName: getErrorName(error),
       status: getErrorStatus(error)
