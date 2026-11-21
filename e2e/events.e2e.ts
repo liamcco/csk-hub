@@ -33,5 +33,5 @@ test("an Admin drafts an Event and publishes it through the API", async ({ page 
   await page.context().clearCookies()
   await signIn(page, alto)
   await page.goto(managementPath)
-  await expect(page.getByRole("heading", { level: 2, name: "This page could not be found." })).toBeVisible()
+  await expect(page.getByRole("heading", { level: 1, name: "Page not found" })).toBeVisible()
 })

@@ -31,3 +31,14 @@ export async function sql(text: string, values: unknown[] = []) {
     await client.end()
   }
 }
+
+/** Writes a Post through the composer and saves it as a draft or publishes it. */
+export async function writePost(page: Page, title: string, button: "Save draft" | "Publish") {
+  await page.goto("/news/new")
+  await page.getByRole("textbox", { name: "Title", exact: true }).fill(title)
+  await page.getByRole("textbox").last().click()
+  await page.keyboard.type(`${title} body text`)
+  const write = page.waitForRequest((request) => new URL(request.url()).pathname.startsWith("/api/v1/posts"))
+  await page.getByRole("button", { name: button, exact: true }).click()
+  expect((await write).method()).toBe("POST")
+}

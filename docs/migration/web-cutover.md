@@ -56,12 +56,13 @@ Done:
 - Typecheck, lint and unit tests pass; Next-only session modules and mocks removed.
 - Workspace split (above); builds, `api:generate` and the members journeys pass after it.
 - Posts publish with the database clock (fixes the known unread flake against a skewed DB).
+- All journeys pass in dev mode (19 + 4 navigation journeys in `e2e/navigation.e2e.ts`; the
+  real-time one needs `REDIS_URL`, e.g. `redis://localhost:6379` from `deploy/compose.dev.yml`).
+  Denied pages are asserted by their screen ("Page not found" / "No access") plus the API's 403.
 
 Next:
-1. Run the remaining journeys and fix them (`shell.e2e.ts` expects HTTP 403 for `/admin/users`;
-   the SPA renders the forbidden screen instead); add the instant-navigation journeys from the
-   acceptance criteria. `--stack` mode needs `deploy/compose.local.yml` publishing the database
-   on 127.0.0.1:${DB_PORT:-5434}.
+1. `--stack` journeys: need `deploy/compose.local.yml` publishing the database on
+   127.0.0.1:${DB_PORT:-5434}.
 2. Route-level code splitting (currently one large chunk).
 3. Deploy: Dockerfile targets for `api` and a static `web` server (Caddy with history fallback
    for web paths only), `compose.yml`, `local-stack.sh`, `publish-image.sh`, `validate-stack.ts`.

@@ -54,5 +54,5 @@ test("a member outside a Conversation cannot open it", async ({ browser }) => {
   const outsider = await browser.newPage()
   await signIn(outsider, fixtures.admin)
   await outsider.goto(href)
-  await expect(outsider.getByRole("heading", { level: 2, name: "This page could not be found." })).toBeVisible()
+  await expect(outsider.getByRole("heading", { level: 1, name: "Page not found" })).toBeVisible()
 })
