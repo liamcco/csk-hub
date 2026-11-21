@@ -18,9 +18,9 @@ import { mkdtempSync, readFileSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { parseEnv } from "node:util"
-import { createAuth } from "@/core/auth/create-auth"
-import { createDb } from "@/core/db/client"
-import { createTestDatabase } from "../test/database"
+import { createAuth } from "../apps/api/src/core/auth/create-auth"
+import { createDb } from "../apps/api/src/core/db/client"
+import { createTestDatabase } from "../apps/api/test/database"
 import { E2E_PASSWORD, E2E_PORT, type E2EFixtures } from "./fixtures"
 
 const args = process.argv.slice(2)

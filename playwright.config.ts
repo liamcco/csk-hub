@@ -29,6 +29,7 @@ export default defineConfig({
     : [
         {
           command: "bun src/api/server.ts",
+          cwd: "apps/api",
           url: `http://localhost:${E2E_API_PORT}/api/auth/ok`,
           timeout: 60_000,
           reuseExistingServer: false,
@@ -43,6 +44,7 @@ export default defineConfig({
         },
         {
           command: `bunx vite --port ${E2E_PORT} --strictPort`,
+          cwd: "apps/web",
           url: `${E2E_ORIGIN}/login`,
           timeout: 120_000,
           reuseExistingServer: false,

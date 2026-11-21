@@ -1,0 +1,14 @@
+{
+  "name": "@csk-hub/contract",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "The API's OpenAPI document and the TypeScript client generated from it. Hey API needs the TypeScript 6 compiler API; the isolated linker gives this package its own TypeScript 6 beside the applications' TypeScript 7.",
+  "scripts": {
+    "generate": "openapi-ts"
+  },
+  "devDependencies": {
+    "@hey-api/openapi-ts": "0.99.0",
+    "typescript": "6.0.3"
+  }
+}

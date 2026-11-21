@@ -1,0 +1,118 @@
+"use client"
+
+import { getPostLoginPath, twoFactorPath } from "@csk-hub/shared/core/navigation/navigation-utils"
+import { ROUTES } from "@csk-hub/shared/core/navigation/site"
+import { useState } from "react"
+import { useTranslations } from "@/core/i18n/translations"
+import { Link, useAppRouter, useSearchParams } from "@/core/navigation/router"
+import { Alert, AlertDescription } from "@/shared/ui/base/alert"
+import { PasswordResetForm } from "./password-reset-form"
+import { PasswordResetRequestForm } from "./password-reset-request-form"
+import type { PasswordResetCompletion } from "./service"
+
+export function PasswordResetRequest() {
+  const t = useTranslations("Public.passwordReset")
+  const [isComplete, setIsComplete] = useState(false)
+
+  return (
+    <>
+      <header className="flex flex-col gap-1">
+        <h1 id="password-reset-title" className="font-semibold text-2xl tracking-normal">
+          {isComplete ? t("completeTitle") : t("requestTitle")}
+        </h1>
+        <p id="password-reset-description" className="text-muted-foreground text-sm">
+          {isComplete ? t("completeDescription") : t("requestDescription")}
+        </p>
+      </header>
+      {isComplete ? (
+        <div role="status">
+          <Link href={ROUTES.login} className="text-sm underline underline-offset-4">
+            {t("returnToSignIn")}
+          </Link>
+        </div>
+      ) : (
+        <PasswordResetRequestForm onSuccess={() => setIsComplete(true)} />
+      )}
+    </>
+  )
+}
+
+export function PasswordReset() {
+  const t = useTranslations("Public.passwordReset")
+  const router = useAppRouter()
+  const searchParams = useSearchParams()
+  const token = searchParams.get("token") ?? undefined
+  const email = searchParams.get("email") ?? ""
+  const invalidLink = searchParams.get("error") === "INVALID_TOKEN" || !token
+  const [freshRequested, setFreshRequested] = useState(false)
+  const [resetCompleted, setResetCompleted] = useState(false)
+
+  if (invalidLink) {
+    return (
+      <>
+        <header className="flex flex-col gap-1">
+          <h1 className="font-semibold text-2xl tracking-normal">{t("newPasswordTitle")}</h1>
+          <p className="text-muted-foreground text-sm">{t("newPasswordDescription")}</p>
+        </header>
+        <Alert variant="destructive">
+          <AlertDescription>{t("invalidLink")}</AlertDescription>
+        </Alert>
+        {freshRequested ? (
+          <p role="status" className="text-sm text-muted-foreground">
+            {t("completeDescription")}
+          </p>
+        ) : (
+          <PasswordResetRequestForm initialEmail={email} onSuccess={() => setFreshRequested(true)} />
+        )}
+      </>
+    )
+  }
+
+  function handleResetSuccess(completion: PasswordResetCompletion) {
+    if ("signIn" in completion) {
+      router.sessionChanged(getPostLoginPath(completion.signIn.role))
+      return
+    }
+
+    if ("requiresTwoFactor" in completion) {
+      router.replace(twoFactorPath(completion.methods))
+      return
+    }
+
+    setResetCompleted(true)
+  }
+
+  if (resetCompleted) {
+    return (
+      <>
+        <header className="flex flex-col gap-1">
+          <h1 id="password-reset-title" className="font-semibold text-2xl tracking-normal">
+            {t("resetCompleteTitle")}
+          </h1>
+          <p id="password-reset-description" className="text-muted-foreground text-sm">
+            {t("resetCompleteDescription")}
+          </p>
+        </header>
+        <div role="status">
+          <Link href={ROUTES.login} className="text-sm underline underline-offset-4">
+            {t("returnToSignIn")}
+          </Link>
+        </div>
+      </>
+    )
+  }
+
+  return (
+    <>
+      <header className="flex flex-col gap-1">
+        <h1 id="password-reset-title" className="font-semibold text-2xl tracking-normal">
+          {t("newPasswordTitle")}
+        </h1>
+        <p id="password-reset-description" className="text-muted-foreground text-sm">
+          {t("resetDescription")}
+        </p>
+      </header>
+      <PasswordResetForm token={token} initialEmail={email} onSuccess={handleResetSuccess} />
+    </>
+  )
+}

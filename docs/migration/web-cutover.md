@@ -22,34 +22,47 @@ runtime is gone.
 - Real-time: `ActivityConnection` invalidates the queries an event affects (mapping in
   `src/app/layouts.tsx`); `ready.reset` invalidates all reads; `unauthorized` reloads the session.
 - `server-only` is gone: the Vite build refuses server packages (`vite.config.ts`, `webOnly`).
-- One package, two builds: `vite build` (web, `dist/web`) and `bun build src/api/server.ts`
-  (API). Feature folders keep their UI beside their HTTP routes; web entrypoints are the screens'
-  index files (for Events, `@/features/events/ui`).
+- Workspace (user decision 2026-11-21): a Bun workspace with the isolated linker.
+  - `apps/api` (`@csk-hub/api`): Hono API, CLI, Drizzle schema and migrations, dev database CLI.
+  - `apps/web` (`@csk-hub/web`): the Vite SPA. It reaches API behaviour only through the contract.
+  - `packages/shared` (`@csk-hub/shared`): code both run (models, form schemas, rich-text
+    document schema, locales, catalogues in `src/messages`). Relative imports only inside it.
+  - `packages/contract` (`@csk-hub/contract`): `openapi.json`, the generated client and the
+    Hey API generator. The isolated linker gives it TypeScript 6 (Hey API's peer) beside the
+    apps' TypeScript 7, which is what broke the earlier attempt with the hoisted linker.
+  - Each app's tsconfig maps `@/*` to its own `src`, plus `@csk-hub/shared/*` and
+    `@csk-hub/contract/*`; Vite mirrors the aliases. Files keep their old `src/...` path inside
+    their package, so a path in an old note maps to `apps/<api|web>/src/...` or
+    `packages/shared/src/...`.
+  - Web types for API data come from contract types (`QueryData` over the web query options),
+    never from API modules. Shared models own enum value lists; the Drizzle schema takes them.
+- VAPID env (user decision): the API reads `VAPID_PUBLIC_KEY`; the web reads
+  `VITE_VAPID_PUBLIC_KEY` (`.env.example` sets it from `$VAPID_PUBLIC_KEY`). No `NEXT_PUBLIC_`
+  fallback. A developer `.env` with the old name must be renamed.
+
+## Local checks
+
+- `bun install`
+- `bun lint`, `bun typecheck` (each package plus the root e2e project)
+- `bun --env-file=.env run tst` (shared, API, web suites in turn)
+- `bun run api:generate` then `git status --porcelain` must be clean
+- `bun --env-file=.env run e2e [files]` (API + Vite dev server on a disposable database)
+- `bun run build` (web to `apps/web/dist`, API to `apps/api/dist`)
 
 ## Resume here
 
-Done (uncommitted WIP at the first checkpoint, committed as "WIP"):
-- Vite config, `index.html`, `src/app/{main,router,layouts,query-client}.tsx`, pages.
-- i18n on use-intl; locale switcher; saved locale via capabilities (API test added).
-- Every screen converted from server components to `useSuspenseQuery` over per-feature query
-  options (`queries.ts` / `query.ts` in each feature UI folder).
-- Next.js, next-intl, `server-only`, `@vercel/analytics`, `react-form-nextjs` removed from
-  dependencies; `vite build` succeeds.
-
-Half-done (second WIP commit):
-- `e2e/run.ts`, `e2e/fixtures.ts`, `playwright.config.ts`: dev mode (API on 3101 + Vite on 3100,
-  disposable database) works; `e2e/members.e2e.ts` passes (4/4). Other journeys not yet run.
-  `--stack` mode is written but untested and needs `deploy/compose.local.yml` publishing the
-  database on 127.0.0.1:${DB_PORT:-5434} (not written yet).
-- `package.json` scripts: `dev`, `dev:api`, `dev:web`, `build:web`, `build:api`; `"type": "module"`.
+Done:
+- Vite SPA, use-intl, TanStack Router/Query port (earlier WIP commits).
+- Typecheck, lint and unit tests pass; Next-only session modules and mocks removed.
+- Workspace split (above); builds, `api:generate` and the members journeys pass after it.
+- Posts publish with the database clock (fixes the known unread flake against a skewed DB).
 
 Next:
 1. Run the remaining journeys and fix them (`shell.e2e.ts` expects HTTP 403 for `/admin/users`;
-   the SPA now renders the forbidden screen instead); add the instant-navigation journeys from
-   the acceptance criteria.
-2. Fix typecheck, lint, unit tests (tests that mocked `next/navigation` or `authz/request`,
-   `core/auth/session.server.ts`, `core/authz/request.ts`, `architecture.test.ts` rules).
-3. Route-level code splitting.
-4. Deploy: Dockerfile targets for `api` and a static `web` server (Caddy with history fallback
-   for web paths only), `compose.yml`, `local-stack.sh`, `validate-stack.ts` (route fallback).
-5. Docs: README, `src/core/i18n/README.md`, `deploy/README.md`, codebase-structure, ADR note.
+   the SPA renders the forbidden screen instead); add the instant-navigation journeys from the
+   acceptance criteria. `--stack` mode needs `deploy/compose.local.yml` publishing the database
+   on 127.0.0.1:${DB_PORT:-5434}.
+2. Route-level code splitting (currently one large chunk).
+3. Deploy: Dockerfile targets for `api` and a static `web` server (Caddy with history fallback
+   for web paths only), `compose.yml`, `local-stack.sh`, `publish-image.sh`, `validate-stack.ts`.
+4. Docs: README, i18n README, `deploy/README.md`, codebase-structure, CONTRIBUTING index, ADR note.
