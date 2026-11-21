@@ -35,7 +35,7 @@ contains it. It is public trust material, identical for every Supabase project, 
 committed rather than kept in `.env`.
 
 It is a TypeScript module rather than a `.crt` file so that nothing reads the filesystem
-at runtime. It travels with the import graph into the Next.js server bundle and into
+at runtime. It travels with the import graph into the API bundle and into
 drizzle-kit's bundled config, with no file-tracing configuration.
 
 - Provenance: downloaded from the Supabase dashboard (Database settings → SSL

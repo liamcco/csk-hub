@@ -64,9 +64,21 @@ Done:
   out of screen modules, or the screen (and its imports) lands in the start chunk again.
   `"sideEffects"` in `apps/web/package.json` lets unused feature re-exports drop.
 
-Next:
-1. `--stack` journeys: need `deploy/compose.local.yml` publishing the database on
-   127.0.0.1:${DB_PORT:-5434}.
-2. Deploy: Dockerfile targets for `api` and a static `web` server (Caddy with history fallback
-   for web paths only), `compose.yml`, `local-stack.sh`, `publish-image.sh`, `validate-stack.ts`.
-3. Docs: README, i18n README, `deploy/README.md`, codebase-structure, CONTRIBUTING index, ADR note.
+- Deploy: `deploy/Dockerfile` builds `api` and `web` images; `web` is Caddy with the SPA and
+  history fallback for non-file, non-API paths; `compose.yml` has no separate proxy service.
+  `compose.local.yml` publishes the database for `bun run e2e --stack`. `deploy/local-stack.sh up`,
+  `validate` (12 checks incl. route fallback) and all 22 journeys with `--stack` pass. On this
+  machine 127.0.0.1:5434 was taken, so `deploy/local.env` used `DB_PORT=5435` and the project
+  name `csk-hub-ticket7`.
+- Docs: README, AGENTS, CONTRIBUTING, codebase-structure, i18n, api-client, deploy, notifications,
+  realtime, authz READMEs; draft ADR 0013; ADR 0012 updated for two images.
+
+Next: merge the integration tip, run the full suite, push; then code review.
+
+Open items:
+- `.github/workflows/ci.yml` still sets `NEXT_PUBLIC_VAPID_PUBLIC_KEY` and runs root-level
+  commands; left alone (no CI changes by user rule).
+- Better Auth rate limiting behind Caddy falls back to one shared bucket (no trusted client-IP
+  header configured); the stack journeys wait out 429s on sign-in.
+- `publish-image.sh`/`deploy-image.sh` updated for two images but untested against a registry
+  and Portainer (GUD work is deferred).

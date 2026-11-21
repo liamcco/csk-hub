@@ -2,11 +2,10 @@
 .git
 .github
 .claude
-.next
-node_modules
-# Contract and client generation tooling; not part of the release.
-tools
-dist
+**/node_modules
+**/dist
+test-results
+playwright-report
 coverage
 .env*
 !.env.example

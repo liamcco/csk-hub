@@ -22,7 +22,7 @@ solely for completeness.
 
 - Use PascalCase for `.tsx` filenames and React component names, such as `GroupDetailScreen.tsx` exporting `GroupDetailScreen`.
 - Use kebab-case for other filenames and directories, such as `group-queries.ts`, `use-group-selection.ts`, and `user-management/`. Compound extensions stay intact, such as `group-queries.test.ts`.
-- Preserve names required by frameworks and tools, including Next.js convention files such as `page.tsx`, `layout.tsx`, and `error.tsx`, generated files, and standard documentation names such as `README.md` and `AGENTS.md`.
+- Preserve names required by frameworks and tools, including generated files, and standard documentation names such as `README.md` and `AGENTS.md`.
 
 These casing rules govern file and directory names; keep ordinary JavaScript/TypeScript variables and functions in camelCase and types in PascalCase.
 

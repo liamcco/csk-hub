@@ -18,6 +18,7 @@ import { mkdtempSync, readFileSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { parseEnv } from "node:util"
+import { Client } from "pg"
 import { createAuth } from "../apps/api/src/core/auth/create-auth"
 import { createDb } from "../apps/api/src/core/db/client"
 import { createTestDatabase } from "../apps/api/test/database"
@@ -71,6 +72,11 @@ try {
     const created = await auth.api.createUser({
       body: { email, password: E2E_PASSWORD, name, role, data: { username } }
     })
+    // Activated members have verified their email; the stack's production auth requires it.
+    const client = new Client({ connectionString: target.url })
+    await client.connect()
+    await client.query(`update "user" set email_verified = true where id = $1`, [created.user.id])
+    await client.end()
     return { id: created.user.id, email, name, username }
   }
 

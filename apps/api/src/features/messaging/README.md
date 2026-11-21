@@ -19,7 +19,7 @@ messaging/
 ```
 
 Dependencies point from `ui` into `sending` and `model`. `sending` may use `model` and core
-infrastructure. `model` stays independent of React, Next.js, and the database.
+infrastructure. `model` stays independent of React and the database.
 
 Routes import screens only through `@/features/messaging`. Screens read and write through the HTTP
 API (`ui/screen-reads.ts`, `ui/api-commands.ts`); the HTTP routes call the public `sending`
@@ -41,7 +41,6 @@ interface rather than its implementation files. Code outside `sending` must not 
 - `reading/` provides the active-pair lookup used when opening messaging from a profile.
   An existing Direct Conversation opens directly; otherwise the shared conversation dialog opens
   with that member selected. Looking up a destination creates neither a Conversation nor a Message.
-- Keep Next.js route files thin and import the feature through `index.ts`.
 
 The `ui/conversation/` name follows the domain language. “Thread” and “chat” are intentionally not
 used as synonyms for Conversation.

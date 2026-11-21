@@ -17,7 +17,17 @@ export async function signIn(page: Page, user: E2EUser) {
   await page.goto("/login")
   await page.getByLabel("Email or username").fill(user.email)
   await page.getByLabel("Password", { exact: true }).fill(E2E_PASSWORD)
-  await page.getByRole("button", { name: "Sign in", exact: true }).click()
+  // The stack keeps Better Auth's sign-in rate limit, and every journey signs in from one address:
+  // wait out a 429 as a member would.
+  for (let attempt = 1; ; attempt++) {
+    const answered = page.waitForResponse((response) =>
+      new URL(response.url()).pathname.startsWith("/api/auth/sign-in")
+    )
+    await page.getByRole("button", { name: "Sign in", exact: true }).click()
+    const response = await answered
+    if (response.status() !== 429 || attempt === 5) break
+    await page.waitForTimeout(Number(response.headers()["x-retry-after"] ?? 10) * 1000)
+  }
   await expect(page).not.toHaveURL(/\/login/)
 }
 

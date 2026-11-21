@@ -1,24 +1,63 @@
 # Internationalization
 
-This module owns CSK Hub's locale contract: supported locales, cookie behavior, next-intl routing, request configuration, and catalog loading. Read this file before adding user-facing copy.
+CSK Hub's locale contract: supported locales, the locale cookie, translation catalogues and the
+`use-intl` integration. Read this file before adding user-facing copy.
 
-CSK Hub uses cookie-selected locales and internal `[locale]` routes. The public URL never contains a locale prefix; `src/proxy.ts` applies the rewrite and the selected locale is a root parameter for rendering.
+The public URL never contains a locale. The web app chooses the locale in the browser; the API
+chooses it explicitly for each recipient of server-generated text.
+
+## Where the pieces live
+
+`core/i18n` exists in three packages, each holding what its side runs:
+
+- `packages/shared/src/core/i18n`: `locales.ts` (the supported locales and the default),
+  `locale-validation.ts`, `time-zone.ts`, `messages.ts` (the catalogues by locale) and
+  `use-intl.d.ts`, which registers the English catalogue as the canonical message shape.
+- `apps/web/src/core/i18n`: the provider and locale switching (`client.tsx`), the hooks
+  (`translations.ts`), the locale cookie (`locale-cookie.ts`), locale negotiation
+  (`locale-preference.ts`), `LocalizedFormProvider` and validation messages.
+- `apps/api/src/core/i18n`: `getTranslator(locale)` (`server.ts`) for email, notifications and
+  other server-generated text.
+
+Only these `core/i18n` modules import `use-intl`; architecture tests enforce it in both apps.
 
 ## Translation interface
 
-Only this module imports `next-intl`. Async Server Components, pages, layouts, and metadata use `getTranslations` from `@/core/i18n/server`; components that use the `useTranslations` hook import it from `@/core/i18n/translations`; Client Components use browser-only locale helpers from `@/core/i18n/client`. The proxy delegates locale routing to `middleware.ts`.
+Web components use the hooks from `@/core/i18n/translations`:
 
-Keep server and client imports separate. `translations.ts` is intentionally universal because next-intl supports `useTranslations` in synchronous Server Components. Do not add a broad barrel that combines the server-only and client-only modules.
+```tsx
+import { useTranslations } from "@/core/i18n/translations"
 
-Keep shared UI base components independent of this module. Shared controls read built-in labels from [`UiLabelsProvider`](../../shared/ui/UiLabelsProvider.tsx), which defaults to English. The shared `UiLabels` type defines the required labels independently of the catalogs. The locale root supplies `messages.Ui` directly, so app code can use shared controls without a localization wrapper or per-label mapping. Keep the `Ui` namespace's keys aligned with that contract in every catalog. These labels are plain text, consumed without ICU formatting; messages with parameters or plural/select logic need formatting before display. Keep application copy in the feature that owns it; the shared label context is only for built-in control text such as close buttons. [`validation-errors.tsx`](./validation-errors.tsx) translates stable validation issue IDs for display.
+export function SaveButton() {
+  const t = useTranslations("Example")
 
-`next-intl.d.ts` registers the English catalogue as the canonical message shape. Translation namespaces and keys used through the façade are checked by TypeScript; catalogue parity remains responsible for checking that every locale supplies that shape.
+  return <button type="submit">{t("save")}</button>
+}
+```
 
-## Catalogs and keys
+`I18nProvider` in `main.tsx` supplies the locale, the active catalogue and the Stockholm time zone
+to the whole app. Do not add another provider or pass a catalogue through feature props. Tests that
+render translated components wrap them in `IntlProvider` (or `I18nProvider` when they need locale
+switching) from `@/core/i18n/client`.
 
-Catalogs are application-wide content assets in [`/messages`](../../../messages), one JSON file per supported locale. Import them with `@messages/*` only from [`messages.ts`](./messages.ts).
+Server-generated text calls `getTranslator(locale)` with the intended recipient's locale. The API
+never infers a locale from the request. API operations return typed outcomes or stable error
+codes; the web app translates them.
 
-Keep the catalogs parallel. When adding a key, add its translation to every locale in the same change. Group keys by a durable feature or screen namespace, not by individual source file:
+Keep shared UI base components independent of this module. Shared controls read built-in labels
+from `UiLabelsProvider` (`apps/web/src/shared/ui`), which defaults to English; the provider
+supplies `messages.Ui`. Keep the `Ui` namespace aligned with the `UiLabels` type in every
+catalogue. These labels are plain text without ICU formatting.
+
+## Catalogues and keys
+
+The catalogues are `packages/shared/src/messages/<locale>.json`. The web app loads only the active
+locale's catalogue (one chunk each); the API reads them through `messages.ts`. Import a catalogue
+directly only in tests.
+
+Keep the catalogues parallel. When adding a key, add its translation to every locale in the same
+change (`messages.test.ts` checks parity). Group keys by a durable feature or screen namespace,
+not by source file:
 
 ```json
 {
@@ -30,84 +69,44 @@ Keep the catalogs parallel. When adding a key, add its translation to every loca
 }
 ```
 
-Translate every user-facing string, including headings, controls, empty states, dialogs, metadata, and validation/error copy displayed to a member. Biome enforces `style/noJsxLiterals` as an **error** except in `src/shared/ui/base/**`; do not treat it as a warning. Use it as the inventory when migrating existing copy.
+Translate every user-facing string, including headings, controls, empty states, dialogs and
+validation or error copy. Biome enforces `style/noJsxLiterals` as an error except in
+`apps/web/src/shared/ui/base/**`.
 
-Preserve ICU placeholders and plural/select logic consistently across locales.
-
-Use ICU parameters instead of concatenating translated fragments:
+Preserve ICU placeholders and plural/select logic across locales, and use ICU parameters instead of
+concatenating translated fragments:
 
 ```json
 "memberCount": "{count, plural, =0 {No members} one {# member} other {# members}}"
 ```
 
-`locales.ts` is the single source of truth for valid locales and the default. Adding a locale means updating that module and adding a complete catalog; do not add an ad hoc list in a feature.
+`locales.ts` is the single source of truth for valid locales and the default. Adding a locale
+means updating it and adding a complete catalogue.
 
-## Server Components
+## Validation messages
 
-Server Components are the default. `[locale]` is a Next.js root parameter: [`request.ts`](./request.ts) reads and validates it once through `next/root-params`, then next-intl supplies it to all server translation APIs. Do not await `params.locale` or pass it to `getTranslations` / `getLocale` from a page, layout, or metadata function. Those manual reads block Cache Components' static shell validation, even for locales returned by `generateStaticParams`.
+Keep Zod schemas static and locale-neutral. Validation issues carry stable IDs and machine-readable
+parameters, not translated text. Pass issues to the shared `InputField` or `SelectField` through
+`errors`; `LocalizedFormProvider` (`apps/web/src/core/i18n`) supplies the formatter through shared
+forms' validation context. Use `useValidationMessage` to display validation errors elsewhere.
 
-For an async page, layout, or metadata function, use the server façade without a locale override:
+Register new validation IDs in `validationMessageIds` in `packages/shared/src/shared/schemas.ts`
+and add matching keys under `Common.validation` in every catalogue.
 
-```tsx
-import { getTranslations } from "@/core/i18n/server"
+## Locale resolution and the cookie
 
-export default async function ExamplePage() {
-  const t = await getTranslations("Example")
+`NEXT_LOCALE` is the per-browser locale choice; the name predates the Vite web app and is kept so
+existing browsers keep their choice. The web app starts in the first of:
 
-  return <h1>{t("title")}</h1>
-}
-```
+1. a valid `NEXT_LOCALE` cookie,
+2. the member's saved locale (from `getCurrentCapabilities`), which then initializes the cookie,
+3. the browser's languages,
+4. the default, Swedish.
 
-Use the same pattern in `generateMetadata`. When a layout needs the locale itself—for example, for `<html lang>`—use `getLocale` from `@/core/i18n/server`:
-
-```tsx
-import { getLocale } from "@/core/i18n/server"
-
-export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const locale = await getLocale()
-
-  return <html lang={locale}>{children}</html>
-}
-```
-
-`generateStaticParams` remains responsible for the supported static locale variants. Do not import JSON catalogs or `messages.ts` from a route or feature; the root layout and request configuration provide the translation context.
-
-For a synchronous Server Component, `useTranslations` is supported by next-intl. Prefer an async component with `getTranslations` when adding new page-level copy, so translation resolution stays in the central root-parameter-aware request configuration.
-
-## Server Actions
-
-Avoid i18n in Server Actions and the helpers they call. Return typed outcomes or stable error codes and translate them in the UI. Keep low-level services independent of translation APIs and message catalogs.
-
-Keep Zod schemas as static, locale-neutral constants. Validation issues should carry stable IDs (and machine-readable parameters such as a minimum length), not translated text. Pass issues directly to shared `InputField` or `SelectField` through `errors`; the locale root's [`LocalizedFormProvider`](./LocalizedFormProvider.tsx) supplies the formatter directly through shared forms' [`ValidationMessagesContext`](../../shared/forms/validation-messages.ts). The context, issue types, and consumer hook live in shared; the locale-aware provider lives in core. Validation messages stand on their own beneath the field, without interpolating its label. Labels remain `ReactNode` presentation content and never enter validation formatting. No localized field wrapper or per-field localization configuration is needed. The `error` prop remains already-formatted content and takes precedence over `errors`. Fields without validator errors can render without the forms provider; formatting validator errors requires one. Use `useValidationMessage` when displaying validation errors elsewhere. This keeps schemas reusable in server and client code and avoids rebuilding them for each locale.
-
-Register new validation IDs in `validationMessageIds` in `src/shared/schemas.ts` and add matching keys under `Common.validation` in every catalog. [`useValidationMessage`](./validation-errors.tsx) accepts only the issue, maps Zod's numeric `minimum` to `count`, and passes custom refinement `params` through. New IDs need no translation switch case. Keep parameter values in the validation issue rather than supplying fallback limits in the UI.
-
-Only translate on the server when it must produce final text, such as an email. Choose the intended recipient's locale explicitly. `next/root-params` is unavailable in Server Actions and Route Handlers; server translation APIs need an explicit locale and request configuration that honors the override before reading root params.
-
-## Client Components
-
-Only use a Client Component for browser APIs or interaction. The root locale layout already supplies `NextIntlClientProvider`, so client code uses the hook:
-
-```tsx
-"use client"
-
-import { useTranslations } from "@/core/i18n/translations"
-
-export function SaveButton() {
-  const t = useTranslations("Example")
-
-  return <button type="submit">{t("save")}</button>
-}
-```
-
-Do not call `getTranslations` in a Client Component, add another provider, or pass an entire catalog through feature props.
-
-## Locale cookies
-
-Browser code must not write `NEXT_LOCALE` directly. Use [`locale-cookie.ts`](./locale-cookie.ts) to read and write the locale cookie. It keeps browser writers, proxy synchronization, and next-intl's cookie configuration aligned. `NEXT_LOCALE` is the per-browser locale choice: it is authoritative when valid. A saved member locale is validated through [`locale-preference.ts`](./locale-preference.ts) and initializes that cookie only when the browser has no valid choice. The Account Settings control updates both values, so a member's saved preference becomes the current browser choice too.
+Browser code must not write the cookie directly; use `locale-cookie.ts` (`apps/web/src/core/i18n`).
+The Account Settings control saves the member's locale and switches the browser, so both agree.
 
 ## Verification
 
-Run `bun run typecheck`, `bun run lint`, and `bun run build` after i18n changes. Verify every catalog contains the new key and that the localized static routes still appear in the build output.
-
-For next-intl's broader server/client guidance, see [Server & Client Components](https://learn.next-intl.dev/chapters/03-translations/02-server-client-components).
+Run `bun run typecheck`, `bun run lint` and `bun --env-file=.env run tst` after i18n changes; the
+account journey (`e2e/account.e2e.ts`) checks a saved language end to end.

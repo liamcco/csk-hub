@@ -37,9 +37,8 @@ Messaging/Post workflows. Transport and scheduling tests live beside their core 
 3. Configure `REDIS_URL=redis://localhost:6379` and
    `REDIS_KEY_PREFIX=csk-hub-development` in `.env`. Leave `REDIS_URL` unset to disable
    realtime. Use a different database and prefix in production, preview and development.
-4. Run `bun run dev`. Next.js hosts the API in development and starts one delivery worker with
-   the first API request. The local Compose stack (`deploy/local-stack.sh`) runs it in the
-   standalone API from startup.
+4. Run `bun run dev`. The API process starts its delivery worker at startup, in development as in
+   the local Compose stack (`deploy/local-stack.sh`).
 
 ## The delivery worker
 

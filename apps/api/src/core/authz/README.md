@@ -24,7 +24,6 @@ for Locations and Admin routes. See the adoption guide for the explicit policy l
 | `policy-registry.ts` | Static registration and pure policy evaluation |
 | `authorization.ts` | Fresh actor resolution, operation snapshots and denial errors |
 | `index.ts` | Denial errors and caller-facing types; safe for the API to import |
-| `request.ts` | Next.js wiring: authorization bound to the Next.js request session |
 | `policies.test.ts` | Examples of grants, denials and policy exceptions |
 
 ## Calling the module
@@ -90,8 +89,7 @@ write. Standalone `can`/`requirePermission` resolve a fresh actor on every invoc
 A transaction shares visibility but acquires no authorization locks by itself. The feature
 coordinates reads/checks/writes with resource updates, deactivation, Membership departure and
 other permission-changing commands. Keep existing lifecycle predicates and lock ordering.
-Neither a snapshot nor a successful `can` is a durable grant. Rendering callers still need
-Suspense and must keep actor resolution outside Next.js cache scopes.
+Neither a snapshot nor a successful `can` is a durable grant.
 
 ## Editing policies
 
@@ -167,12 +165,10 @@ checks after deactivation or session revocation.
 through `bun run typecheck`.
 
 `createAuthorization({ database, readSession })`, imported directly from
-`@/core/authz/authorization`, is the internal server composition seam for those tests and for
-`request.ts`. `@/core/authz` exposes denial errors and caller-facing types only, so the
-standalone API never loads Next.js. `@/core/authz/request` exposes `can`, `requirePermission` and
-`forCurrentRequest` for Next.js callers, wired to the application database and
-`getFreshRequestSession`. The API resolves authority per request instead (`@/core/http`). Never use
-the factory to accept browser-supplied identity.
+`@/core/authz/authorization`, is the internal server composition seam for those tests and for the
+API's request context, which resolves authority per request (`@/core/http`). `@/core/authz`
+exposes denial errors and caller-facing types. Never use the factory to accept browser-supplied
+identity.
 
 Event viewing contexts require trusted resource facts, dated audience Memberships and a server
 clock. Response/Registration privacy and Section-parent attendance rules are documented as future
