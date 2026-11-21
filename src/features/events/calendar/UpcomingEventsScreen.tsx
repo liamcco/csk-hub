@@ -8,11 +8,11 @@ import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/shared/ui/ba
 import { Skeleton } from "@/shared/ui/base/skeleton"
 import { cn } from "@/shared/utils"
 import { EVENT_TYPES, stockholmInstant } from "../model"
+import type { UpcomingEvent } from "../ui/queries"
 import { upcomingEventsQuery } from "../ui/queries"
 import { StatusBadge } from "../ui/StatusBadge"
 import { eventDays, groupByDay } from "./days"
 import { EventKind } from "./EventKind"
-import type { UpcomingEvent } from "./query"
 import { UpcomingEventsFilter } from "./UpcomingEventsFilter"
 
 function UpcomingEventsHeader() {

@@ -10,8 +10,8 @@ import { FieldDescription } from "@/shared/ui/base/field"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/base/table"
 import { addMemberAction, changeVoiceAction, endMembershipAction } from "../commands"
 import { GroupCommandDialog } from "../group-command-dialog"
+import type { GroupDetail } from "../queries"
 import { SortableHead, useSortedRows } from "../sortable-table"
-import type { GroupDetail } from "./query"
 
 type Member = GroupDetail["members"][number]
 type PastMember = GroupDetail["pastMembers"][number]

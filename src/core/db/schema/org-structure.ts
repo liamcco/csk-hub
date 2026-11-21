@@ -12,6 +12,7 @@ import {
   uniqueIndex,
   uuid
 } from "drizzle-orm/pg-core"
+import { GROUP_TYPES } from "@/features/org-structure/model"
 import { user } from "./auth"
 import { voice, voiceDivision } from "./voice"
 
@@ -28,26 +29,7 @@ import { voice, voiceDivision } from "./voice"
 // drizzle-kit neither generates nor diffs them. A regenerated migration loses them unless they are
 // copied back, and changing one later takes a hand-written migration.
 
-export const groupType = pgEnum("group_type", [
-  "Choir",
-  "Section",
-  "Board",
-  "GigGroup",
-  "Gigmästeri",
-  "Sexmästeri",
-  "Roddgrupp",
-  "Festgrupp",
-  "Rephelg",
-  "Konsertmästeri",
-  "Rekryteringskommitté",
-  "Turnékommitté",
-  "Valberedning",
-  "Webmästeri",
-  "Föräldramötet",
-  "Arkivarie",
-  "Utantillkommitté",
-  "Övrig"
-])
+export const groupType = pgEnum("group_type", GROUP_TYPES)
 
 export const group = pgTable(
   "group",

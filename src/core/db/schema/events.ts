@@ -16,6 +16,7 @@ import {
   uniqueIndex,
   uuid
 } from "drizzle-orm/pg-core"
+import { EVENT_STATUSES, EVENT_TYPES, PARTICIPATION_MODES } from "@/features/events/model"
 import { user } from "./auth"
 import { group } from "./org-structure"
 import { voiceFamily } from "./voice"
@@ -37,27 +38,9 @@ import { voiceFamily } from "./voice"
 // copied back, and changing one later takes a hand-written migration. The triggers raise errors
 // that name a constraint, so callers can map them like any other constraint violation.
 
-export const eventType = pgEnum("event_type", [
-  "Rehearsal",
-  "Gig",
-  "Concert",
-  "Social",
-  "Rephelg",
-  "Körmöte",
-  "Booking", // Reserving a room.
-  "Meeting", // Board, committee and other general meetings; a Körmöte is its own type.
-  "Other"
-])
-
-export const eventStatus = pgEnum("event_status", ["Draft", "Published", "Cancelled"])
-
-// What an Event collects from its audience in advance. The code branches on every value.
-export const participationMode = pgEnum("participation_mode", [
-  "None",
-  "ResponseRequired",
-  "ResponseRequiredStrict",
-  "Registration"
-])
+export const eventType = pgEnum("event_type", EVENT_TYPES)
+export const eventStatus = pgEnum("event_status", EVENT_STATUSES)
+export const participationMode = pgEnum("participation_mode", PARTICIPATION_MODES)
 
 export const rsvpAnswer = pgEnum("rsvp_answer", ["Yes", "No", "Maybe"])
 export const attendanceStatus = pgEnum("attendance_status", ["Present", "Excused", "Absent"])

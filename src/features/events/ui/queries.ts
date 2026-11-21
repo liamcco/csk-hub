@@ -4,20 +4,36 @@ import {
   getEventPage,
   listLocations,
   listManagedEvents,
-  listUpcomingEvents
+  listUpcomingEvents,
+  type UpcomingEvents
 } from "@contract/client"
 import { queryOptions } from "@tanstack/react-query"
 import { browserApiClient as client } from "@/core/api-client/browser"
-import { read } from "@/core/api-client/result"
+import { type QueryData, read } from "@/core/api-client/result"
 import type { RichTextDocument } from "@/features/rich-text/document"
 import type { VoiceFamily } from "@/features/voice/model"
-import type { UpcomingEvent } from "../calendar/query"
 import type { EventStatus, EventType } from "../model"
-import type { EventFormValues } from "./editor/query"
-import type { EventListFilters } from "./list/query"
+import type { EventFormValues } from "./editor/form-input"
 
-function dated<T extends { startsAt: string; endsAt: string }>(item: T) {
+type Dated<T> = Omit<T, "startsAt" | "endsAt"> & { startsAt: Date; endsAt: Date }
+
+function dated<T extends { startsAt: string; endsAt: string }>(item: T): Dated<T> {
   return { ...item, startsAt: new Date(item.startsAt), endsAt: new Date(item.endsAt) }
+}
+
+export type UpcomingEvent = Dated<UpcomingEvents["items"][number]>
+export type EventPage = QueryData<ReturnType<typeof eventPageQuery>>
+export type EventListRow = QueryData<ReturnType<typeof managedEventsQuery>>["items"][number]
+export type EventFormOptions = QueryData<typeof eventFormOptionsQuery>
+export type EventDeletionImpact = QueryData<ReturnType<typeof eventEditorQuery>>["impact"]
+export type LocationRow = QueryData<typeof locationsQuery>[number]
+
+/** The management list's filters, as its URL carries them. */
+export type EventListFilters = {
+  /** Upcoming Events have not ended yet; past ones have. */
+  when: "upcoming" | "past"
+  status?: EventStatus
+  type?: EventType
 }
 
 /** Every Event and Location read lives under this key, so a change refreshes them together. */

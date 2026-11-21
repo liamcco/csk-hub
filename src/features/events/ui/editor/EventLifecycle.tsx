@@ -5,9 +5,9 @@ import { useAppRouter } from "@/core/navigation/router"
 import { ROUTES } from "@/core/navigation/site"
 import { Button } from "@/shared/ui/base/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/base/card"
-import type { EventDeletionImpact } from "../../lifecycle"
 import { type EventStatus, statusChangesFrom } from "../../model"
 import { EventCommandDialog } from "../EventCommandDialog"
+import type { EventDeletionImpact } from "../queries"
 import { useEventCommand } from "../use-event-command"
 
 /** What moving from one status to another is called. */

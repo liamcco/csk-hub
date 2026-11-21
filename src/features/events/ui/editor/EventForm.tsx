@@ -26,8 +26,9 @@ import {
 } from "../../model"
 import { ERROR_FIELD, type EventFormField, useEventErrorMessage } from "../errors"
 import { DETAIL_LABEL_MAX_LENGTH, LONG_TEXT_MAX_LENGTH, SHORT_TEXT_MAX_LENGTH, TITLE_MAX_LENGTH } from "../limits"
+import type { EventFormOptions } from "../queries"
 import { type EventCommand, useEventCommand } from "../use-event-command"
-import type { EventFormOptions, EventFormValues } from "./query"
+import type { EventFormValues } from "./form-input"
 import { eventFormVersion, parseStoredEvent, snapshotEventForm } from "./unsaved-event"
 
 const VOICE_FAMILIES = ["S", "A", "T", "B"]

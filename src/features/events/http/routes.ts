@@ -9,8 +9,7 @@ import { getCurrentEventPage, listCurrentUpcomingEvents } from "../calendar/quer
 import { createEvent, updateEvent } from "../events"
 import { changeEventStatus, deleteEvent } from "../lifecycle"
 import { archiveLocation, createLocation, updateLocation } from "../locations"
-import { EVENT_STATUSES, EVENT_TYPES, type EventResult, PARTICIPATION_MODES } from "../model"
-import type { EventCommandError } from "../ui/command-state"
+import { EVENT_STATUSES, EVENT_TYPES, type EventResult, type EventViolation, PARTICIPATION_MODES } from "../model"
 import { eventFormSchema } from "../ui/editor/form-input"
 import { getEventEditor, getEventFormOptions } from "../ui/editor/query"
 import { SHORT_TEXT_MAX_LENGTH, URL_MAX_LENGTH } from "../ui/limits"
@@ -42,7 +41,7 @@ const eventCommandErrors = [
   "detail-incomplete",
   "user-not-found",
   "invalid-input"
-] as const satisfies readonly Exclude<EventCommandError, "unexpected" | "access-denied">[]
+] as const satisfies readonly (EventViolation | "invalid-input")[]
 
 /** `title-required` travels as `TITLE_REQUIRED`; clients map it back to translate it. */
 function eventCode(kind: (typeof eventCommandErrors)[number]) {
@@ -62,8 +61,8 @@ const nullableText = () => z.string().nullable()
 const DocumentSchema = z.record(z.string(), z.unknown()).openapi("EventDescription", {
   description: "The editor's document (ProseMirror JSON) for an Event description."
 })
-const EventTypeSchema = z.enum(EVENT_TYPES as [string, ...string[]])
-const EventStatusSchema = z.enum(EVENT_STATUSES as [string, ...string[]])
+const EventTypeSchema = z.enum(EVENT_TYPES)
+const EventStatusSchema = z.enum(EVENT_STATUSES)
 const VoiceFamilySchema = z.enum(["S", "A", "T", "B"])
 
 function json<T extends z.ZodType>(description: string, schema: T) {
@@ -154,7 +153,7 @@ const EventFormValuesSchema = z
     lastDay: z.string(),
     callTime: z.string(),
     respondBy: z.string(),
-    participationMode: z.enum(PARTICIPATION_MODES as [string, ...string[]]),
+    participationMode: z.enum(PARTICIPATION_MODES),
     locationId: z.string(),
     locationText: z.string(),
     organiserGroupId: z.string(),

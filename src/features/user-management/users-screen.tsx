@@ -9,8 +9,7 @@ import { Skeleton } from "@/shared/ui/base/skeleton"
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/base/table"
 import { AddUserDialog } from "./add/add-user-dialog"
 import { ImportUsersDialog } from "./import/import-users-dialog"
-import type { UserListItem } from "./service"
-import { UserList } from "./user-list"
+import { UserList, type UserListItem } from "./user-list"
 
 export const usersQuery = queryOptions({
   queryKey: ["users"],

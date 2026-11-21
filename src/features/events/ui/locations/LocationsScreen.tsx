@@ -7,9 +7,9 @@ import { Button } from "@/shared/ui/base/button"
 import { Card } from "@/shared/ui/base/card"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/shared/ui/base/collapsible"
 import { Skeleton } from "@/shared/ui/base/skeleton"
+import type { LocationRow } from "../queries"
 import { locationsQuery } from "../queries"
 import { ArchiveLocationDialog, CreateLocationDialog, EditLocationDialog } from "./LocationDialogs"
-import type { LocationRow } from "./query"
 
 /** The reusable venues Events are held at. Archived ones stay on their Events but are not offered for new ones. */
 export function LocationsScreen() {

@@ -10,7 +10,7 @@ import {
   listMembershipsOfUser,
   lockGroupAuthorizationFacts
 } from "@/features/org-structure"
-import type { RichTextDocument } from "@/features/rich-text"
+import type { RichTextDocument } from "@/features/rich-text/document"
 import type { VoiceFamily } from "@/features/voice/model"
 import type { EventAccessResolver } from "../access"
 import { eventGroupContext } from "../access"

@@ -11,10 +11,10 @@ import { Skeleton } from "@/shared/ui/base/skeleton"
 import { cn } from "@/shared/utils"
 import { addDays, EVENT_STATUSES, EVENT_TYPES, stockholmDate, stockholmInstant } from "../../model"
 import { eventManagementPath } from "../command-state"
+import type { EventListFilters, EventListRow } from "../queries"
 import { managedEventsQuery } from "../queries"
 import { StatusBadge } from "../StatusBadge"
 import { EventFilters } from "./EventFilters"
-import type { EventListFilters, EventListRow } from "./query"
 
 /** The filters an address asks for; anything unknown is ignored. */
 export function eventListFilters(search: Record<string, unknown>): EventListFilters {

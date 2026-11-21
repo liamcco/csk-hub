@@ -1,8 +1,28 @@
-import type { groupType } from "@/core/db/schema/org-structure"
-
 export { ORG_STRUCTURE_VIOLATIONS, type OrgStructureResult, type OrgStructureViolation } from "./result"
 
-export type GroupType = (typeof groupType.enumValues)[number]
+/** Every group type. The database enum takes this list. */
+export const GROUP_TYPES = [
+  "Choir",
+  "Section",
+  "Board",
+  "GigGroup",
+  "Gigmästeri",
+  "Sexmästeri",
+  "Roddgrupp",
+  "Festgrupp",
+  "Rephelg",
+  "Konsertmästeri",
+  "Rekryteringskommitté",
+  "Turnékommitté",
+  "Valberedning",
+  "Webmästeri",
+  "Föräldramötet",
+  "Arkivarie",
+  "Utantillkommitté",
+  "Övrig"
+] as const
+
+export type GroupType = (typeof GROUP_TYPES)[number]
 
 /**
  * The group types whose Positions are elected posts, as each Board member is elected to one post:

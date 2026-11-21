@@ -1,7 +1,7 @@
 import { eventDocument } from "../../event-document"
 import { EVENT_TYPES, type EventType, PARTICIPATION_MODES, type ParticipationMode } from "../../model"
+import type { EventFormValues } from "./form-input"
 import { rows } from "./form-input"
-import type { EventFormValues } from "./query"
 
 // The Event form's unsaved copy, kept in the tab's session storage by `useUnsavedForm` so a
 // reload does not lose it. The copy is the form's own values, read off the form element.

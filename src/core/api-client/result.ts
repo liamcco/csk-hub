@@ -41,3 +41,8 @@ export function isUnauthenticated(error: unknown) {
 export function isUnavailable(error: unknown) {
   return error instanceof ApiRequestError && (error.status === 403 || error.status === 404)
 }
+
+/** The data a query's options resolve to, for naming a screen's types after its query. */
+export type QueryData<Options> = Options extends { queryFn?: infer Fn }
+  ? Awaited<ReturnType<Extract<Fn, (...args: never[]) => unknown>>>
+  : never

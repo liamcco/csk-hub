@@ -7,11 +7,11 @@ import { OverviewCard, OverviewList, overviewLinkClassName, overviewRowClassName
 import { Card, CardContent } from "@/shared/ui/base/card"
 import { cn } from "@/shared/utils"
 import { addDays, stockholmDate } from "../model"
+import type { UpcomingEvent } from "../ui/queries"
 import { upcomingEventsQuery } from "../ui/queries"
 import { StatusBadge } from "../ui/StatusBadge"
 import { happensOn } from "./days"
 import { EventKind } from "./EventKind"
-import type { UpcomingEvent } from "./query"
 
 /** How many Events "Coming up" lists after the next one. */
 const COMING_UP = 4

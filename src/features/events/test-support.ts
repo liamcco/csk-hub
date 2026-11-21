@@ -2,8 +2,7 @@ import { eq } from "drizzle-orm"
 import { user } from "@/core/db/schema/auth"
 import { choir, group, groupMember, position, positionHolder } from "@/core/db/schema/org-structure"
 import { createTestDatabase, type TestDatabase } from "../../../test/database"
-import type { EventInput } from "./events"
-import type { EventResult } from "./model"
+import type { EventInput, EventResult } from "./model"
 
 /**
  * A migrated throwaway database, or undefined without Postgres. Events only point at groups, so

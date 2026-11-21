@@ -6,7 +6,6 @@ import { logger } from "@/core/logging"
 import { getErrorCode, getErrorName, getErrorStatus } from "@/shared/errors"
 import * as lifecycle from "../lifecycle"
 import { type Authorize, isPostId, type PostsDatabase } from "../service"
-import type { UnpublishedTo } from "./unpublished-notice"
 
 /** Where a command writes and how it resolves the acting User inside its transaction. */
 export type PostCommandContext = { database: PostsDatabase; authorize: Authorize }
@@ -93,11 +92,11 @@ export async function editPublishedPostCommand(
 export async function unpublishPostCommand(
   context: PostCommandContext,
   postId: string
-): Promise<PostWriteResult<{ unpublishedTo: UnpublishedTo }>> {
+): Promise<PostWriteResult<{ unpublishedTo: "own" | "author" }>> {
   return writePost(context, "unpublish", "post.unpublish", postId, async (actorId, tx) => {
     const recalled = await lifecycle.unpublishPost(postId, tx)
     if (!recalled) return null
-    const unpublishedTo: UnpublishedTo = recalled.authorId === actorId ? "own" : "author"
+    const unpublishedTo = recalled.authorId === actorId ? ("own" as const) : ("author" as const)
     return { id: postId, unpublishedTo }
   })
 }

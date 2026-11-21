@@ -5,8 +5,8 @@ import { InputField } from "@/shared/forms/fields"
 import { Button } from "@/shared/ui/base/button"
 import { EventCommandDialog } from "../EventCommandDialog"
 import { SHORT_TEXT_MAX_LENGTH, URL_MAX_LENGTH } from "../limits"
+import type { LocationRow } from "../queries"
 import { useEventCommand } from "../use-event-command"
-import type { LocationRow } from "./query"
 
 function LocationFields({ location }: { location?: LocationRow }) {
   const t = useTranslations("Events.locations")

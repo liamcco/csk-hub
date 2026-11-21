@@ -1,5 +1,4 @@
-import type { eventStatus, eventType, participationMode } from "@/core/db/schema/events"
-
+export type { EventDetailInput, EventInput, EventSchedule, EventTargetInput } from "./input"
 export { type RehearsalKind, rehearsalKind } from "./rehearsal-kind"
 export type { EventResult, EventViolation } from "./result"
 export {
@@ -13,9 +12,27 @@ export {
   stockholmLocalDateTime
 } from "./stockholm-time"
 
-export type EventType = (typeof eventType.enumValues)[number]
-export type EventStatus = (typeof eventStatus.enumValues)[number]
-export type ParticipationMode = (typeof participationMode.enumValues)[number]
+/** Every Event type, in the order a picker offers them. The database enum takes this list. */
+export const EVENT_TYPES = [
+  "Rehearsal",
+  "Gig",
+  "Concert",
+  "Social",
+  "Rephelg",
+  "Körmöte",
+  "Booking", // Reserving a room.
+  "Meeting", // Board, committee and other general meetings; a Körmöte is its own type.
+  "Other"
+] as const
+
+export const EVENT_STATUSES = ["Draft", "Published", "Cancelled"] as const
+
+/** What an Event collects from its audience in advance. The code branches on every value. */
+export const PARTICIPATION_MODES = ["None", "ResponseRequired", "ResponseRequiredStrict", "Registration"] as const
+
+export type EventType = (typeof EVENT_TYPES)[number]
+export type EventStatus = (typeof EVENT_STATUSES)[number]
+export type ParticipationMode = (typeof PARTICIPATION_MODES)[number]
 
 /** The Participation mode an Event of each type starts with, which the organiser may override. */
 export const DEFAULT_PARTICIPATION_MODE: Record<EventType, ParticipationMode> = {
@@ -29,18 +46,6 @@ export const DEFAULT_PARTICIPATION_MODE: Record<EventType, ParticipationMode> = 
   Meeting: "None",
   Other: "None"
 }
-
-/** Every Event type, in the order a picker offers them. */
-export const EVENT_TYPES = Object.keys(DEFAULT_PARTICIPATION_MODE) as EventType[]
-
-export const PARTICIPATION_MODES: readonly ParticipationMode[] = [
-  "None",
-  "ResponseRequired",
-  "ResponseRequiredStrict",
-  "Registration"
-]
-
-export const EVENT_STATUSES: readonly EventStatus[] = ["Draft", "Published", "Cancelled"]
 
 /** The types with an extension row of their own fields. The others have none. */
 export type ExtendedEventType = Extract<EventType, "Rehearsal" | "Gig" | "Social">

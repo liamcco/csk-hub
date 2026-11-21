@@ -6,7 +6,7 @@ import { Skeleton } from "@/shared/ui/base/skeleton"
 import { DEFAULT_PARTICIPATION_MODE, EVENT_TYPES, type EventType } from "../../model"
 import { eventFormOptionsQuery } from "../queries"
 import { EventForm } from "./EventForm"
-import type { EventFormValues } from "./query"
+import type { EventFormValues } from "./form-input"
 
 const FIRST_TYPE = EVENT_TYPES[0] as EventType
 

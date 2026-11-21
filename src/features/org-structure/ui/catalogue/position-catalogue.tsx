@@ -12,7 +12,7 @@ import type { GroupType } from "../../model"
 import { createPositionAction, updatePositionAction } from "../commands"
 import { GroupCommandDialog } from "../group-command-dialog"
 import { NAME_MAX_LENGTH } from "../limits"
-import type { CataloguePosition, LimitGroup, PositionCatalogueData } from "./query"
+import type { CataloguePosition, LimitGroup, PositionCatalogueData } from "../queries"
 
 const GROUP_TYPES: GroupType[] = [
   "Choir",

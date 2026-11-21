@@ -9,7 +9,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/shared/ui
 import { Label } from "@/shared/ui/base/label"
 import { Switch } from "@/shared/ui/base/switch"
 import { groupDetailPath } from "./command-state"
-import type { GroupSummary } from "./group-summaries"
+import type { GroupSummary } from "./queries"
 
 /** The switch both overviews use to include archived groups. */
 export function ShowArchivedToggle({ checked, onChange }: { checked: boolean; onChange: (checked: boolean) => void }) {

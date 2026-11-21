@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test"
 import { registerDom } from "@test/dom"
-import type { EventFormValues } from "./query"
+import type { EventFormValues } from "./form-input"
 import { eventFormVersion, parseStoredEvent, snapshotEventForm } from "./unsaved-event"
 
 registerDom()

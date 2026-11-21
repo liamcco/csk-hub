@@ -10,11 +10,11 @@ import { buttonVariants } from "@/shared/ui/base/button"
 import { Skeleton } from "@/shared/ui/base/skeleton"
 import { stockholmInstant } from "../model"
 import { eventManagementPath } from "../ui/command-state"
+import type { EventPage } from "../ui/queries"
 import { eventPageQuery } from "../ui/queries"
 import { StatusBadge } from "../ui/StatusBadge"
 import { eventDays } from "./days"
 import { EventKind } from "./EventKind"
-import type { EventPage } from "./query"
 
 /**
  * One Event as its Audience reads it. Anything the viewer may not see, including every Draft, is

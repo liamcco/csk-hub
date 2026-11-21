@@ -6,8 +6,7 @@ import { Badge } from "@/shared/ui/base/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/base/card"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/shared/ui/base/collapsible"
 import { EXPAND_TRIGGER, ExpandChevron, GroupItems, GroupList, ShowArchivedToggle } from "../group-list"
-import type { GroupSummary } from "../group-summaries"
-import type { GroupsOverview as Overview } from "./query"
+import type { GroupSummary, GroupsOverview as Overview } from "../queries"
 
 /** The groups beside the Choirs' Sections: each Choir's own groups, and the CSK-wide groups by type. */
 export function GroupsOverview({ overview }: { overview: Overview }) {

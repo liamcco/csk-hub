@@ -1,10 +1,11 @@
-import type { voice } from "@/core/db/schema/voice"
-
 /**
  * A line someone sings, at either granularity: a family (B) or one of its divisions (B1). Never a
  * group of people.
  */
-export type Voice = (typeof voice.enumValues)[number]
+export type Voice = (typeof VOICES)[number]
+
+/** Every Voice line. The database enum takes this list. */
+export const VOICES = ["S", "A", "T", "B", "S1", "S2", "A1", "A2", "T1", "T2", "B1", "B2"] as const
 
 /** S1 … B2: a Voice line when its family splits, as B1 in TTBB. */
 export type VoiceDivision = Extract<Voice, `${string}${1 | 2}`>

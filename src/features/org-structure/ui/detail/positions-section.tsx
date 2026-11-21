@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { holdsElectedPosts } from "../../model"
 import { assignHolderAction, endHoldingAction } from "../commands"
 import { GroupCommandDialog } from "../group-command-dialog"
-import type { GroupDetail } from "./query"
+import type { GroupDetail } from "../queries"
 
 type GroupPosition = GroupDetail["positions"][number]
 

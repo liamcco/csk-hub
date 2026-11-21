@@ -4,7 +4,7 @@ import swedishMessages from "@messages/sv.json"
 import { renderToStaticMarkup } from "react-dom/server"
 import { app } from "@/core/config/app"
 import { IntlProvider } from "@/core/i18n/client"
-import type { UserListItem } from "./service"
+import type { UserListItem } from "./user-list"
 
 const navigation = await import("@/core/navigation/router")
 mock.module("@/core/navigation/router", () => ({ ...navigation, useAppRouter: () => ({ refresh: () => {} }) }))

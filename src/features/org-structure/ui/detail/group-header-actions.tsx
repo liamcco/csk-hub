@@ -6,7 +6,7 @@ import { Button } from "@/shared/ui/base/button"
 import { archiveGroupAction, renameGroupAction } from "../commands"
 import { GroupCommandDialog } from "../group-command-dialog"
 import { NAME_MAX_LENGTH } from "../limits"
-import type { GroupDetail } from "./query"
+import type { GroupDetail } from "../queries"
 
 export function GroupHeaderActions({ group }: { group: GroupDetail["group"] }) {
   const t = useTranslations("Groups")

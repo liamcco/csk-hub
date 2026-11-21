@@ -1,5 +1,6 @@
 "use client"
 
+import type { AdministeredUser } from "@contract/client"
 import { CheckIcon, TriangleAlertIcon } from "lucide-react"
 import { useMemo, useState } from "react"
 import { app } from "@/core/config/app"
@@ -9,10 +10,12 @@ import { Badge } from "@/shared/ui/base/badge"
 import { Input } from "@/shared/ui/base/input"
 import { NativeSelect, NativeSelectOption } from "@/shared/ui/base/native-select"
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/base/table"
-import type { UserListItem } from "./service"
 import { UserActions } from "./user-actions"
 
 type UserStatusFilter = "active" | "inactive" | "all"
+
+/** A row of the user list: an administered User with their join date parsed. */
+export type UserListItem = Omit<AdministeredUser, "createdAt"> & { createdAt: Date }
 
 function roleLabel(role: UserListItem["role"]) {
   return parseRoles(role)

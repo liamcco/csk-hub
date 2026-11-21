@@ -1,14 +1,7 @@
 import { z } from "zod"
-import type { EventInput } from "../../events"
-import {
-  EVENT_TYPES,
-  type EventType,
-  isIsoDate,
-  isLocalDateTime,
-  PARTICIPATION_MODES,
-  type ParticipationMode,
-  stockholmInstant
-} from "../../model"
+import type { RichTextDocument } from "@/features/rich-text/document"
+import type { EventInput, EventType, IsoDate, LocalDateTime, ParticipationMode } from "../../model"
+import { EVENT_TYPES, isIsoDate, isLocalDateTime, PARTICIPATION_MODES, stockholmInstant } from "../../model"
 import { DETAIL_LABEL_MAX_LENGTH, LONG_TEXT_MAX_LENGTH, SHORT_TEXT_MAX_LENGTH, TITLE_MAX_LENGTH } from "../limits"
 
 // How the Event form travels: one field per value, and the Target and Event detail rows as
@@ -94,7 +87,7 @@ const description = z
 /** The Event form as the module's `EventInput`. */
 export const eventFormSchema = z
   .object({
-    type: z.enum(EVENT_TYPES as [EventType, ...EventType[]]),
+    type: z.enum(EVENT_TYPES),
     title: z.string().max(TITLE_MAX_LENGTH),
     description,
     schedule: z.discriminatedUnion("allDay", [
@@ -103,7 +96,7 @@ export const eventFormSchema = z
     ]),
     callTime: instant.optional(),
     respondBy: instant.optional(),
-    participationMode: z.enum(PARTICIPATION_MODES as [ParticipationMode, ...ParticipationMode[]]),
+    participationMode: z.enum(PARTICIPATION_MODES),
     locationId: z.uuid().optional(),
     locationText: optionalText(SHORT_TEXT_MAX_LENGTH),
     organiserGroupId: z.uuid().optional(),
@@ -130,3 +123,28 @@ export const eventFormSchema = z
       }))
     })
   )
+
+/** What the Event form shows, in the form's own terms: Stockholm wall-clock times and calendar dates. */
+export type EventFormValues = {
+  type: EventType
+  title: string
+  description: RichTextDocument | null
+  allDay: boolean
+  startsAt: LocalDateTime
+  endsAt: LocalDateTime
+  firstDay: IsoDate
+  lastDay: IsoDate
+  callTime: LocalDateTime
+  respondBy: LocalDateTime
+  participationMode: ParticipationMode
+  locationId: string
+  locationText: string
+  organiserGroupId: string
+  leaderUserId: string
+  responsibleUserId: string
+  contactName: string
+  contactDetails: string
+  costInfo: string
+  targets: { groupId: string; voiceFamily: string }[]
+  details: { label: string; value: string }[]
+}

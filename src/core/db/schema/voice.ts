@@ -1,5 +1,6 @@
 import { defineRelations } from "drizzle-orm"
 import { customType, pgEnum, pgTable, primaryKey, text } from "drizzle-orm/pg-core"
+import { VOICES } from "@/features/voice/model"
 import { user } from "./auth"
 
 // The Voice types, and what each user can sing. The org structure uses `voice` for Sections and
@@ -14,7 +15,7 @@ import { user } from "./auth"
 // A Voice is a family (S, A, T, B) or one of its divisions (S1 … B2). The family of a division is
 // derived, never stored. A Section may sing a family; a singer's Voice, in a Section Membership or
 // a capability, is always a division.
-export const voice = pgEnum("voice", ["S", "A", "T", "B", "S1", "S2", "A1", "A2", "T1", "T2", "B1", "B2"])
+export const voice = pgEnum("voice", VOICES)
 
 // Hand-written in drizzle/20261004114247_groups/migration.sql (1): `voice_family` and `voice_division` are Postgres
 // domains over `voice`, restricted to families and divisions. This custom type only names the

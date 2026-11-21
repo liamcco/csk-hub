@@ -5,7 +5,6 @@ import { user } from "@/core/db/schema/auth"
 import { event, eventDetail, eventTarget, gig, location, rehearsal, socialEvent } from "@/core/db/schema/events"
 import { listActiveGroups } from "@/features/org-structure"
 import type { GroupType } from "@/features/org-structure/model"
-import type { RichTextDocument } from "@/features/rich-text"
 import {
   type EventAccessResolver,
   getEventManagementScope,
@@ -13,41 +12,8 @@ import {
   withEventPermission
 } from "../../access"
 import { getEventDeletionImpact } from "../../lifecycle"
-import {
-  addDays,
-  type EventStatus,
-  type EventType,
-  type IsoDate,
-  type LocalDateTime,
-  type ParticipationMode,
-  stockholmDate,
-  stockholmLocalDateTime
-} from "../../model"
-
-/** What the Event form shows, in the form's own terms: Stockholm wall-clock times and calendar dates. */
-export type EventFormValues = {
-  type: EventType
-  title: string
-  description: RichTextDocument | null
-  allDay: boolean
-  startsAt: LocalDateTime
-  endsAt: LocalDateTime
-  firstDay: IsoDate
-  lastDay: IsoDate
-  callTime: LocalDateTime
-  respondBy: LocalDateTime
-  participationMode: ParticipationMode
-  locationId: string
-  locationText: string
-  organiserGroupId: string
-  leaderUserId: string
-  responsibleUserId: string
-  contactName: string
-  contactDetails: string
-  costInfo: string
-  targets: { groupId: string; voiceFamily: string }[]
-  details: { label: string; value: string }[]
-}
+import { addDays, type EventStatus, stockholmDate, stockholmLocalDateTime } from "../../model"
+import type { EventFormValues } from "./form-input"
 
 export type EventFormOptions = Awaited<ReturnType<typeof getEventFormOptions>>
 
