@@ -43,22 +43,17 @@ describe("Architecture Rules", () => {
     await projectFiles().inPath("src/**").shouldNot().dependOnFiles().inPath("node_modules/**").check()
   }, 30_000)
 
-  test("only core i18n imports next-intl", () => {
+  test("only core i18n imports use-intl", () => {
     const violations = sourceFiles("src")
       .filter((file) => !projectPath(file).startsWith("src/core/i18n/"))
-      .filter((file) => /from\s+["']next-intl(?:\/[^"']+)?["']/.test(readFileSync(file, "utf8")))
+      .filter((file) => /from\s+["']use-intl(?:\/[^"']+)?["']/.test(readFileSync(file, "utf8")))
       .map(projectPath)
 
     expect(violations).toEqual([])
   })
 
-  test("only the session helpers and proxy call auth.api.getSession", () => {
-    // The shared helper gates Better Auth's expiry clock read behind io() (issue #84).
-    const allowedPaths = new Set([
-      "src/core/auth/session.server.ts",
-      "src/core/auth/request-session.ts",
-      "src/proxy.ts"
-    ])
+  test("only the request session helper calls auth.api.getSession", () => {
+    const allowedPaths = new Set(["src/core/auth/request-session.ts"])
     const violations = sourceFiles("src")
       .filter((file) => !allowedPaths.has(projectPath(file)))
       .filter((file) => /\bauth\s*\.\s*api\s*\.\s*getSession\s*\(/.test(readFileSync(file, "utf8")))

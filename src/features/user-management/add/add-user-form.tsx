@@ -2,13 +2,13 @@
 
 import { useActionState, useEffect, useRef } from "react"
 import { useTranslations } from "@/core/i18n/translations"
+import { useAppRouter } from "@/core/navigation/router"
 import { InputField } from "@/shared/forms/fields"
 import { Button } from "@/shared/ui/base/button"
 import { DialogClose } from "@/shared/ui/base/dialog"
 import { FieldError, FieldGroup } from "@/shared/ui/base/field"
 import { toast } from "@/shared/ui/base/toast"
 import { type AddUserState, addUser } from "../user-commands"
-import { useAppRouter } from "@/core/navigation/router"
 
 export function AddUserForm() {
   const t = useTranslations("Members")

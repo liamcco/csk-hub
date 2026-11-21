@@ -9,7 +9,8 @@ registerDom()
 
 const push = mock((_path: string) => {})
 const router = { push }
-mock.module("next/navigation", () => ({ useRouter: () => router }))
+const navigation = await import("@/core/navigation/router")
+mock.module("@/core/navigation/router", () => ({ ...navigation, useAppRouter: () => router }))
 mock.module("@/core/i18n/translations", () => ({ useTranslations: () => (key: string) => key }))
 const startConversation = mock(
   async (_state: MessageCommandState, _formData: FormData): Promise<MessageCommandState> => ({

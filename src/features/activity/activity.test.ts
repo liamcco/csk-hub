@@ -51,25 +51,6 @@ if (!process.env.CSK_ACTIVITY_TEST) {
     const fixtureConversations: string[] = []
     const identity = new AsyncLocalStorage<{ userId: string; sessionId: string }>()
     mock.module("@/core/db", () => ({ db: testDatabase.db }))
-    mock.module("@/core/auth/session.server", () => ({
-      requireAuthenticatedUser: async () => {
-        const current = identity.getStore()
-        if (!current) throw new Error("Authentication required")
-        return current.userId
-      },
-      getFreshRequestSession: async () => {
-        const current = identity.getStore()
-        return current
-          ? { user: { id: current.userId }, session: { id: current.sessionId, impersonatedBy: null } }
-          : null
-      },
-      getRequestSession: async () => {
-        const current = identity.getStore()
-        return current
-          ? { user: { id: current.userId }, session: { id: current.sessionId, impersonatedBy: null } }
-          : null
-      }
-    }))
     const push = mock(
       async (): Promise<NotificationDeliveryResult> => ({
         success: true,
@@ -96,7 +77,15 @@ if (!process.env.CSK_ACTIVITY_TEST) {
     // The mocked database and authority, passed explicitly as the HTTP API passes its own.
     const messaging = {
       database: (await import("@/core/db")).db,
-      authorize: (await import("@/core/authz/request")).requirePermission
+      authorize: (await import("@/core/authz/authorization")).createAuthorization({
+        database: testDatabase.db,
+        readSession: async () => {
+          const current = identity.getStore()
+          return current
+            ? { user: { id: current.userId }, session: { id: current.sessionId, impersonatedBy: null } }
+            : null
+        }
+      }).requirePermission
     } as unknown as import("@/features/messaging/model/context").MessagingContext
     const { dispatchActivity, nextActivityDelay, pendingActivityStats, pruneActivity } = await import(
       "@/core/realtime/dispatch"

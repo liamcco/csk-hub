@@ -1,6 +1,6 @@
 import { useSuspenseQuery } from "@tanstack/react-query"
-import { useTranslations } from "@/core/i18n/translations"
 import { timeZone } from "@/core/i18n/time-zone"
+import { useTranslations } from "@/core/i18n/translations"
 import { PageBreadcrumb } from "@/core/navigation/PageBreadcrumb"
 import { Badge } from "@/shared/ui/base/badge"
 import { Skeleton } from "@/shared/ui/base/skeleton"

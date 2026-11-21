@@ -3,11 +3,11 @@
 import { CalendarDays, CircleUser, EllipsisIcon, House, type LucideIcon, MessageCircle, Newspaper } from "lucide-react"
 import { type MouseEvent, type PointerEvent, type RefObject, Suspense, useEffect, useRef, useState } from "react"
 import { useTranslations } from "@/core/i18n/translations"
+import { Link, useAppRouter, usePathname } from "@/core/navigation/router"
 import { cn } from "@/shared/utils"
 import { isActiveRoute } from "./navigation-utils"
 import { slotIndexAt } from "./quick-access"
 import { ROUTES } from "./site"
-import { Link, useAppRouter, usePathname } from "@/core/navigation/router"
 
 type ShortcutLabel = "events" | "routes.news" | "routes.home" | "routes.messages" | "profile"
 

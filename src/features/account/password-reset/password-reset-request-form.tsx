@@ -5,6 +5,7 @@ import type { SubmitEvent } from "react"
 import { useRef, useState } from "react"
 import type z from "zod"
 import { useTranslations } from "@/core/i18n/translations"
+import { Link } from "@/core/navigation/router"
 import { ROUTES } from "@/core/navigation/site"
 import { InputField } from "@/shared/forms/fields"
 import { Alert, AlertDescription } from "@/shared/ui/base/alert"
@@ -12,7 +13,6 @@ import { Button } from "@/shared/ui/base/button"
 import { Spinner } from "@/shared/ui/base/spinner"
 import { passwordResetRequestSchema } from "./schemas"
 import { requestPasswordReset } from "./service"
-import { Link } from "@/core/navigation/router"
 
 export function PasswordResetRequestForm({
   onSuccess,

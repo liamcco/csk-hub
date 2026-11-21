@@ -35,14 +35,13 @@ const tx = {
 const db = { transaction: mock(async (callback: (transaction: typeof tx) => unknown) => callback(tx)) }
 const requirePermission = mock(async () => ({ userId: "creator", isAdmin: false }))
 mock.module("@/core/db", () => ({ db }))
-mock.module("@/core/authz/request", () => ({ requirePermission }))
 const { addGroupMembers, createGroupConversation, leaveGroupConversation, renameGroupConversation } = await import(
   "./commands"
 )
 // The mocked database and authority, passed explicitly as the HTTP API passes its own.
 const messaging = {
   database: (await import("@/core/db")).db,
-  authorize: (await import("@/core/authz/request")).requirePermission
+  authorize: requirePermission
 } as unknown as import("@/features/messaging/model/context").MessagingContext
 
 beforeEach(() => {

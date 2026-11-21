@@ -2,6 +2,7 @@ import { useSuspenseQuery } from "@tanstack/react-query"
 import { Suspense } from "react"
 import { useTranslations } from "@/core/i18n/translations"
 import { newsPostEditPath, newsPostPath } from "@/core/navigation/navigation-utils"
+import { Link } from "@/core/navigation/router"
 import { ROUTES } from "@/core/navigation/site"
 import { RichTextContent } from "@/features/rich-text/view"
 import { ContentPage } from "@/shared/layouts/content-page"
@@ -15,7 +16,6 @@ import { UnpublishedNotice } from "./compose/UnpublishedNotice"
 import { PostTime } from "./PostTime"
 import { PostByline } from "./post-byline"
 import { newsFeedQuery, ownDraftsQuery } from "./query"
-import { Link } from "@/core/navigation/router"
 
 function NewsHeader({ children }: { children?: React.ReactNode }) {
   const t = useTranslations("Posts")

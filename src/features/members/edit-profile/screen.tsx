@@ -1,11 +1,11 @@
 import { useSuspenseQuery } from "@tanstack/react-query"
 import { ArrowLeft } from "lucide-react"
 import { useTranslations } from "@/core/i18n/translations"
+import { Link } from "@/core/navigation/router"
 import { ROUTES } from "@/core/navigation/site"
 import { Skeleton } from "@/shared/ui/base/skeleton"
 import { profileEditorQuery } from "../queries"
 import { EditProfileForm } from "./form"
-import { Link } from "@/core/navigation/router"
 
 export function EditProfileScreen() {
   const { data: voices } = useSuspenseQuery(profileEditorQuery)

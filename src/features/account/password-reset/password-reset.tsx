@@ -3,12 +3,12 @@
 import { useState } from "react"
 import { useTranslations } from "@/core/i18n/translations"
 import { getPostLoginPath, twoFactorPath } from "@/core/navigation/navigation-utils"
+import { Link, useAppRouter, useSearchParams } from "@/core/navigation/router"
 import { ROUTES } from "@/core/navigation/site"
 import { Alert, AlertDescription } from "@/shared/ui/base/alert"
 import { PasswordResetForm } from "./password-reset-form"
 import { PasswordResetRequestForm } from "./password-reset-request-form"
 import type { PasswordResetCompletion } from "./service"
-import { Link, useAppRouter, useSearchParams } from "@/core/navigation/router"
 
 export function PasswordResetRequest() {
   const t = useTranslations("Public.passwordReset")

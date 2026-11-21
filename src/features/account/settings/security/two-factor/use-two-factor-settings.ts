@@ -2,8 +2,8 @@
 
 import { useRef, useState } from "react"
 import { useTranslations } from "@/core/i18n/translations"
-import { disableTwoFactor, enableTwoFactor, verifyTwoFactorSetup } from "./two-factor-service"
 import { useAppRouter } from "@/core/navigation/router"
+import { disableTwoFactor, enableTwoFactor, verifyTwoFactorSetup } from "./two-factor-service"
 
 type Step = { kind: "idle" } | { kind: "confirm"; enable: boolean } | { kind: "verify"; totpUri: string }
 type Feedback = { type: "error" | "success"; message: string }

@@ -2,13 +2,13 @@
 
 import { useActionState, useEffect, useRef, useState } from "react"
 import { useTranslations } from "@/core/i18n/translations"
+import { useAppRouter } from "@/core/navigation/router"
 import { Button } from "@/shared/ui/base/button"
 import { Input } from "@/shared/ui/base/input"
 import { MAX_GROUP_NAME_LENGTH } from "../../model/group-conversation"
 import { groupConversationCommand } from "../api-commands"
 import type { MessageCommandState } from "../composer/message-command-state"
 import { MemberSelection } from "../member-selection"
-import { useAppRouter } from "@/core/navigation/router"
 
 type Member = { id: string; name: string }
 const initialState: MessageCommandState = { status: "idle" }

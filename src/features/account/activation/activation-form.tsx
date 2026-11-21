@@ -2,13 +2,13 @@
 
 import { useActionState, useEffect } from "react"
 import { useTranslations } from "@/core/i18n/translations"
+import { Link, useAppRouter, useSearchParams } from "@/core/navigation/router"
 import { ROUTES } from "@/core/navigation/site"
 import { InputField } from "@/shared/forms/fields"
 import { passwordPolicy } from "@/shared/policy"
 import { Button } from "@/shared/ui/base/button"
 import { FieldError, FieldGroup } from "@/shared/ui/base/field"
 import { type ActivationState, activateAccount } from "./activate"
-import { Link, useAppRouter, useSearchParams } from "@/core/navigation/router"
 
 export function ActivationForm() {
   const t = useTranslations("Public.activation")

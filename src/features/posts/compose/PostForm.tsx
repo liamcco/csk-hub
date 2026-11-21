@@ -2,6 +2,7 @@
 
 import { type FormEvent, useState, useTransition } from "react"
 import { useTranslations } from "@/core/i18n/translations"
+import { Link, useAppRouter } from "@/core/navigation/router"
 import { type RichTextDocument, RichTextEditor } from "@/features/rich-text"
 import { InputField } from "@/shared/forms/fields"
 import { Alert, AlertAction, AlertDescription } from "@/shared/ui/base/alert"
@@ -11,7 +12,6 @@ import { postDocument } from "../post-document"
 import { POST_TITLE_MAX_LENGTH } from "./schemas"
 import { type PostFormState, type PostFormTarget, submitPost } from "./submit"
 import { useUnsavedPost } from "./use-unsaved-post"
-import { Link, useAppRouter } from "@/core/navigation/router"
 
 const POST_BODY_LABEL_ID = "post-body-label"
 

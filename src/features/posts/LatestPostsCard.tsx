@@ -1,11 +1,11 @@
 import { useSuspenseQuery } from "@tanstack/react-query"
 import { useTranslations } from "@/core/i18n/translations"
 import { newsPostPath } from "@/core/navigation/navigation-utils"
+import { Link } from "@/core/navigation/router"
 import { ROUTES } from "@/core/navigation/site"
-import { OverviewCard, OverviewList, overviewRowClassName } from "@/shared/layouts/overview-card"
+import { OverviewCard, OverviewList, overviewLinkClassName, overviewRowClassName } from "@/shared/layouts/overview-card"
 import { PostByline } from "./post-byline"
 import { latestPostsQuery } from "./query"
-import { Link } from "@/core/navigation/router"
 
 const LATEST = 3
 
@@ -15,7 +15,15 @@ export function LatestPostsCard({ className }: { className?: string }) {
   const t = useTranslations("HomePage.news")
 
   return (
-    <OverviewCard title={t("title")} link={{ href: ROUTES.news, label: t("seeAll") }} className={className}>
+    <OverviewCard
+      title={t("title")}
+      action={
+        <Link href={ROUTES.news} className={overviewLinkClassName}>
+          {t("seeAll")}
+        </Link>
+      }
+      className={className}
+    >
       {posts.length ? (
         <OverviewList>
           {posts.map((post) => (

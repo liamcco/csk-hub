@@ -2,6 +2,7 @@ import { useSuspenseQuery } from "@tanstack/react-query"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { useTranslations } from "@/core/i18n/translations"
 import { memberProfilePath } from "@/core/navigation/navigation-utils"
+import { Link } from "@/core/navigation/router"
 import { ROUTES } from "@/core/navigation/site"
 import { buttonVariants } from "@/shared/ui/base/button"
 import { Card, CardContent } from "@/shared/ui/base/card"
@@ -10,7 +11,6 @@ import { Skeleton } from "@/shared/ui/base/skeleton"
 import { DirectorySearchButton, DirectorySearchForm } from "./directory-search-button"
 import { MemberAvatar } from "./member-avatar"
 import { type DirectorySearch, directoryQuery } from "./queries"
-import { Link } from "@/core/navigation/router"
 
 export function MemberDirectoryScreen({ search }: { search: DirectorySearch }) {
   const {

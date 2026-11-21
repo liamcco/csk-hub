@@ -4,6 +4,7 @@ import { ArrowUpIcon } from "lucide-react"
 import { useActionState, useEffect, useState } from "react"
 import { useTranslations } from "@/core/i18n/translations"
 import { conversationPath } from "@/core/navigation/navigation-utils"
+import { useAppRouter } from "@/core/navigation/router"
 import { Button } from "@/shared/ui/base/button"
 import { useMessageScroller } from "@/shared/ui/base/message-scroller"
 import { Textarea } from "@/shared/ui/base/textarea"
@@ -12,7 +13,6 @@ import { sendMessageCommand } from "../api-commands"
 import { createMessageIdempotencyKey, nextMessageIdempotencyKey } from "../composer/idempotency-key"
 import type { MessageCommandState } from "../composer/message-command-state"
 import { submitOnEnter } from "../composer/submit-on-enter"
-import { useAppRouter } from "@/core/navigation/router"
 
 const initialState: MessageCommandState = { status: "idle" }
 

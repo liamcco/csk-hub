@@ -31,9 +31,7 @@ if (!process.env.CSK_GROUP_CREATION_TEST) {
   const database = await createTestDatabase()
   const identity = new AsyncLocalStorage<string>()
   let failBeforeCommit = false
-  mock.module("@/core/authz/request", () => ({
-    requirePermission: async () => ({ userId: identity.getStore(), isAdmin: false })
-  }))
+  const requirePermission = async () => ({ userId: identity.getStore(), isAdmin: false })
   mock.module("@/core/db", () => ({
     db: {
       transaction: async <T>(work: (tx: MessageTransaction) => Promise<T>) => {
@@ -55,7 +53,7 @@ if (!process.env.CSK_GROUP_CREATION_TEST) {
   // The mocked database and authority, passed explicitly as the HTTP API passes its own.
   const messaging = {
     database: (await import("@/core/db")).db,
-    authorize: (await import("@/core/authz/request")).requirePermission
+    authorize: requirePermission
   } as unknown as import("@/features/messaging/model/context").MessagingContext
 
   describe.skipIf(!database)("Group creation idempotency", () => {
@@ -66,7 +64,7 @@ if (!process.env.CSK_GROUP_CREATION_TEST) {
       const ids = Array.from({ length: 4 }, () => crypto.randomUUID())
       await t.db.insert(user).values(ids.map((id) => ({ id, name: id, email: `${id}@example.test` })))
       const [creator, first, second, extra] = ids as [string, string, string, string]
-      const input = { name: "Planning", memberIds: [first, second], idempotencyKey: crypto.randomUUID() }
+      const input = { name: "Planning", memberIds: [first, second], idempotencyKey: crypto.randomUUID() as string }
       const create = (changes: Partial<typeof input> = {}, creatorId = creator) =>
         identity.run(creatorId, () => createGroupConversation({ ...input, ...changes }, messaging))
       return { creator, first, second, extra, input, create }

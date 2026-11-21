@@ -2,12 +2,12 @@ import { useSuspenseQuery } from "@tanstack/react-query"
 import { UserRoundIcon, UsersRoundIcon } from "lucide-react"
 import { useFormatter, useTranslations } from "@/core/i18n/translations"
 import { conversationPath } from "@/core/navigation/navigation-utils"
+import { Link } from "@/core/navigation/router"
 import { Card, CardContent } from "@/shared/ui/base/card"
 import { Skeleton } from "@/shared/ui/base/skeleton"
 import { formatMessageSentAt } from "../message-timestamp"
 import { inboxQuery } from "../queries"
 import { StartConversationDialog } from "./start-conversation-dialog"
-import { Link } from "@/core/navigation/router"
 
 export function MessagesScreen() {
   const { data: conversations } = useSuspenseQuery(inboxQuery)

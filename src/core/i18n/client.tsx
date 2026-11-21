@@ -1,13 +1,13 @@
 import { createContext, type ReactNode, useCallback, useContext, useState } from "react"
 import { IntlProvider } from "use-intl"
 import { UiLabelsProvider } from "@/shared/ui/UiLabelsProvider"
+import { LocalizedFormProvider } from "./LocalizedFormProvider"
 import { readBrowserLocaleCookie, writeBrowserLocaleCookie } from "./locale-cookie"
 import { negotiateLocale } from "./locale-preference"
 import type { Locale } from "./locales"
-import { LocalizedFormProvider } from "./LocalizedFormProvider"
 import { timeZone } from "./time-zone"
 
-export { useLocale } from "use-intl"
+export { IntlProvider, useLocale } from "use-intl"
 
 type Messages = typeof import("@messages/en.json")
 

@@ -22,7 +22,7 @@ const getRegistration = mock(async (): Promise<typeof registration | undefined> 
 const originalServiceWorker = Object.getOwnPropertyDescriptor(navigator, "serviceWorker")
 const originalPushManager = Object.getOwnPropertyDescriptor(window, "PushManager")
 const originalNotification = Object.getOwnPropertyDescriptor(window, "Notification")
-const originalVapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
+const originalVapidKey = process.env.VITE_VAPID_PUBLIC_KEY
 
 const translate = (key: string) => key
 mock.module("@/core/i18n/translations", () => ({ useTranslations: () => translate }))
@@ -44,7 +44,7 @@ beforeEach(() => {
   getRegistration.mockReset().mockResolvedValue(registration)
   getSubscription.mockReset().mockResolvedValue(subscription)
   browserSubscribe.mockReset().mockResolvedValue(subscription)
-  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY = "AQAB"
+  process.env.VITE_VAPID_PUBLIC_KEY = "AQAB"
   Object.defineProperty(navigator, "serviceWorker", {
     configurable: true,
     value: { register, getRegistration, ready: Promise.resolve(registration) }
@@ -59,8 +59,8 @@ beforeEach(() => {
 afterEach(async () => {
   await act(async () => root.unmount())
   container.remove()
-  if (originalVapidKey === undefined) delete process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
-  else process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY = originalVapidKey
+  if (originalVapidKey === undefined) delete process.env.VITE_VAPID_PUBLIC_KEY
+  else process.env.VITE_VAPID_PUBLIC_KEY = originalVapidKey
   for (const [target, name, descriptor] of [
     [navigator, "serviceWorker", originalServiceWorker],
     [window, "PushManager", originalPushManager],

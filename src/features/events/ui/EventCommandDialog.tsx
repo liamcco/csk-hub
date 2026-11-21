@@ -1,10 +1,10 @@
 "use client"
 
 import { useTranslations } from "@/core/i18n/translations"
+import { useAppRouter } from "@/core/navigation/router"
 import { CommandDialog, type CommandDialogProps } from "@/shared/forms/CommandDialog"
 import type { EventCommandError } from "./command-state"
 import { useEventErrorMessage } from "./errors"
-import { useAppRouter } from "@/core/navigation/router"
 
 type EventCommandDialogProps = Omit<
   CommandDialogProps<EventCommandError>,

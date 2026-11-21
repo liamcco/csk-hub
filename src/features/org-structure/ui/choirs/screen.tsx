@@ -1,11 +1,11 @@
 import { useSuspenseQuery } from "@tanstack/react-query"
 import { useTranslations } from "@/core/i18n/translations"
 import { PageBreadcrumb } from "@/core/navigation/PageBreadcrumb"
+import { Link } from "@/core/navigation/router"
 import { ROUTES } from "@/core/navigation/site"
 import { Skeleton } from "@/shared/ui/base/skeleton"
 import { choirPlacementQuery } from "../queries"
 import { ChoirsOverview } from "./overview"
-import { Link } from "@/core/navigation/router"
 
 /** The Choirs and their Sections: where singers are placed in a Choir and given a Voice. */
 export function ChoirsScreen() {

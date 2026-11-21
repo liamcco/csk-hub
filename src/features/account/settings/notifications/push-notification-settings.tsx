@@ -78,7 +78,7 @@ export function PushNotificationSettings() {
 
   async function subscribeToPush() {
     if (isPending) return
-    const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
+    const vapidPublicKey = import.meta.env.VITE_VAPID_PUBLIC_KEY
     if (!subscription && !vapidPublicKey) {
       setError(t("notConfigured"))
       return

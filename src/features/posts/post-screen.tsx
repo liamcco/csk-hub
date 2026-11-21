@@ -2,6 +2,7 @@ import { useSuspenseQuery } from "@tanstack/react-query"
 import { useTranslations } from "@/core/i18n/translations"
 import { newsPostEditPath } from "@/core/navigation/navigation-utils"
 import { PageBreadcrumb } from "@/core/navigation/PageBreadcrumb"
+import { Link } from "@/core/navigation/router"
 import { RichTextContent } from "@/features/rich-text/view"
 import { ContentPage } from "@/shared/layouts/content-page"
 import { buttonVariants } from "@/shared/ui/base/button"
@@ -11,7 +12,6 @@ import { ConfirmPostCommand } from "./compose/ConfirmPostCommand"
 import { PostByline } from "./post-byline"
 import { postQuery } from "./query"
 import { PostReadMarker } from "./unread"
-import { Link } from "@/core/navigation/router"
 
 /** Changing a published Post, offered only to whoever may make the change. */
 function PostControls({ postId, canChange }: { postId: string; canChange: boolean }) {

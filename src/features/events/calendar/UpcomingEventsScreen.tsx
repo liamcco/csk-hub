@@ -1,19 +1,19 @@
 import { useSuspenseQuery } from "@tanstack/react-query"
 import { useFormatter, useTranslations } from "@/core/i18n/translations"
 import { eventPath } from "@/core/navigation/navigation-utils"
+import { Link } from "@/core/navigation/router"
 import { ROUTES } from "@/core/navigation/site"
 import { ContentPage } from "@/shared/layouts/content-page"
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/shared/ui/base/empty"
 import { Skeleton } from "@/shared/ui/base/skeleton"
 import { cn } from "@/shared/utils"
 import { EVENT_TYPES, stockholmInstant } from "../model"
-import { StatusBadge } from "../ui/StatusBadge"
 import { upcomingEventsQuery } from "../ui/queries"
+import { StatusBadge } from "../ui/StatusBadge"
 import { eventDays, groupByDay } from "./days"
 import { EventKind } from "./EventKind"
 import type { UpcomingEvent } from "./query"
 import { UpcomingEventsFilter } from "./UpcomingEventsFilter"
-import { Link } from "@/core/navigation/router"
 
 function UpcomingEventsHeader() {
   const t = useTranslations("Events.calendar")

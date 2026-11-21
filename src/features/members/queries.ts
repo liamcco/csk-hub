@@ -7,8 +7,7 @@ import { read } from "@/core/api-client/result"
 export function memberProfileQuery(memberId?: string) {
   return queryOptions({
     queryKey: ["members", "profile", memberId ?? "me"],
-    queryFn: () =>
-      read(memberId ? getMemberProfile({ client, path: { memberId } }) : getOwnProfile({ client }))
+    queryFn: () => read(memberId ? getMemberProfile({ client, path: { memberId } }) : getOwnProfile({ client }))
   })
 }
 

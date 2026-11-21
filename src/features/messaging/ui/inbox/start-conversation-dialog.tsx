@@ -4,6 +4,7 @@ import { PlusIcon, XIcon } from "lucide-react"
 import { type ReactNode, useActionState, useState } from "react"
 import { useTranslations } from "@/core/i18n/translations"
 import { conversationPath } from "@/core/navigation/navigation-utils"
+import { useAppRouter } from "@/core/navigation/router"
 import { Button } from "@/shared/ui/base/button"
 import {
   Dialog,
@@ -22,7 +23,6 @@ import { startConversationCommand } from "../api-commands"
 import { createMessageIdempotencyKey } from "../composer/idempotency-key"
 import type { MessageCommandState } from "../composer/message-command-state"
 import { MemberSelection, type SelectedMember } from "../member-selection"
-import { useAppRouter } from "@/core/navigation/router"
 
 const initialState: MessageCommandState = { status: "idle" }
 /** Opens the shared composer, optionally with a member selected from their profile. */

@@ -12,9 +12,9 @@ import {
 import { useCallback } from "react"
 import { browserApiClient } from "@/core/api-client/browser"
 import { errorCode } from "@/core/api-client/result"
+import { useAppRouter } from "@/core/navigation/router"
 import { type EventCommandError, type EventCommandState, eventManagementPath } from "./command-state"
 import { readEventForm } from "./editor/form-input"
-import { useAppRouter } from "@/core/navigation/router"
 
 /** Which Events or Locations command a form runs through the API. */
 export type EventCommand =

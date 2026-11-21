@@ -4,7 +4,7 @@ import { renderToStaticMarkup } from "react-dom/server"
 import { z } from "zod"
 import { InputField } from "@/shared/forms/fields"
 import { normalizedEmailSchema, passwordSchema, validationMessageIds } from "@/shared/schemas"
-import { NextIntlClientProvider } from "./client"
+import { IntlProvider } from "./client"
 import { LocalizedFormProvider } from "./LocalizedFormProvider"
 import type { Locale } from "./locales"
 import { getMessages } from "./messages"
@@ -19,19 +19,19 @@ function ValidationText({ issue }: { issue: ValidationInput }) {
 
 function renderMessage(issue: ValidationInput, locale: Locale = "en", onError?: (error: Error) => void) {
   return renderToStaticMarkup(
-    <NextIntlClientProvider locale={locale} messages={getMessages(locale)} timeZone="Europe/Oslo" onError={onError}>
+    <IntlProvider locale={locale} messages={getMessages(locale)} timeZone="Europe/Oslo" onError={onError}>
       <ValidationText issue={issue} />
-    </NextIntlClientProvider>
+    </IntlProvider>
   )
 }
 
 function renderField(props: ComponentProps<typeof InputField>, locale: Locale = "en") {
   return renderToStaticMarkup(
-    <NextIntlClientProvider locale={locale} messages={getMessages(locale)} timeZone="Europe/Oslo">
+    <IntlProvider locale={locale} messages={getMessages(locale)} timeZone="Europe/Oslo">
       <LocalizedFormProvider>
         <InputField {...props} />
       </LocalizedFormProvider>
-    </NextIntlClientProvider>
+    </IntlProvider>
   )
 }
 

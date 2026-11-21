@@ -1,9 +1,9 @@
 "use client"
 
 import { useTranslations } from "@/core/i18n/translations"
+import { useAppRouter } from "@/core/navigation/router"
 import { CommandDialog, type CommandDialogProps } from "@/shared/forms/CommandDialog"
 import type { GroupCommandError } from "./command-state"
-import { useAppRouter } from "@/core/navigation/router"
 
 type GroupCommandDialogProps = Omit<
   CommandDialogProps<GroupCommandError>,

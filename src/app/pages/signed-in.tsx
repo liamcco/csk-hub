@@ -15,7 +15,12 @@ export function AdminPage() {
     { href: ROUTES.adminOrgStructure, title: t("choirs"), description: t("choirsDescription"), icon: Music },
     { href: ROUTES.adminOrgStructureGroups, title: t("groups"), description: t("groupsDescription"), icon: Users },
     { href: ROUTES.adminEvents, title: t("events"), description: t("eventsDescription"), icon: CalendarDays },
-    { href: ROUTES.adminNotifications, title: t("notifications"), description: t("notificationsDescription"), icon: Bell }
+    {
+      href: ROUTES.adminNotifications,
+      title: t("notifications"),
+      description: t("notificationsDescription"),
+      icon: Bell
+    }
   ]
 
   return (

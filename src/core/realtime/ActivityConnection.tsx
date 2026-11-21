@@ -2,10 +2,15 @@ import { type QueryKey, useQueryClient } from "@tanstack/react-query"
 import { useEffect, useRef } from "react"
 import { useTranslations } from "@/core/i18n/translations"
 import { parseSafeInternalPath } from "@/core/navigation/navigation-utils"
-import { type ActivityChange, type ActivityEvent, activityEventSchema, activityReadySchema } from "@/core/realtime/events"
+import { refreshReads, useAppRouter, usePathname, useSearchParams } from "@/core/navigation/router"
+import {
+  type ActivityChange,
+  type ActivityEvent,
+  activityEventSchema,
+  activityReadySchema
+} from "@/core/realtime/events"
 import { toast } from "@/shared/ui/base/toast"
 import { canPresentActivity } from "./presentation"
-import { refreshReads, useAppRouter, usePathname, useSearchParams } from "@/core/navigation/router"
 
 /** The cached reads an activity change affects, composed by the app from its features. */
 export type AffectedReads = (change: ActivityChange) => QueryKey[]

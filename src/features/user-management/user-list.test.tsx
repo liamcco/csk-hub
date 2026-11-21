@@ -3,18 +3,19 @@ import messages from "@messages/en.json"
 import swedishMessages from "@messages/sv.json"
 import { renderToStaticMarkup } from "react-dom/server"
 import { app } from "@/core/config/app"
-import { NextIntlClientProvider } from "@/core/i18n/client"
+import { IntlProvider } from "@/core/i18n/client"
 import type { UserListItem } from "./service"
 
-mock.module("next/navigation", () => ({ useRouter: () => ({ refresh: () => {} }) }))
+const navigation = await import("@/core/navigation/router")
+mock.module("@/core/navigation/router", () => ({ ...navigation, useAppRouter: () => ({ refresh: () => {} }) }))
 const { UserList } = await import("./user-list")
 
 describe("UserList", () => {
   test("formats the table caption with the application name", () => {
     const markup = renderToStaticMarkup(
-      <NextIntlClientProvider locale="en" messages={messages}>
+      <IntlProvider locale="en" messages={messages}>
         <UserList users={[]} />
-      </NextIntlClientProvider>
+      </IntlProvider>
     )
 
     expect(markup).toContain(`Manage everyone with access to ${app.name}.`)
@@ -33,9 +34,9 @@ describe("UserList", () => {
       createdAt: new Date("2026-09-08T23:30:00-02:00")
     } satisfies UserListItem
     const markup = renderToStaticMarkup(
-      <NextIntlClientProvider locale="sv" messages={swedishMessages} timeZone="UTC">
+      <IntlProvider locale="sv" messages={swedishMessages} timeZone="UTC">
         <UserList users={[member]} />
-      </NextIntlClientProvider>
+      </IntlProvider>
     )
 
     expect(markup).toContain("2026-09-09")

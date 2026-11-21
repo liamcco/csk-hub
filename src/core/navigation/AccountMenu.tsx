@@ -3,6 +3,7 @@
 import { LogOutIcon, SettingsIcon, UserRoundIcon } from "lucide-react"
 import { useState } from "react"
 import { useTranslations } from "@/core/i18n/translations"
+import { Link, useAppRouter } from "@/core/navigation/router"
 import { Avatar, AvatarFallback, AvatarImage } from "@/shared/ui/base/avatar"
 import { Button } from "@/shared/ui/base/button"
 import {
@@ -17,7 +18,6 @@ import {
 import { toast } from "@/shared/ui/base/toast"
 import { logout } from "./logout"
 import { ROUTES } from "./site"
-import { Link, useAppRouter } from "@/core/navigation/router"
 
 /** Combines account navigation and sign-out. */
 export function AccountMenu({ user }: { user: { name: string; image?: string | null } }) {

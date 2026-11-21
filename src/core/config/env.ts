@@ -36,7 +36,7 @@ const envSchema = z
     LOG_DATABASE: z.enum(["true", "false"]).default("false"),
 
     // TODO: Validate these more precisely
-    NEXT_PUBLIC_VAPID_PUBLIC_KEY: z.string(),
+    VAPID_PUBLIC_KEY: z.string(),
     VAPID_PRIVATE_KEY: z.string(),
     CONTACT_EMAIL: z.email().default("webmaster@choir.chs.chalmers.se")
   })

@@ -1,6 +1,7 @@
 import { useCapabilities } from "@/core/api-client/capabilities"
 import { app } from "@/core/config/app"
 import { useTranslations } from "@/core/i18n/translations"
+import { Link } from "@/core/navigation/router"
 import { type NavigationRouteId, ROUTES } from "@/core/navigation/site"
 import { cn } from "@/shared/utils"
 import { ThemeSwitch } from "../theme/ThemeSwitch"
@@ -10,7 +11,6 @@ import { NavLinks } from "./NavLinks"
 import { QuickAccessBar } from "./QuickAccessBar"
 import { UnreadBadge, UnreadIndicator } from "./UnreadBadge"
 import type { UnreadSources } from "./unread-sources"
-import { Link } from "@/core/navigation/router"
 
 export type NavigationRoute = {
   id: NavigationRouteId

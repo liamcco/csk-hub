@@ -1,8 +1,8 @@
 "use client"
 
 import { useTranslations } from "@/core/i18n/translations"
-import { ROUTES } from "@/core/navigation/site"
 import { Link } from "@/core/navigation/router"
+import { ROUTES } from "@/core/navigation/site"
 
 export function ActivationFailed() {
   const t = useTranslations("Public.activationFailed")

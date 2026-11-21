@@ -1,6 +1,5 @@
-import { useSuspenseQuery } from "@tanstack/react-query"
 import { listUsers } from "@contract/client"
-import { queryOptions } from "@tanstack/react-query"
+import { queryOptions, useSuspenseQuery } from "@tanstack/react-query"
 import { browserApiClient as client } from "@/core/api-client/browser"
 import { read } from "@/core/api-client/result"
 import { app } from "@/core/config/app"

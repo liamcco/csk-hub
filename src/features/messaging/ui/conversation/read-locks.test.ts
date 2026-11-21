@@ -34,9 +34,7 @@ if (!process.env.CSK_MESSAGING_READ_LOCK_TEST) {
   const identity = new AsyncLocalStorage<string>()
   let holdNextTransaction: { ready: () => void; release: Promise<void> } | undefined
 
-  mock.module("@/core/authz/request", () => ({
-    requirePermission: async () => ({ userId: identity.getStore(), isAdmin: false })
-  }))
+  const requirePermission = async () => ({ userId: identity.getStore(), isAdmin: false })
   mock.module("@/core/db", () => ({
     db: {
       select: (...args: Parameters<typeof testDb.select>) => testDb.select(...args),
@@ -65,7 +63,7 @@ if (!process.env.CSK_MESSAGING_READ_LOCK_TEST) {
   // The mocked database and authority, passed explicitly as the HTTP API passes its own.
   const messaging = {
     database: (await import("@/core/db")).db,
-    authorize: (await import("@/core/authz/request")).requirePermission
+    authorize: requirePermission
   } as unknown as import("@/features/messaging/model/context").MessagingContext
 
   describe.skipIf(!database)("Conversation read concurrency", () => {

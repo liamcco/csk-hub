@@ -5,6 +5,7 @@ import { useRef, useState } from "react"
 import type z from "zod"
 import { authClient } from "@/core/auth/auth-client"
 import { useTranslations } from "@/core/i18n/translations"
+import { useAppRouter } from "@/core/navigation/router"
 import { InputField } from "@/shared/forms/fields"
 import { passwordPolicy } from "@/shared/policy"
 import { Alert, AlertDescription } from "@/shared/ui/base/alert"
@@ -13,7 +14,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/sha
 import { FieldGroup } from "@/shared/ui/base/field"
 import { toast } from "@/shared/ui/base/toast"
 import { changePasswordSchema } from "./schemas"
-import { useAppRouter } from "@/core/navigation/router"
 
 export function PasswordSettings() {
   const t = useTranslations("AccountSettings")

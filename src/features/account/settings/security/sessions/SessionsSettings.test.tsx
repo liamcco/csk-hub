@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, expect, mock, spyOn, test } from "bun:test"
+import { afterEach, beforeEach, expect, mock, test } from "bun:test"
 import { registerDom } from "@test/dom"
 import { act } from "react"
 import { createRoot } from "react-dom/client"
@@ -32,6 +32,8 @@ if (process.env.CSK_SESSIONS_TEST_FILE !== import.meta.path) {
   const translate = (key: string) => key
   mock.module("@/core/auth/auth-client", () => ({ authClient: { listSessions, revokeSession } }))
   mock.module("@/core/navigation/logout", () => ({ logout }))
+  const sessionChanged = mock(async (_href: string) => {})
+  mock.module("@/core/navigation/router", () => ({ useAppRouter: () => ({ sessionChanged }) }))
   mock.module("@/core/i18n/translations", () => ({
     useTranslations: () => translate,
     useFormatter: () => ({ dateTime: () => "date" })
@@ -39,13 +41,12 @@ if (process.env.CSK_SESSIONS_TEST_FILE !== import.meta.path) {
   const { SessionsSettings } = await import("./sessions-settings")
   let container: HTMLDivElement
   let root: ReturnType<typeof createRoot>
-  let navigate: ReturnType<typeof spyOn<typeof window.location, "assign">>
 
   beforeEach(() => {
     listSessions.mockClear()
     revokeSession.mockReset().mockResolvedValue({ error: null })
     logout.mockReset().mockResolvedValue({ error: null })
-    navigate = spyOn(window.location, "assign").mockImplementation(() => undefined)
+    sessionChanged.mockClear()
     container = document.createElement("div")
     document.body.append(container)
     root = createRoot(container)
@@ -54,7 +55,6 @@ if (process.env.CSK_SESSIONS_TEST_FILE !== import.meta.path) {
   afterEach(async () => {
     await act(async () => root.unmount())
     container.remove()
-    navigate.mockRestore()
   })
 
   async function signOut(label = "signOut") {
@@ -69,14 +69,14 @@ if (process.env.CSK_SESSIONS_TEST_FILE !== import.meta.path) {
     await signOut()
     expect(logout).toHaveBeenCalledWith()
     expect(revokeSession).not.toHaveBeenCalled()
-    expect(navigate).toHaveBeenCalledWith("/login")
+    expect(sessionChanged).toHaveBeenCalledWith("/login")
   })
 
   test("revoking another device leaves this browser's binding untouched", async () => {
     await signOut("delete")
     expect(revokeSession).toHaveBeenCalledWith({ token: "other" })
     expect(logout).not.toHaveBeenCalled()
-    expect(navigate).not.toHaveBeenCalled()
+    expect(sessionChanged).not.toHaveBeenCalled()
     expect(listSessions).toHaveBeenCalledTimes(2)
   })
 
@@ -87,7 +87,7 @@ if (process.env.CSK_SESSIONS_TEST_FILE !== import.meta.path) {
       const button = await signOut()
       expect(container.textContent).toContain("sessionRevokeFailed")
       expect(button?.disabled).toBe(false)
-      expect(navigate).not.toHaveBeenCalled()
+      expect(sessionChanged).not.toHaveBeenCalled()
     })
   }
 }

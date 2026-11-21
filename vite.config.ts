@@ -23,8 +23,6 @@ const webOnly: Plugin = {
  */
 export default defineConfig(({ mode }) => {
   const env = { ...loadEnv(mode, process.cwd(), ""), ...process.env }
-  // The browser's VAPID key is public. Development reuses the API's variable from `.env`.
-  const vapidPublicKey = env.VITE_VAPID_PUBLIC_KEY || env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || ""
   const apiOrigin = env.API_DEV_ORIGIN ?? "http://localhost:3001"
   return {
     plugins: [webOnly, tailwindcss(), react(), babel({ presets: [reactCompilerPreset()] })],
@@ -35,7 +33,6 @@ export default defineConfig(({ mode }) => {
         { find: /^@messages\//, replacement: path("./messages/") }
       ]
     },
-    define: { "import.meta.env.VITE_VAPID_PUBLIC_KEY": JSON.stringify(vapidPublicKey) },
     build: { outDir: "dist/web", emptyOutDir: true, sourcemap: true },
     server: {
       port: Number(env.WEB_DEV_PORT ?? 3000),

@@ -95,7 +95,6 @@ function keep(column: AnyColumn, ids: string[] | undefined) {
   return ids && ids.length > 0 ? inArray(column, ids) : undefined
 }
 
-
 export type EventEditor = NonNullable<Awaited<ReturnType<typeof getEventEditor>>>
 
 /** Everything the admin page of one Event shows and offers, or null when there is no such Event. */

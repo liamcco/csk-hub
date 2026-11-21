@@ -3,6 +3,7 @@ import { useSuspenseQuery } from "@tanstack/react-query"
 import { ArrowLeft, Award, MessageCircle, Music2, PencilLine, Settings, Users } from "lucide-react"
 import { useTranslations } from "@/core/i18n/translations"
 import { conversationPath } from "@/core/navigation/navigation-utils"
+import { Link } from "@/core/navigation/router"
 import { ROUTES } from "@/core/navigation/site"
 import { StartConversationDialog } from "@/features/messaging"
 import { Badge } from "@/shared/ui/base/badge"
@@ -12,7 +13,6 @@ import { Skeleton } from "@/shared/ui/base/skeleton"
 import { ChoirCard, MemberGroupsCard } from "./affiliation-cards"
 import { MemberAvatar } from "./member-avatar"
 import { memberProfileQuery } from "./queries"
-import { Link } from "@/core/navigation/router"
 
 type ProfileData = MemberProfileView
 type Profile = ProfileData["profile"]
@@ -101,8 +101,8 @@ function ProfileActions({ data }: { data: ProfileData }) {
 }
 
 function ProfilePositions({ positions }: { positions: Profile["positions"] }) {
-  if (positions.length === 0) return null
   const t = useTranslations("MemberProfiles")
+  if (positions.length === 0) return null
   return (
     <section aria-labelledby="positions-title">
       <h2 id="positions-title" className="mb-4 flex items-center gap-2 font-heading text-xl font-semibold">

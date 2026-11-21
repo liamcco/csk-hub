@@ -4,6 +4,7 @@ import { MoreHorizontalIcon } from "lucide-react"
 import { useCallback, useEffect, useState, useTransition } from "react"
 import { app } from "@/core/config/app"
 import { useTranslations } from "@/core/i18n/translations"
+import { useAppRouter } from "@/core/navigation/router"
 import { ADMIN_ROLE, hasAdminRole, USER_ROLE } from "@/shared/roles"
 import {
   AlertDialog,
@@ -27,7 +28,6 @@ import { Input } from "@/shared/ui/base/input"
 import { toast } from "@/shared/ui/base/toast"
 import type { UserCommandState } from "./command-state"
 import { userCommand } from "./user-commands"
-import { useAppRouter } from "@/core/navigation/router"
 
 type UserAction = "activate" | "deactivate" | "delete" | "invite" | "role"
 const destructiveMenuItemClassName =

@@ -1,8 +1,10 @@
 import { useSuspenseQuery } from "@tanstack/react-query"
 import { Fragment } from "react"
-import { useFormatter, useTimeZone, useTranslations } from "@/core/i18n/translations"
+import { timeZone } from "@/core/i18n/time-zone"
+import { useFormatter, useTranslations } from "@/core/i18n/translations"
 import { conversationPath, memberProfilePath } from "@/core/navigation/navigation-utils"
 import { PageBreadcrumb } from "@/core/navigation/PageBreadcrumb"
+import { Link } from "@/core/navigation/router"
 import { Message, MessageContent, MessageGroup } from "@/shared/ui/base/message"
 import {
   MessageScroller,
@@ -21,7 +23,6 @@ import { MessageComposer } from "./message-composer"
 import { ReadMarker } from "./read-marker"
 import { getMessageLayout } from "./timeline-layout"
 import { createMessageCalendarDayKey, formatMessageDay, formatMessageTime } from "./timestamp"
-import { Link } from "@/core/navigation/router"
 
 /**
  * Below `md` the conversation is a chat screen: it takes the height left under the header (and above the quick-access
@@ -45,7 +46,6 @@ export function ConversationScreen({
   const { data: conversation } = useSuspenseQuery(conversationQuery(conversationId, beforeSequence))
   const t = useTranslations("Messages")
   const format = useFormatter()
-  const timeZone = useTimeZone()
   const layout = getMessageLayout(conversation.messages, createMessageCalendarDayKey(timeZone))
   return (
     <main className={screenClass}>

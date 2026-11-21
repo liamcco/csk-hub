@@ -1,5 +1,6 @@
 import { Fragment, type ReactNode } from "react"
 import { useTranslations } from "@/core/i18n/translations"
+import { Link } from "@/core/navigation/router"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -9,7 +10,6 @@ import {
   BreadcrumbSeparator
 } from "@/shared/ui/base/breadcrumb"
 import { type MenuRouteId, ROUTES, routeTrail } from "./site"
-import { Link } from "@/core/navigation/router"
 
 export interface PageBreadcrumbProps {
   /** The deepest known route; its ancestors come from `ROUTE_PARENTS`. */

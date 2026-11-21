@@ -5,6 +5,7 @@ import { useState } from "react"
 import type z from "zod"
 import { useTranslations } from "@/core/i18n/translations"
 import { getPostLoginPath, twoFactorPath } from "@/core/navigation/navigation-utils"
+import { Link, useAppRouter, useSearchParams } from "@/core/navigation/router"
 import { ROUTES } from "@/core/navigation/site"
 import { InputField } from "@/shared/forms/fields"
 import { Alert, AlertDescription } from "@/shared/ui/base/alert"
@@ -14,7 +15,6 @@ import { Field, FieldGroup, FieldLabel } from "@/shared/ui/base/field"
 import { Spinner } from "@/shared/ui/base/spinner"
 import { loginSchema } from "./schemas"
 import { type LoginResult, signInWithIdentifier, signInWithPasskey } from "./service"
-import { Link, useAppRouter, useSearchParams } from "@/core/navigation/router"
 
 export function LoginForm() {
   const t = useTranslations("Public.login")

@@ -1,4 +1,5 @@
-import { type QueryClient, type QueryKey, useQueryErrorResetBoundary, type UseSuspenseQueryOptions } from "@tanstack/react-query"
+import type { CurrentCapabilities } from "@contract/client"
+import { type QueryClient, type UseSuspenseQueryOptions, useQueryErrorResetBoundary } from "@tanstack/react-query"
 import {
   createRootRouteWithContext,
   createRoute,
@@ -15,11 +16,31 @@ import type { ReactNode } from "react"
 import { z } from "zod"
 import { capabilitiesQuery } from "@/core/api-client/capabilities"
 import { isUnauthenticated, isUnavailable } from "@/core/api-client/result"
-import { reloadSession, sessionQuery } from "@/core/auth/session"
 import { getRouteAccessDecision } from "@/core/auth/route-access"
+import { reloadSession, sessionQuery } from "@/core/auth/session"
 import { loginPath } from "@/core/navigation/navigation-utils"
-import type { CurrentCapabilities } from "@contract/client"
 import { accountSessionQuery } from "@/features/account/settings"
+import {
+  EventPageScreen,
+  EventPageScreenSkeleton,
+  EventScreen,
+  EventScreenSkeleton,
+  EventsScreen,
+  EventsScreenSkeleton,
+  eventEditorQuery,
+  eventFormOptionsQuery,
+  eventListFilters,
+  eventPageQuery,
+  LocationsScreen,
+  LocationsScreenSkeleton,
+  locationsQuery,
+  managedEventsQuery,
+  NewEventScreen,
+  NewEventScreenSkeleton,
+  UpcomingEventsScreen,
+  UpcomingEventsScreenSkeleton,
+  upcomingEventsQuery
+} from "@/features/events/ui"
 import { HomeScreen } from "@/features/home"
 import {
   directoryQuery,
@@ -69,27 +90,6 @@ import {
   PostScreenSkeleton,
   postQuery
 } from "@/features/posts"
-import {
-  EventPageScreen,
-  EventPageScreenSkeleton,
-  EventScreen,
-  EventScreenSkeleton,
-  EventsScreen,
-  EventsScreenSkeleton,
-  eventEditorQuery,
-  eventFormOptionsQuery,
-  eventListFilters,
-  eventPageQuery,
-  LocationsScreen,
-  LocationsScreenSkeleton,
-  locationsQuery,
-  managedEventsQuery,
-  NewEventScreen,
-  NewEventScreenSkeleton,
-  UpcomingEventsScreen,
-  UpcomingEventsScreenSkeleton,
-  upcomingEventsQuery
-} from "@/features/events/ui"
 import { UsersScreen, UsersScreenSkeleton, usersQuery } from "@/features/user-management"
 import { AppLayout, FailedScreen, ForbiddenScreen, NotFoundScreen, PublicLayout } from "./layouts"
 import {
@@ -109,7 +109,8 @@ export type RouterContext = { queryClient: QueryClient }
 /** A page the session's role does not open: the router renders the forbidden screen. */
 class ForbiddenError extends Error {}
 
-type Loadable = Pick<UseSuspenseQueryOptions<unknown, Error, unknown, QueryKey>, "queryKey" | "queryFn">
+// biome-ignore lint/suspicious/noExplicitAny: each page's query keys have their own tuple type.
+type Loadable = Pick<UseSuspenseQueryOptions<unknown, Error, unknown, any>, "queryKey" | "queryFn">
 
 /**
  * Loads a page's data into the cache, or answers from it at once when the page was visited before
@@ -267,7 +268,11 @@ const signedInPages: Page[] = [
         await load(context, location, ownDraftsQuery)
     }
   },
-  { path: "/news/new", component: NewPostScreen, loader: ({ context, location }) => load(context, location, capabilitiesQuery) },
+  {
+    path: "/news/new",
+    component: NewPostScreen,
+    loader: ({ context, location }) => load(context, location, capabilitiesQuery)
+  },
   {
     path: "/news/$id",
     component: () => <PostScreen postId={useParam("id")} />,
@@ -302,7 +307,10 @@ const signedInPages: Page[] = [
   {
     path: "/messages/$conversationId",
     component: () => (
-      <ConversationScreen conversationId={useParam("conversationId")} beforeSequence={beforeSequence(useSearchLoose())} />
+      <ConversationScreen
+        conversationId={useParam("conversationId")}
+        beforeSequence={beforeSequence(useSearchLoose())}
+      />
     ),
     pending: ConversationScreenSkeleton,
     loader: async ({ context, location, params, search }) => {
@@ -339,7 +347,11 @@ const signedInPages: Page[] = [
     component: SettingsPage,
     loader: ({ context, location }) => load(context, location, capabilitiesQuery, accountSessionQuery)
   },
-  { path: "/admin", component: AdminPage, loader: ({ context, location }) => requireCapability(context, location, "admin") },
+  {
+    path: "/admin",
+    component: AdminPage,
+    loader: ({ context, location }) => requireCapability(context, location, "admin")
+  },
   {
     path: "/admin/users",
     component: UsersScreen,
@@ -418,7 +430,8 @@ function parseSearch(search: string): Record<string, unknown> {
 
 function stringifySearch(search: Record<string, unknown>): string {
   const params = new URLSearchParams()
-  for (const [key, value] of Object.entries(search)) if (value !== undefined && value !== null) params.set(key, String(value))
+  for (const [key, value] of Object.entries(search))
+    if (value !== undefined && value !== null) params.set(key, String(value))
   const query = params.toString()
   return query ? `?${query}` : ""
 }

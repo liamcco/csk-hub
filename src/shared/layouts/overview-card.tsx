@@ -2,20 +2,20 @@ import type { ReactNode } from "react"
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/shared/ui/base/card"
 import { Skeleton } from "@/shared/ui/base/skeleton"
 import { cn } from "@/shared/utils"
-import { Link } from "@/core/navigation/router"
 
 /**
- * One card of an overview page: a heading, a link onward to the full page, and a few short rows.
+ * One card of an overview page: a heading, an action (usually a link onward to the full page, styled
+ * with `overviewLinkClassName`), and a few short rows.
  * Each feature fills its own; this keeps them looking alike. `className` places it in the grid.
  */
 export function OverviewCard({
   title,
-  link,
+  action,
   className,
   children
 }: {
   title: ReactNode
-  link?: { href: string; label: ReactNode }
+  action?: ReactNode
   className?: string
   children: ReactNode
 }) {
@@ -25,16 +25,7 @@ export function OverviewCard({
         <CardTitle>
           <h2 className="font-heading text-base font-semibold">{title}</h2>
         </CardTitle>
-        {link ? (
-          <CardAction>
-            <Link
-              href={link.href}
-              className="text-sm font-medium text-primary underline-offset-4 hover:underline focus-visible:underline focus-visible:outline-none"
-            >
-              {link.label}
-            </Link>
-          </CardAction>
-        ) : null}
+        {action ? <CardAction>{action}</CardAction> : null}
       </CardHeader>
       <CardContent className="flex flex-col gap-3">{children}</CardContent>
     </Card>
@@ -64,3 +55,7 @@ export function OverviewCardSkeleton({ rows = 3, className }: { rows?: number; c
     </Card>
   )
 }
+
+/** The look of an overview card's onward link. */
+export const overviewLinkClassName =
+  "text-sm font-medium text-primary underline-offset-4 hover:underline focus-visible:underline focus-visible:outline-none"

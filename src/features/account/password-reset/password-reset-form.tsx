@@ -5,6 +5,7 @@ import type { SubmitEvent } from "react"
 import { useRef, useState } from "react"
 import type z from "zod"
 import { useTranslations } from "@/core/i18n/translations"
+import { Link } from "@/core/navigation/router"
 import { ROUTES } from "@/core/navigation/site"
 import { InputField } from "@/shared/forms/fields"
 import { passwordPolicy } from "@/shared/policy"
@@ -13,7 +14,6 @@ import { Button } from "@/shared/ui/base/button"
 import { FieldGroup } from "@/shared/ui/base/field"
 import { passwordResetSchema } from "./schemas"
 import { type PasswordResetCompletion, resetPassword } from "./service"
-import { Link } from "@/core/navigation/router"
 
 export function PasswordResetForm({
   token,

@@ -4,8 +4,8 @@ import { useRef, useState } from "react"
 import { authClient } from "@/core/auth/auth-client"
 import { useTranslations } from "@/core/i18n/translations"
 import { getPostLoginPath } from "@/core/navigation/navigation-utils"
-import { getAvailableMethods, sendTwoFactorOtp, type TwoFactorMethod, verifyTwoFactorMethod } from "./service"
 import { useAppRouter, useSearchParams } from "@/core/navigation/router"
+import { getAvailableMethods, sendTwoFactorOtp, type TwoFactorMethod, verifyTwoFactorMethod } from "./service"
 
 export function useTwoFactorForm() {
   const t = useTranslations("Public.twoFactor")

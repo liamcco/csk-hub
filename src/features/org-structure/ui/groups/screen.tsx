@@ -1,13 +1,13 @@
 import { useSuspenseQuery } from "@tanstack/react-query"
 import { useTranslations } from "@/core/i18n/translations"
 import { PageBreadcrumb } from "@/core/navigation/PageBreadcrumb"
+import { Link } from "@/core/navigation/router"
 import { ROUTES } from "@/core/navigation/site"
 import { Skeleton } from "@/shared/ui/base/skeleton"
 import { PositionCatalogue } from "../catalogue/position-catalogue"
 import { groupsOverviewQuery, positionCatalogueQuery } from "../queries"
 import { CreateGroupDialog } from "./create-group-dialog"
 import { GroupsOverview } from "./overview"
-import { Link } from "@/core/navigation/router"
 
 /** The groups beside the Choirs' Sections, and the Positions they can have. */
 export function GroupsScreen() {

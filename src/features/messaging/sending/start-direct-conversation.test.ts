@@ -1,5 +1,4 @@
 import { describe, expect, mock, test } from "bun:test"
-import { AuthorizationDeniedError } from "@/core/authz/authorization"
 
 const requirePermission = mock(async () => ({ userId: "sender", isAdmin: false }))
 const execute = mock(async () => undefined)
@@ -15,9 +14,6 @@ function selectRows(rows: unknown[]) {
   return query
 }
 
-mock.module("@/core/authz/request", () => ({ requirePermission, AuthorizationDeniedError }))
-mock.module("server-only", () => ({}))
-
 const db = {
   select: mock(),
   transaction: mock()
@@ -28,7 +24,7 @@ const { startDirectConversation } = await import("./start-direct-conversation")
 // The mocked database and authority, passed explicitly as the HTTP API passes its own.
 const messaging = {
   database: (await import("@/core/db")).db,
-  authorize: (await import("@/core/authz/request")).requirePermission
+  authorize: requirePermission
 } as unknown as import("@/features/messaging/model/context").MessagingContext
 
 describe("startDirectConversation", () => {

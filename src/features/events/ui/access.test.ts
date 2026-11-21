@@ -19,12 +19,6 @@ const access = database
 const resolve = access?.forCurrentRequest as NonNullable<typeof access>["forCurrentRequest"]
 const authorize = access?.requirePermission as NonNullable<typeof access>["requirePermission"]
 mock.module("@/core/db", () => ({ db: database?.db }))
-mock.module("next/cache", () => ({ revalidatePath: mock() }))
-mock.module("next/navigation", () => ({
-  redirect: (path: string) => {
-    throw new Error(`redirect:${path}`)
-  }
-}))
 
 const { withEventPermission } = await import("../access")
 const { getEventEditor, getEventFormOptions } = await import("./editor/query")

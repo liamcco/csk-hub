@@ -1,17 +1,17 @@
 import { useSuspenseQuery } from "@tanstack/react-query"
 import { useFormatter, useTranslations } from "@/core/i18n/translations"
 import { eventPath } from "@/core/navigation/navigation-utils"
+import { Link } from "@/core/navigation/router"
 import { ROUTES } from "@/core/navigation/site"
-import { OverviewCard, OverviewList, overviewRowClassName } from "@/shared/layouts/overview-card"
+import { OverviewCard, OverviewList, overviewLinkClassName, overviewRowClassName } from "@/shared/layouts/overview-card"
 import { Card, CardContent } from "@/shared/ui/base/card"
 import { cn } from "@/shared/utils"
 import { addDays, stockholmDate } from "../model"
-import { StatusBadge } from "../ui/StatusBadge"
 import { upcomingEventsQuery } from "../ui/queries"
+import { StatusBadge } from "../ui/StatusBadge"
 import { happensOn } from "./days"
 import { EventKind } from "./EventKind"
 import type { UpcomingEvent } from "./query"
-import { Link } from "@/core/navigation/router"
 
 /** How many Events "Coming up" lists after the next one. */
 const COMING_UP = 4
@@ -30,7 +30,15 @@ export function NextEventCard({ className }: { className?: string }) {
   const next = events[0]
   if (!next) {
     return (
-      <OverviewCard title={t("title")} link={{ href: ROUTES.events, label: t("seeAll") }} className={className}>
+      <OverviewCard
+        title={t("title")}
+        action={
+          <Link href={ROUTES.events} className={overviewLinkClassName}>
+            {t("seeAll")}
+          </Link>
+        }
+        className={className}
+      >
         <p className="text-sm text-muted-foreground">{t("empty")}</p>
       </OverviewCard>
     )
@@ -84,7 +92,15 @@ export function ComingUpCard({ className }: { className?: string }) {
   if (later.length === 0) return null
 
   return (
-    <OverviewCard title={t("comingUp")} link={{ href: ROUTES.events, label: t("seeAll") }} className={className}>
+    <OverviewCard
+      title={t("comingUp")}
+      action={
+        <Link href={ROUTES.events} className={overviewLinkClassName}>
+          {t("seeAll")}
+        </Link>
+      }
+      className={className}
+    >
       <OverviewList>
         {later.map((event) => (
           <li key={event.id}>

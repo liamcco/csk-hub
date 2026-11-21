@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react"
 import { useTranslations } from "@/core/i18n/translations"
+import { useAppRouter } from "@/core/navigation/router"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,7 +16,6 @@ import {
 } from "@/shared/ui/base/alert-dialog"
 import { Button } from "@/shared/ui/base/button"
 import { type PostCommand, type PostCommandError, runPostCommand } from "./submit"
-import { useAppRouter } from "@/core/navigation/router"
 
 const COPY = {
   unpublish: {
@@ -53,29 +53,27 @@ export function ConfirmPostCommand({ command, postId }: { command: PostCommand; 
   }
 
   return (
-    <>
-      <AlertDialog open={open} onOpenChange={(next) => !pending && setOpen(next)}>
-        <AlertDialogTrigger render={<Button type="button" variant="outline" size="sm" />}>
-          {t(copy.label)}
-        </AlertDialogTrigger>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t(copy.title)}</AlertDialogTitle>
-            <AlertDialogDescription>{t(copy.description)}</AlertDialogDescription>
-          </AlertDialogHeader>
-          {error ? (
-            <p role="alert" className="text-sm text-destructive">
-              {t(error)}
-            </p>
-          ) : null}
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={pending}>{common("cancel")}</AlertDialogCancel>
-            <AlertDialogAction type="button" onClick={confirm} variant="destructive" disabled={pending}>
-              {pending ? t(copy.pending) : t(copy.label)}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </>
+    <AlertDialog open={open} onOpenChange={(next) => !pending && setOpen(next)}>
+      <AlertDialogTrigger render={<Button type="button" variant="outline" size="sm" />}>
+        {t(copy.label)}
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{t(copy.title)}</AlertDialogTitle>
+          <AlertDialogDescription>{t(copy.description)}</AlertDialogDescription>
+        </AlertDialogHeader>
+        {error ? (
+          <p role="alert" className="text-sm text-destructive">
+            {t(error)}
+          </p>
+        ) : null}
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={pending}>{common("cancel")}</AlertDialogCancel>
+          <AlertDialogAction type="button" onClick={confirm} variant="destructive" disabled={pending}>
+            {pending ? t(copy.pending) : t(copy.label)}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   )
 }

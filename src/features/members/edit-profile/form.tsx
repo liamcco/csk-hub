@@ -4,13 +4,13 @@ import { updateProfileVoices } from "@contract/client"
 import { type FormEvent, useState, useTransition } from "react"
 import { browserApiClient } from "@/core/api-client/browser"
 import { useTranslations } from "@/core/i18n/translations"
+import { Link, useAppRouter } from "@/core/navigation/router"
 import { ROUTES } from "@/core/navigation/site"
 import { VOICE_DIVISIONS, type VoiceDivision } from "@/features/voice/model"
 import { Button, buttonVariants } from "@/shared/ui/base/button"
 import { Card, CardContent } from "@/shared/ui/base/card"
 import { Checkbox } from "@/shared/ui/base/checkbox"
 import type { EditProfileState } from "./state"
-import { Link, useAppRouter } from "@/core/navigation/router"
 
 async function saveVoices(voices: VoiceDivision[]): Promise<EditProfileState> {
   try {
