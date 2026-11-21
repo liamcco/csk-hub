@@ -87,9 +87,8 @@ if (!process.env.CSK_ACTIVITY_TEST) {
         }
       }).requirePermission
     } as unknown as import("@/features/messaging/model/context").MessagingContext
-    const { dispatchActivity, nextActivityDelay, pendingActivityStats, pruneActivity } = await import(
-      "@/core/realtime/dispatch"
-    )
+    const { MAX_DELIVERY_ATTEMPTS, dispatchActivity, nextActivityDelay, pendingActivityStats, pruneActivity } =
+      await import("@/core/realtime/dispatch")
     const { startActivityWorker } = await import("@/core/realtime/worker")
     const { conversationActivityPolicy } = await import("@/features/messaging/activity")
     // Streams and acknowledgements go through the real API, signed in through Better Auth.
@@ -398,6 +397,32 @@ if (!process.env.CSK_ACTIVITY_TEST) {
         await dispatchActivity(conversationActivityPolicy)
         expect((await messageDelivery(recipient.userId)).publishedAt).not.toBeNull()
         expect(push).toHaveBeenCalledTimes(1)
+      })
+
+      test("failed push retries with backoff until the attempt bound, then gives up", async () => {
+        const { recipient } = await direct()
+        const failed: NotificationDeliveryResult = {
+          success: false,
+          error: "deliveryFailed",
+          accepted: 0,
+          failed: 1,
+          failureCategories: {}
+        }
+        push.mockResolvedValue(failed)
+        await makePushDue()
+        await dispatchActivity(conversationActivityPolicy)
+        const retried = await messageDelivery(recipient.userId)
+        expect(retried.pushCompletedAt).toBeNull()
+        expect(retried.pushAfter?.getTime()).toBeGreaterThan(Date.now())
+
+        await testDatabase.db
+          .update(activityDelivery)
+          .set({ attempts: MAX_DELIVERY_ATTEMPTS - 1 })
+          .where(eq(activityDelivery.id, retried.id))
+        await makePushDue()
+        await dispatchActivity(conversationActivityPolicy)
+        expect(push).toHaveBeenCalledTimes(2)
+        expect((await messageDelivery(recipient.userId)).pushCompletedAt).not.toBeNull()
       })
 
       test("a departed Group member receives no queued future Message notification", async () => {

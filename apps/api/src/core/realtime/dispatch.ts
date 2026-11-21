@@ -9,6 +9,12 @@ import { type ActivityDeliveryPolicy, type Delivery, isDeliveryAllowed } from ".
 
 const DISPATCH_CONCURRENCY = 5
 
+/**
+ * Claims a delivery may take before a failing Web Push gives up. Retries back off from one second
+ * to a minute, so the bound is reached about seven minutes after the first attempt.
+ */
+export const MAX_DELIVERY_ATTEMPTS = 12
+
 async function claimDeliveries(limit: number) {
   const now = sql`now()`
   const candidates = db
@@ -90,7 +96,10 @@ async function dispatchOne(
           tag: current.id
         })
         if (result.success || result.error === "noActiveSubscriptions") updates.pushCompletedAt = sql`now()`
-        else {
+        else if (delivery.attempts >= MAX_DELIVERY_ATTEMPTS) {
+          updates.pushCompletedAt = sql`now()`
+          logger.error("realtime.push.abandoned", { deliveryId: delivery.id, attempts: delivery.attempts })
+        } else {
           updates.pushAfter = retryAt
           logger.warn("realtime.push.retry", { deliveryId: delivery.id, attempts: delivery.attempts })
         }
@@ -100,7 +109,10 @@ async function dispatchOne(
     }
   } catch {
     updates.publishAfter = retryAt
-    if (delivery.pushAfter) updates.pushAfter = retryAt
+    if (delivery.pushAfter && delivery.attempts >= MAX_DELIVERY_ATTEMPTS) {
+      updates.pushCompletedAt = sql`now()`
+      logger.error("realtime.push.abandoned", { deliveryId: delivery.id, attempts: delivery.attempts })
+    } else if (delivery.pushAfter) updates.pushAfter = retryAt
     logger.error("realtime.delivery.retry", { deliveryId: delivery.id })
   } finally {
     await db.update(activityDelivery).set(updates).where(owned)

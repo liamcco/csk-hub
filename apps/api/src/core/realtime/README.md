@@ -58,8 +58,9 @@ take priority over public fan-out. Up to 50 rows are processed per batch. Ninety
 coordinate any number of runners: a runner never claims a leased row, and an abandoned lease
 becomes claimable when it expires. Transient database failures retry with backoff (one to eight
 seconds). Publication and push failures retain their own retry deadlines, doubling from one
-second to at most a minute per attempt, until the record is delivered or expires. Redis
-publication failures do not prevent due Web Push.
+second to at most a minute per attempt. Publication retries until the record is delivered or
+expires; Web Push gives up after twelve claims of the record (about seven minutes) and logs
+`realtime.push.abandoned`. Redis publication failures do not prevent due Web Push.
 
 On `SIGTERM` the API ends open event streams (browsers reconnect, to another runner if there is
 one), stops claiming, finishes the current wave, releases its leases, finishes in-flight requests
