@@ -42,6 +42,8 @@ Messaging/Post workflows. Transport and scheduling tests live beside their core 
 
 ## The delivery worker
 
+Why the worker runs inside each API process: [ADR 0014](../../../../../docs/adr/0014-real-time-delivery-runs-in-a-worker-inside-each-api-process.md).
+
 A feature saves its data and delivery records in one Postgres transaction. After commit, the
 route calls `scheduleDelivery()`, which wakes the process's worker (`startActivityWorker` in
 `worker.ts`). Message writes do not wait for delivery. Draft-only Post changes, unchanged read
