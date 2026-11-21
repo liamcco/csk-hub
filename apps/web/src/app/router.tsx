@@ -2,6 +2,7 @@ import type { CurrentCapabilities } from "@csk-hub/contract/client"
 import { loginPath } from "@csk-hub/shared/core/navigation/navigation-utils"
 import { type QueryClient, type UseSuspenseQueryOptions, useQueryErrorResetBoundary } from "@tanstack/react-query"
 import {
+  createLazyRoute,
   createRootRouteWithContext,
   createRoute,
   createRouter,
@@ -9,11 +10,8 @@ import {
   notFound,
   type ParsedLocation,
   redirect,
-  useParams,
-  useRouter,
-  useSearch
+  useRouter
 } from "@tanstack/react-router"
-import type { ReactNode } from "react"
 import { z } from "zod"
 import { capabilitiesQuery } from "@/core/api-client/capabilities"
 import { isUnauthenticated, isUnavailable } from "@/core/api-client/result"
@@ -21,88 +19,26 @@ import { getRouteAccessDecision } from "@/core/auth/route-access"
 import { reloadSession, sessionQuery } from "@/core/auth/session"
 import { accountSessionQuery } from "@/features/account/settings"
 import {
-  EventPageScreen,
-  EventPageScreenSkeleton,
-  EventScreen,
-  EventScreenSkeleton,
-  EventsScreen,
-  EventsScreenSkeleton,
   eventEditorQuery,
   eventFormOptionsQuery,
   eventListFilters,
   eventPageQuery,
-  LocationsScreen,
-  LocationsScreenSkeleton,
   locationsQuery,
   managedEventsQuery,
-  NewEventScreen,
-  NewEventScreenSkeleton,
-  UpcomingEventsScreen,
-  UpcomingEventsScreenSkeleton,
   upcomingEventsQuery
 } from "@/features/events/ui"
-import { HomeScreen } from "@/features/home"
+import { directoryQuery, directorySearch, memberProfileQuery, profileEditorQuery } from "@/features/members"
+import { beforeSequence, conversationQuery, inboxQuery } from "@/features/messaging"
 import {
-  directoryQuery,
-  directorySearch,
-  EditProfileScreen,
-  EditProfileSkeleton,
-  MemberDirectoryScreen,
-  MemberDirectorySkeleton,
-  MemberProfileScreen,
-  MemberProfileSkeleton,
-  memberProfileQuery,
-  profileEditorQuery
-} from "@/features/members"
-import {
-  beforeSequence,
-  ConversationScreen,
-  ConversationScreenSkeleton,
-  conversationQuery,
-  inboxQuery,
-  MessagesScreen,
-  MessagesScreenSkeleton
-} from "@/features/messaging"
-import { NotificationManagementScreen } from "@/features/notification-broadcast"
-import {
-  ChoirsScreen,
-  ChoirsScreenSkeleton,
   choirPlacementQuery,
-  GroupDetailScreen,
-  GroupDetailScreenSkeleton,
-  GroupsScreen,
-  GroupsScreenSkeleton,
   groupDetailQuery,
   groupsOverviewQuery,
   positionCatalogueQuery
 } from "@/features/org-structure/ui"
-import {
-  EditPostScreen,
-  EditPostScreenSkeleton,
-  editablePostQuery,
-  latestPostsQuery,
-  NewPostScreen,
-  NewsScreen,
-  NewsScreenSkeleton,
-  newsFeedQuery,
-  ownDraftsQuery,
-  PostScreen,
-  PostScreenSkeleton,
-  postQuery
-} from "@/features/posts"
-import { UsersScreen, UsersScreenSkeleton, usersQuery } from "@/features/user-management"
+import { editablePostQuery, latestPostsQuery, newsFeedQuery, ownDraftsQuery, postQuery } from "@/features/posts"
+import { usersQuery } from "@/features/user-management"
 import { AppLayout, FailedScreen, ForbiddenScreen, NotFoundScreen, PublicLayout } from "./layouts"
-import {
-  ActivatePage,
-  ActivationFailedPage,
-  ForgotPasswordPage,
-  LoginPage,
-  PrivacyPage,
-  ResetPasswordPage,
-  SupportPage,
-  TwoFactorPage
-} from "./pages/public"
-import { AdminPage, SettingsPage } from "./pages/signed-in"
+import type { Screen } from "./route-hooks"
 
 export type RouterContext = { queryClient: QueryClient }
 
@@ -179,8 +115,8 @@ const publicLayout = createRoute({ getParentRoute: () => rootRoute, id: "public"
 
 type Page = {
   path: string
-  component: () => ReactNode
-  pending?: () => ReactNode
+  /** The page's screen, in a code chunk of its own area that loads with the page or on intent. */
+  screen: () => Promise<Screen>
   loader?: (args: {
     context: RouterContext
     location: ParsedLocation
@@ -196,33 +132,24 @@ function requireUuid(value: string) {
   if (!uuid.safeParse(value).success) throw notFound()
 }
 
-function page(parent: typeof appLayout | typeof publicLayout, { path, component, pending, loader }: Page) {
+function page(parent: typeof appLayout | typeof publicLayout, { path, screen, loader }: Page) {
   return createRoute({
     getParentRoute: () => parent,
     path,
-    component,
-    pendingComponent: pending,
     loaderDeps: ({ search }) => ({ search: search as Record<string, unknown> }),
     loader: loader
       ? ({ context, location, params, deps }) =>
           loader({ context, location, params: params as Record<string, string>, search: deps.search })
       : undefined
-  })
-}
-
-function useParam(name: string): string {
-  return (useParams({ strict: false }) as Record<string, string>)[name] ?? ""
-}
-
-function useSearchLoose(): Record<string, unknown> {
-  return useSearch({ strict: false }) as Record<string, unknown>
+  }).lazy(() =>
+    screen().then(({ component, pending }) => createLazyRoute(path)({ component, pendingComponent: pending }))
+  )
 }
 
 const eventsAdminPages = (prefix: "/events/manage" | "/admin/events", gate: boolean): Page[] => [
   {
     path: prefix,
-    component: () => <EventsScreen filters={eventListFilters(useSearchLoose())} />,
-    pending: EventsScreenSkeleton,
+    screen: () => import("./pages/events").then((m) => m.managedEvents),
     loader: async ({ context, location, search }) => {
       if (gate) await requireCapability(context, location, "administerEvents")
       await load(context, location, managedEventsQuery(eventListFilters(search)))
@@ -230,8 +157,7 @@ const eventsAdminPages = (prefix: "/events/manage" | "/admin/events", gate: bool
   },
   {
     path: `${prefix}/new`,
-    component: NewEventScreen,
-    pending: NewEventScreenSkeleton,
+    screen: () => import("./pages/events").then((m) => m.newEvent),
     loader: async ({ context, location }) => {
       if (gate) await requireCapability(context, location, "administerEvents")
       await load(context, location, eventFormOptionsQuery)
@@ -240,8 +166,7 @@ const eventsAdminPages = (prefix: "/events/manage" | "/admin/events", gate: bool
   },
   {
     path: `${prefix}/$eventId`,
-    component: () => <EventScreen eventId={useParam("eventId")} />,
-    pending: EventScreenSkeleton,
+    screen: () => import("./pages/events").then((m) => m.eventEditor),
     loader: async ({ context, location, params }) => {
       // Authorize before validating the address, so non-Admins get the same answer for any Event.
       if (gate) await requireCapability(context, location, "administerEvents")
@@ -254,14 +179,13 @@ const eventsAdminPages = (prefix: "/events/manage" | "/admin/events", gate: bool
 const signedInPages: Page[] = [
   {
     path: "/",
-    component: HomeScreen,
+    screen: () => import("./pages/home").then((m) => m.home),
     loader: ({ context, location }) =>
       load(context, location, capabilitiesQuery, upcomingEventsQuery, latestPostsQuery(3))
   },
   {
     path: "/news",
-    component: NewsScreen,
-    pending: NewsScreenSkeleton,
+    screen: () => import("./pages/posts").then((m) => m.news),
     loader: async ({ context, location }) => {
       await load(context, location, newsFeedQuery)
       if (context.queryClient.getQueryData(newsFeedQuery.queryKey)?.permissions.create)
@@ -270,49 +194,38 @@ const signedInPages: Page[] = [
   },
   {
     path: "/news/new",
-    component: NewPostScreen,
+    screen: () => import("./pages/posts").then((m) => m.newPost),
     loader: ({ context, location }) => load(context, location, capabilitiesQuery)
   },
   {
     path: "/news/$id",
-    component: () => <PostScreen postId={useParam("id")} />,
-    pending: PostScreenSkeleton,
+    screen: () => import("./pages/posts").then((m) => m.post),
     loader: ({ context, location, params }) => load(context, location, postQuery(params.id))
   },
   {
     path: "/news/$id/edit",
-    component: () => <EditPostScreen postId={useParam("id")} />,
-    pending: EditPostScreenSkeleton,
+    screen: () => import("./pages/posts").then((m) => m.editPost),
     loader: ({ context, location, params }) => load(context, location, editablePostQuery(params.id))
   },
   {
     path: "/events",
-    component: () => <UpcomingEventsScreen search={useSearchLoose()} />,
-    pending: UpcomingEventsScreenSkeleton,
+    screen: () => import("./pages/events").then((m) => m.upcomingEvents),
     loader: ({ context, location }) => load(context, location, upcomingEventsQuery)
   },
   {
     path: "/events/$eventId",
-    component: () => <EventPageScreen eventId={useParam("eventId")} />,
-    pending: EventPageScreenSkeleton,
+    screen: () => import("./pages/events").then((m) => m.eventPage),
     loader: ({ context, location, params }) => load(context, location, eventPageQuery(params.eventId))
   },
   ...eventsAdminPages("/events/manage", false),
   {
     path: "/messages",
-    component: MessagesScreen,
-    pending: MessagesScreenSkeleton,
+    screen: () => import("./pages/messaging").then((m) => m.inbox),
     loader: ({ context, location }) => load(context, location, inboxQuery)
   },
   {
     path: "/messages/$conversationId",
-    component: () => (
-      <ConversationScreen
-        conversationId={useParam("conversationId")}
-        beforeSequence={beforeSequence(useSearchLoose())}
-      />
-    ),
-    pending: ConversationScreenSkeleton,
+    screen: () => import("./pages/messaging").then((m) => m.conversation),
     loader: async ({ context, location, params, search }) => {
       requireUuid(params.conversationId)
       await load(context, location, conversationQuery(params.conversationId, beforeSequence(search)))
@@ -320,42 +233,37 @@ const signedInPages: Page[] = [
   },
   {
     path: "/members",
-    component: () => <MemberDirectoryScreen search={directorySearch(useSearchLoose())} />,
-    pending: MemberDirectorySkeleton,
+    screen: () => import("./pages/members").then((m) => m.directory),
     loader: ({ context, location, search }) => load(context, location, directoryQuery(directorySearch(search)))
   },
   {
     path: "/members/$memberId",
-    component: () => <MemberProfileScreen memberId={useParam("memberId")} />,
-    pending: MemberProfileSkeleton,
+    screen: () => import("./pages/members").then((m) => m.memberProfile),
     loader: ({ context, location, params }) => load(context, location, memberProfileQuery(params.memberId))
   },
   {
     path: "/me",
-    component: () => <MemberProfileScreen />,
-    pending: MemberProfileSkeleton,
+    screen: () => import("./pages/members").then((m) => m.ownProfile),
     loader: ({ context, location }) => load(context, location, memberProfileQuery())
   },
   {
     path: "/me/edit",
-    component: EditProfileScreen,
-    pending: EditProfileSkeleton,
+    screen: () => import("./pages/members").then((m) => m.editProfile),
     loader: ({ context, location }) => load(context, location, profileEditorQuery)
   },
   {
     path: "/me/settings",
-    component: SettingsPage,
+    screen: () => import("./pages/home").then((m) => m.settings),
     loader: ({ context, location }) => load(context, location, capabilitiesQuery, accountSessionQuery)
   },
   {
     path: "/admin",
-    component: AdminPage,
+    screen: () => import("./pages/admin").then((m) => m.adminStart),
     loader: ({ context, location }) => requireCapability(context, location, "admin")
   },
   {
     path: "/admin/users",
-    component: UsersScreen,
-    pending: UsersScreenSkeleton,
+    screen: () => import("./pages/admin").then((m) => m.users),
     loader: async ({ context, location }) => {
       await requireCapability(context, location, "admin")
       await load(context, location, usersQuery)
@@ -363,13 +271,12 @@ const signedInPages: Page[] = [
   },
   {
     path: "/admin/notifications",
-    component: NotificationManagementScreen,
+    screen: () => import("./pages/admin").then((m) => m.notifications),
     loader: ({ context, location }) => requireCapability(context, location, "admin")
   },
   {
     path: "/admin/org-structure",
-    component: ChoirsScreen,
-    pending: ChoirsScreenSkeleton,
+    screen: () => import("./pages/organisation").then((m) => m.choirs),
     loader: async ({ context, location }) => {
       await requireCapability(context, location, "admin")
       await load(context, location, choirPlacementQuery)
@@ -377,8 +284,7 @@ const signedInPages: Page[] = [
   },
   {
     path: "/admin/org-structure/groups",
-    component: GroupsScreen,
-    pending: GroupsScreenSkeleton,
+    screen: () => import("./pages/organisation").then((m) => m.groups),
     loader: async ({ context, location }) => {
       await requireCapability(context, location, "admin")
       await load(context, location, groupsOverviewQuery, positionCatalogueQuery)
@@ -386,8 +292,7 @@ const signedInPages: Page[] = [
   },
   {
     path: "/admin/org-structure/$groupId",
-    component: () => <GroupDetailScreen groupId={useParam("groupId")} />,
-    pending: GroupDetailScreenSkeleton,
+    screen: () => import("./pages/organisation").then((m) => m.groupDetail),
     loader: async ({ context, location, params }) => {
       // Authorize before validating the address, so non-Admins get the same answer for any group.
       await requireCapability(context, location, "admin")
@@ -398,8 +303,7 @@ const signedInPages: Page[] = [
   ...eventsAdminPages("/admin/events", true),
   {
     path: "/admin/events/locations",
-    component: LocationsScreen,
-    pending: LocationsScreenSkeleton,
+    screen: () => import("./pages/events").then((m) => m.locations),
     loader: async ({ context, location }) => {
       await requireCapability(context, location, "administerEvents")
       await load(context, location, locationsQuery)
@@ -408,14 +312,20 @@ const signedInPages: Page[] = [
 ]
 
 const publicPages: Page[] = [
-  { path: "/login", component: LoginPage },
-  { path: "/two-factor", component: TwoFactorPage },
-  { path: "/activate", component: ActivatePage },
-  { path: "/activation-failed", component: ActivationFailedPage },
-  { path: "/forgot-password", component: ForgotPasswordPage },
-  { path: "/reset-password", component: ResetPasswordPage },
-  { path: "/privacy", component: PrivacyPage },
-  { path: "/support", component: SupportPage }
+  { path: "/login", screen: () => import("./pages/public").then((m) => ({ component: m.LoginPage })) },
+  { path: "/two-factor", screen: () => import("./pages/public").then((m) => ({ component: m.TwoFactorPage })) },
+  { path: "/activate", screen: () => import("./pages/public").then((m) => ({ component: m.ActivatePage })) },
+  {
+    path: "/activation-failed",
+    screen: () => import("./pages/public").then((m) => ({ component: m.ActivationFailedPage }))
+  },
+  {
+    path: "/forgot-password",
+    screen: () => import("./pages/public").then((m) => ({ component: m.ForgotPasswordPage }))
+  },
+  { path: "/reset-password", screen: () => import("./pages/public").then((m) => ({ component: m.ResetPasswordPage })) },
+  { path: "/privacy", screen: () => import("./pages/public").then((m) => ({ component: m.PrivacyPage })) },
+  { path: "/support", screen: () => import("./pages/public").then((m) => ({ component: m.SupportPage })) }
 ]
 
 const routeTree = rootRoute.addChildren([

@@ -1,11 +1,5 @@
 import { ROUTES } from "@csk-hub/shared/core/navigation/site"
-import {
-  addDays,
-  EVENT_STATUSES,
-  EVENT_TYPES,
-  stockholmDate,
-  stockholmInstant
-} from "@csk-hub/shared/features/events/model"
+import { addDays, stockholmDate, stockholmInstant } from "@csk-hub/shared/features/events/model"
 import { useSuspenseQuery } from "@tanstack/react-query"
 import { CalendarPlus, MapPin } from "lucide-react"
 import { useFormatter, useTranslations } from "@/core/i18n/translations"
@@ -21,17 +15,6 @@ import type { EventListFilters, EventListRow } from "../queries"
 import { managedEventsQuery } from "../queries"
 import { StatusBadge } from "../StatusBadge"
 import { EventFilters } from "./EventFilters"
-
-/** The filters an address asks for; anything unknown is ignored. */
-export function eventListFilters(search: Record<string, unknown>): EventListFilters {
-  const one = (name: string) => {
-    const value = search[name]
-    return typeof value === "string" ? value : undefined
-  }
-  const status = EVENT_STATUSES.find((value) => value === one("status"))
-  const type = EVENT_TYPES.find((value) => value === one("type"))
-  return { when: one("when") === "past" ? "past" : "upcoming", status, type }
-}
 
 /** Events the viewer may manage, across lifecycle states. */
 export function EventsScreen({ filters }: { filters: EventListFilters }) {

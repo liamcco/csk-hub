@@ -1,22 +1,10 @@
-import { queryOptions, useSuspenseQuery } from "@tanstack/react-query"
+import { useSuspenseQuery } from "@tanstack/react-query"
 import { capabilitiesQuery } from "@/core/api-client/capabilities"
-import { authClient } from "@/core/auth/auth-client"
 import { AccountSettingsTabs } from "./account-settings-tabs"
 import { PushNotificationSettings } from "./notifications"
 import { LanguageSettings, ProfileSettings } from "./profile"
 import { PasskeySettings, PasswordSettings, SessionsSettings, TwoFactorSettings } from "./security"
-
-/**
- * Better Auth's own session, read past its cookie cache, for the profile, two-factor and session
- * details the settings show. `/api/auth` keeps serving it outside `/api/v1`.
- */
-export const accountSessionQuery = queryOptions({
-  queryKey: ["account", "session"],
-  queryFn: async () => {
-    const { data } = await authClient.getSession({ query: { disableCookieCache: true } })
-    return data ?? null
-  }
-})
+import { accountSessionQuery } from "./session-query"
 
 /** The signed-in User's settings. The API decides whether the User is active. */
 export function AccountSettings() {

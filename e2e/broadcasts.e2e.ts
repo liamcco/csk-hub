@@ -14,6 +14,10 @@ test("an Admin sends a broadcast through the API and sees how delivery went", as
   )
   await card.getByRole("button", { name: "Send to all" }).click()
   expect((await sent).status()).toBe(200)
-  // The journey database has no push subscriptions and no real-time delivery.
-  await expect(card.getByText("No active notification subscriptions.")).toBeVisible()
+  // With Redis the broadcast is queued for live delivery; without it, nobody has a push subscription.
+  const outcome =
+    process.env.REDIS_URL || process.env.E2E_STACK
+      ? /Notifications queued for \d+ members\./
+      : /No active notification subscriptions\./
+  await expect(card.getByRole("alert")).toHaveText(outcome)
 })

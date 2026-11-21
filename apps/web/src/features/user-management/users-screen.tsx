@@ -1,21 +1,13 @@
-import { listUsers } from "@csk-hub/contract/client"
 import { app } from "@csk-hub/shared/core/config/app"
-import { queryOptions, useSuspenseQuery } from "@tanstack/react-query"
-import { browserApiClient as client } from "@/core/api-client/browser"
-import { read } from "@/core/api-client/result"
+import { useSuspenseQuery } from "@tanstack/react-query"
 import { useTranslations } from "@/core/i18n/translations"
 import { PageBreadcrumb } from "@/core/navigation/PageBreadcrumb"
 import { Skeleton } from "@/shared/ui/base/skeleton"
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/base/table"
 import { AddUserDialog } from "./add/add-user-dialog"
 import { ImportUsersDialog } from "./import/import-users-dialog"
-import { UserList, type UserListItem } from "./user-list"
-
-export const usersQuery = queryOptions({
-  queryKey: ["users"],
-  queryFn: async (): Promise<UserListItem[]> =>
-    (await read(listUsers({ client }))).items.map((item) => ({ ...item, createdAt: new Date(item.createdAt) }))
-})
+import { usersQuery } from "./queries"
+import { UserList } from "./user-list"
 
 export function UsersScreen() {
   const { data: users } = useSuspenseQuery(usersQuery)

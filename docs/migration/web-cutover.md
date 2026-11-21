@@ -59,11 +59,14 @@ Done:
 - All journeys pass in dev mode (19 + 4 navigation journeys in `e2e/navigation.e2e.ts`; the
   real-time one needs `REDIS_URL`, e.g. `redis://localhost:6379` from `deploy/compose.dev.yml`).
   Denied pages are asserted by their screen ("Page not found" / "No access") plus the API's 403.
+- Code splitting: each route's screen loads lazily from `apps/web/src/app/pages/<area>.tsx`
+  (one chunk per area); loaders and query options stay in the start chunk. Keep query options
+  out of screen modules, or the screen (and its imports) lands in the start chunk again.
+  `"sideEffects"` in `apps/web/package.json` lets unused feature re-exports drop.
 
 Next:
 1. `--stack` journeys: need `deploy/compose.local.yml` publishing the database on
    127.0.0.1:${DB_PORT:-5434}.
-2. Route-level code splitting (currently one large chunk).
-3. Deploy: Dockerfile targets for `api` and a static `web` server (Caddy with history fallback
+2. Deploy: Dockerfile targets for `api` and a static `web` server (Caddy with history fallback
    for web paths only), `compose.yml`, `local-stack.sh`, `publish-image.sh`, `validate-stack.ts`.
-4. Docs: README, i18n README, `deploy/README.md`, codebase-structure, CONTRIBUTING index, ADR note.
+3. Docs: README, i18n README, `deploy/README.md`, codebase-structure, CONTRIBUTING index, ADR note.

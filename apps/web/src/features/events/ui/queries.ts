@@ -7,7 +7,7 @@ import {
   listUpcomingEvents,
   type UpcomingEvents
 } from "@csk-hub/contract/client"
-import type { EventStatus, EventType } from "@csk-hub/shared/features/events/model"
+import { EVENT_STATUSES, EVENT_TYPES, type EventStatus, type EventType } from "@csk-hub/shared/features/events/model"
 import type { EventFormValues } from "@csk-hub/shared/features/events/ui/editor/form-input"
 import type { RichTextDocument } from "@csk-hub/shared/features/rich-text/document"
 import type { VoiceFamily } from "@csk-hub/shared/features/voice/model"
@@ -115,3 +115,14 @@ export const locationsQuery = queryOptions({
   queryKey: [...eventsKey, "locations"],
   queryFn: async () => (await read(listLocations({ client }))).items
 })
+
+/** The filters an address asks for; anything unknown is ignored. */
+export function eventListFilters(search: Record<string, unknown>): EventListFilters {
+  const one = (name: string) => {
+    const value = search[name]
+    return typeof value === "string" ? value : undefined
+  }
+  const status = EVENT_STATUSES.find((value) => value === one("status"))
+  const type = EVENT_TYPES.find((value) => value === one("type"))
+  return { when: one("when") === "past" ? "past" : "upcoming", status, type }
+}
