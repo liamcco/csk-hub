@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test"
-import type { EventFormValues } from "@csk-hub/shared/features/events/ui/editor/form-input"
+import type { EventFormValues } from "@csk-hub/shared/features/events/form-input"
 import { registerDom } from "@test/dom"
 import { eventFormVersion, parseStoredEvent, snapshotEventForm } from "./unsaved-event"
 

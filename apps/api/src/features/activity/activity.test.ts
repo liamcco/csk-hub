@@ -72,8 +72,8 @@ if (!process.env.CSK_ACTIVITY_TEST) {
     const { activityEventSchema, activityReadySchema } = await import("@csk-hub/shared/core/realtime/events")
     const { startDirectConversation, sendMessage } = await import("@/features/messaging/sending")
     const { createGroupConversation, leaveGroupConversation } = await import("@/features/messaging/group-conversations")
-    const { markConversationRead } = await import("@/features/messaging/ui/conversation/read")
-    const { createReadToken } = await import("@/features/messaging/ui/conversation/read-token")
+    const { markConversationRead } = await import("@/features/messaging/read-models/conversation/read")
+    const { createReadToken } = await import("@/features/messaging/read-models/conversation/read-token")
     // The mocked database and authority, passed explicitly as the HTTP API passes its own.
     const messaging = {
       database: (await import("@/core/db")).db,

@@ -7,8 +7,8 @@ import {
   listUpcomingEvents,
   type UpcomingEvents
 } from "@csk-hub/contract/client"
+import type { EventFormValues } from "@csk-hub/shared/features/events/form-input"
 import { EVENT_STATUSES, EVENT_TYPES, type EventStatus, type EventType } from "@csk-hub/shared/features/events/model"
-import type { EventFormValues } from "@csk-hub/shared/features/events/ui/editor/form-input"
 import type { RichTextDocument } from "@csk-hub/shared/features/rich-text/document"
 import type { VoiceFamily } from "@csk-hub/shared/features/voice/model"
 import { queryOptions } from "@tanstack/react-query"

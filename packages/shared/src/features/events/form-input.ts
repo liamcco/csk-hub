@@ -1,8 +1,8 @@
 import { z } from "zod"
-import type { RichTextDocument } from "../../../rich-text/document"
-import type { EventInput, EventType, IsoDate, LocalDateTime, ParticipationMode } from "../../model"
-import { EVENT_TYPES, isIsoDate, isLocalDateTime, PARTICIPATION_MODES, stockholmInstant } from "../../model"
-import { DETAIL_LABEL_MAX_LENGTH, LONG_TEXT_MAX_LENGTH, SHORT_TEXT_MAX_LENGTH, TITLE_MAX_LENGTH } from "../limits"
+import type { RichTextDocument } from "../rich-text/document"
+import { DETAIL_LABEL_MAX_LENGTH, LONG_TEXT_MAX_LENGTH, SHORT_TEXT_MAX_LENGTH, TITLE_MAX_LENGTH } from "./limits"
+import type { EventInput, EventType, IsoDate, LocalDateTime, ParticipationMode } from "./model"
+import { EVENT_TYPES, isIsoDate, isLocalDateTime, PARTICIPATION_MODES, stockholmInstant } from "./model"
 
 // How the Event form travels: one field per value, and the Target and Event detail rows as
 // `target.<row>.<field>` and `detail.<row>.<field>`, in the order the form shows them. Rules the

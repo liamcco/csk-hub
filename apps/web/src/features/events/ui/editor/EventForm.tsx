@@ -1,4 +1,11 @@
 import { eventDocument } from "@csk-hub/shared/features/events/event-document"
+import type { EventFormValues } from "@csk-hub/shared/features/events/form-input"
+import {
+  DETAIL_LABEL_MAX_LENGTH,
+  LONG_TEXT_MAX_LENGTH,
+  SHORT_TEXT_MAX_LENGTH,
+  TITLE_MAX_LENGTH
+} from "@csk-hub/shared/features/events/limits"
 import {
   collectsParticipation,
   DEFAULT_PARTICIPATION_MODE,
@@ -7,13 +14,6 @@ import {
   PARTICIPATION_MODES,
   type ParticipationMode
 } from "@csk-hub/shared/features/events/model"
-import type { EventFormValues } from "@csk-hub/shared/features/events/ui/editor/form-input"
-import {
-  DETAIL_LABEL_MAX_LENGTH,
-  LONG_TEXT_MAX_LENGTH,
-  SHORT_TEXT_MAX_LENGTH,
-  TITLE_MAX_LENGTH
-} from "@csk-hub/shared/features/events/ui/limits"
 import { ArrowDown, ArrowUp, Plus, X } from "lucide-react"
 import { type FormEvent, startTransition, useActionState, useEffect, useId, useRef, useState } from "react"
 import { useTranslations } from "@/core/i18n/translations"

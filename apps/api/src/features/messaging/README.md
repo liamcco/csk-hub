@@ -42,7 +42,7 @@ interface rather than its implementation files. Code outside `sending` must not 
   An existing Direct Conversation opens directly; otherwise the shared conversation dialog opens
   with that member selected. Looking up a destination creates neither a Conversation nor a Message.
 
-The `ui/conversation/` name follows the domain language. “Thread” and “chat” are intentionally not
+The `read-models/conversation/` name follows the domain language. “Thread” and “chat” are intentionally not
 used as synonyms for Conversation.
 
 

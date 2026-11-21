@@ -1,4 +1,4 @@
-import { NAME_MAX_LENGTH } from "@csk-hub/shared/features/org-structure/ui/limits"
+import { NAME_MAX_LENGTH } from "@csk-hub/shared/features/org-structure/limits"
 import { useTranslations } from "@/core/i18n/translations"
 import { InputField } from "@/shared/forms/fields"
 import { Button } from "@/shared/ui/base/button"

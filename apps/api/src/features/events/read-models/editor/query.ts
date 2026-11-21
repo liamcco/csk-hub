@@ -1,5 +1,5 @@
+import type { EventFormValues } from "@csk-hub/shared/features/events/form-input"
 import { addDays, type EventStatus, stockholmDate, stockholmLocalDateTime } from "@csk-hub/shared/features/events/model"
-import type { EventFormValues } from "@csk-hub/shared/features/events/ui/editor/form-input"
 import type { GroupType } from "@csk-hub/shared/features/org-structure/model"
 import { type AnyColumn, asc, eq, inArray, isNull, or } from "drizzle-orm"
 import { AuthorizationDeniedError } from "@/core/authz"

@@ -1,6 +1,6 @@
 import { ROUTES } from "@csk-hub/shared/core/navigation/site"
+import type { EventFormValues } from "@csk-hub/shared/features/events/form-input"
 import { DEFAULT_PARTICIPATION_MODE, EVENT_TYPES, type EventType } from "@csk-hub/shared/features/events/model"
-import type { EventFormValues } from "@csk-hub/shared/features/events/ui/editor/form-input"
 import { useSuspenseQuery } from "@tanstack/react-query"
 import { useTranslations } from "@/core/i18n/translations"
 import { PageBreadcrumb } from "@/core/navigation/PageBreadcrumb"

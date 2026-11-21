@@ -9,12 +9,12 @@ import { type ApiEnv, createRouter, domainErrorCode, errorResponses, jsonBody, j
 import { changeVoice, endMembership, placeSingerInSection, startMembership } from "../membership"
 import type { OrgStructureTransaction } from "../operation"
 import { endPositionHolding, replacePositionHolder } from "../positions"
+import { listPositionCatalogue } from "../read-models/catalogue/query"
+import { getChoirPlacement } from "../read-models/choirs/query"
+import { getChoirIdOf, getGroupDetail } from "../read-models/detail/query"
+import { fields } from "../read-models/fields"
+import { getGroupsOverview } from "../read-models/groups/query"
 import { archiveGroup, createGroup, createPosition, renameGroup, updatePosition } from "../structure"
-import { listPositionCatalogue } from "../ui/catalogue/query"
-import { getChoirPlacement } from "../ui/choirs/query"
-import { getChoirIdOf, getGroupDetail } from "../ui/detail/query"
-import { fields } from "../ui/fields"
-import { getGroupsOverview } from "../ui/groups/query"
 
 const OrgStructureErrorSchema = z
   .object({

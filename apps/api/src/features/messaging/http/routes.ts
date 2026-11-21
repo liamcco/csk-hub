@@ -18,11 +18,11 @@ import {
   renameGroupConversation
 } from "../group-conversations"
 import type { MessagingContext } from "../model/context"
+import { getConversationPage } from "../read-models/conversation/query"
+import { markConversationRead } from "../read-models/conversation/read"
+import { searchMembers } from "../read-models/inbox/member-search"
+import { listConversations } from "../read-models/inbox/query"
 import { sendMessage, startDirectConversation } from "../sending"
-import { getConversationPage } from "../ui/conversation/query"
-import { markConversationRead } from "../ui/conversation/read"
-import { searchMembers } from "../ui/inbox/member-search"
-import { listConversations } from "../ui/inbox/query"
 import { countUnreadConversations } from "../unread/service"
 
 const messagingErrorKinds = [

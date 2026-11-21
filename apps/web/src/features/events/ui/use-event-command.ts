@@ -7,7 +7,7 @@ import {
   updateEvent,
   updateLocation
 } from "@csk-hub/contract/client"
-import { readEventForm } from "@csk-hub/shared/features/events/ui/editor/form-input"
+import { readEventForm } from "@csk-hub/shared/features/events/form-input"
 import { useCallback } from "react"
 import { browserApiClient } from "@/core/api-client/browser"
 import { type ApiResult, errorCode, errorKind } from "@/core/api-client/result"

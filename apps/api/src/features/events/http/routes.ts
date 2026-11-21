@@ -1,3 +1,5 @@
+import { eventFormSchema } from "@csk-hub/shared/features/events/form-input"
+import { SHORT_TEXT_MAX_LENGTH, URL_MAX_LENGTH } from "@csk-hub/shared/features/events/limits"
 import {
   EVENT_STATUSES,
   EVENT_TYPES,
@@ -5,8 +7,6 @@ import {
   type EventViolation,
   PARTICIPATION_MODES
 } from "@csk-hub/shared/features/events/model"
-import { eventFormSchema } from "@csk-hub/shared/features/events/ui/editor/form-input"
-import { SHORT_TEXT_MAX_LENGTH, URL_MAX_LENGTH } from "@csk-hub/shared/features/events/ui/limits"
 import { createRoute, z } from "@hono/zod-openapi"
 import type { Context } from "hono"
 import type { RequestAuthorization } from "@/core/authz/authorization"
@@ -26,9 +26,9 @@ import { getCurrentEventPage, listCurrentUpcomingEvents } from "../calendar/quer
 import { createEvent, updateEvent } from "../events"
 import { changeEventStatus, deleteEvent } from "../lifecycle"
 import { archiveLocation, createLocation, updateLocation } from "../locations"
-import { getEventEditor, getEventFormOptions } from "../ui/editor/query"
-import { listManagedEvents } from "../ui/list/query"
-import { listLocations } from "../ui/locations/query"
+import { getEventEditor, getEventFormOptions } from "../read-models/editor/query"
+import { listManagedEvents } from "../read-models/list/query"
+import { listLocations } from "../read-models/locations/query"
 
 const eventCommandErrors = [
   "event-not-found",
