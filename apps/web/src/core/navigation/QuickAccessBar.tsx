@@ -1,5 +1,3 @@
-"use client"
-
 import { isActiveRoute } from "@csk-hub/shared/core/navigation/navigation-utils"
 import { ROUTES } from "@csk-hub/shared/core/navigation/site"
 import { CalendarDays, CircleUser, EllipsisIcon, House, type LucideIcon, MessageCircle, Newspaper } from "lucide-react"

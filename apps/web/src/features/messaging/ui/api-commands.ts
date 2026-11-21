@@ -8,19 +8,19 @@ import {
 } from "@csk-hub/contract/client"
 import type { MessagingErrorKind } from "@csk-hub/shared/features/messaging/model/messaging-error"
 import { browserApiClient } from "@/core/api-client/browser"
-import { errorCode } from "@/core/api-client/result"
+import { type ApiResult, errorCode, errorKind } from "@/core/api-client/result"
 import type { MessageCommandState } from "./composer/message-command-state"
 
 const client = browserApiClient
 
 /** Maps the API's `BLANK_MESSAGE` back to the `blank-message` the screens translate. */
-function failure(
-  result: { error?: unknown; response?: Response },
+function messageCommandError(
+  result: ApiResult<unknown>,
   text: string
 ): Extract<MessageCommandState, { status: "error" }> {
   if (result.response?.status === 401) return { status: "error", error: "sign-in-required", text }
   const code = errorCode(result.error)
-  const kind = code?.toLowerCase().replaceAll("_", "-") as MessagingErrorKind | undefined
+  const kind = errorKind(result.error) as MessagingErrorKind | null
   return {
     status: "error",
     error: kind && code !== "VALIDATION_FAILED" && code !== "INTERNAL" ? kind : "unexpected",
@@ -29,13 +29,13 @@ function failure(
 }
 
 async function command(
-  run: () => Promise<{ data?: { conversationId: string }; error?: unknown; response?: Response }>,
+  run: () => Promise<ApiResult<{ conversationId: string }>>,
   text: string
 ): Promise<MessageCommandState> {
   try {
     const result = await run()
     if (result.data) return { status: "success", conversationId: result.data.conversationId }
-    return failure(result, text)
+    return messageCommandError(result, text)
   } catch {
     return { status: "error", error: "unexpected", text }
   }

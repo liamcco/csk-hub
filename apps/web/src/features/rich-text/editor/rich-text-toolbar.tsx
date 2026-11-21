@@ -1,5 +1,3 @@
-"use client"
-
 import { type DocumentSchema, safeLinkHref } from "@csk-hub/shared/features/rich-text/document"
 import type { Editor } from "@tiptap/react"
 import { useEditorState } from "@tiptap/react"

@@ -1,5 +1,3 @@
-"use client"
-
 import { useCallback, useEffect, useRef, useState } from "react"
 import { useTranslations } from "@/core/i18n/translations"
 import { Alert, AlertDescription } from "@/shared/ui/base/alert"

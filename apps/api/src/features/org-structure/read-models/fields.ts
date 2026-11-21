@@ -1,4 +1,4 @@
-import { NAME_MAX_LENGTH } from "@csk-hub/shared/features/org-structure/ui/limits"
+import { NAME_MAX_LENGTH } from "@csk-hub/shared/features/org-structure/limits"
 import { isVoiceDivision, type VoiceDivision } from "@csk-hub/shared/features/voice/model"
 import { z } from "zod"
 import { groupType } from "@/core/db/schema/org-structure"

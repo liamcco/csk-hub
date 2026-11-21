@@ -1,6 +1,4 @@
-"use client"
-
-import { SHORT_TEXT_MAX_LENGTH, URL_MAX_LENGTH } from "@csk-hub/shared/features/events/ui/limits"
+import { SHORT_TEXT_MAX_LENGTH, URL_MAX_LENGTH } from "@csk-hub/shared/features/events/limits"
 import { useTranslations } from "@/core/i18n/translations"
 import { InputField } from "@/shared/forms/fields"
 import { Button } from "@/shared/ui/base/button"

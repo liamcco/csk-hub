@@ -1,5 +1,3 @@
-"use client"
-
 import { ROUTES } from "@csk-hub/shared/core/navigation/site"
 import { type EventStatus, statusChangesFrom } from "@csk-hub/shared/features/events/model"
 import { useTranslations } from "@/core/i18n/translations"

@@ -1,1 +1,1 @@
-export { memberIdRouter } from "./routes"
+export { memberIdRouter } from "./http"

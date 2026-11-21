@@ -1,5 +1,3 @@
-"use client"
-
 import { LocaleSwitcher } from "@/core/i18n/locale-switcher"
 import { useTranslations } from "@/core/i18n/translations"
 import { Alert, AlertDescription } from "@/shared/ui/base/alert"

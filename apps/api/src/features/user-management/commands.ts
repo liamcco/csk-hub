@@ -33,7 +33,9 @@ export type UserCommandError =
 export type UserCommandResult = { ok: true } | { ok: false; error: UserCommandError }
 
 const done: UserCommandResult = { ok: true }
-const refuse = (error: UserCommandError): UserCommandResult => ({ ok: false, error })
+function refuse(error: UserCommandError): UserCommandResult {
+  return { ok: false, error }
+}
 
 async function getUser(database: Database, userId: string) {
   const [targetUser] = await database

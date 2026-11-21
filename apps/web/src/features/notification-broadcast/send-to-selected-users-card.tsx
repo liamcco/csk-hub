@@ -1,5 +1,3 @@
-"use client"
-
 import { useEffect, useState, useTransition } from "react"
 import { useTranslations } from "@/core/i18n/translations"
 import { Button } from "@/shared/ui/base/button"

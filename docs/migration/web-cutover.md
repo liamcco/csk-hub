@@ -20,7 +20,8 @@ runtime is gone.
   `useSearchParams`) replaces `next/link` and `next/navigation`. `router.refresh()` now
   invalidates every cached read except the session.
 - Real-time: `ActivityConnection` invalidates the queries an event affects (mapping in
-  `src/app/layouts.tsx`); `ready.reset` invalidates all reads; `unauthorized` reloads the session.
+  `src/app/layouts.tsx`); `ready.reset` invalidates all reads; `unauthorized` reloads the session, as does a 401 from a
+  read on screen (`src/app/query-client.ts`) or from a command (`reloadSessionOnUnauthenticatedCommand`).
 - `server-only` is gone: the Vite build refuses server packages (`vite.config.ts`, `webOnly`).
 - Workspace (user decision 2026-11-21): a Bun workspace with the isolated linker.
   - `apps/api` (`@csk-hub/api`): Hono API, CLI, Drizzle schema and migrations, dev database CLI.

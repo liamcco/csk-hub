@@ -1,5 +1,3 @@
-"use client"
-
 import { ROUTES } from "@csk-hub/shared/core/navigation/site"
 import { passwordPolicy } from "@csk-hub/shared/shared/policy"
 import { useForm, useSelector } from "@tanstack/react-form"

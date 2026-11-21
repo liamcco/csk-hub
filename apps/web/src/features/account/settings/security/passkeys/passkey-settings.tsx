@@ -1,5 +1,3 @@
-"use client"
-
 import { getAuthenticatorName } from "@better-auth/passkey"
 import { useState } from "react"
 import { authClient } from "@/core/auth/auth-client"

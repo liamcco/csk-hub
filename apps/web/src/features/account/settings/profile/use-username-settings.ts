@@ -1,5 +1,3 @@
-"use client"
-
 import { useDebouncedValue } from "@tanstack/react-pacer/debouncer"
 import { useEffect, useState } from "react"
 import { authClient } from "@/core/auth/auth-client"

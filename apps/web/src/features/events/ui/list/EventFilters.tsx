@@ -1,5 +1,3 @@
-"use client"
-
 import { EVENT_STATUSES, EVENT_TYPES } from "@csk-hub/shared/features/events/model"
 import { useTranslations } from "@/core/i18n/translations"
 import { Link, useAppRouter, usePathname } from "@/core/navigation/router"

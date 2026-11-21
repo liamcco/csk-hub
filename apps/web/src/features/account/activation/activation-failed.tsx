@@ -1,5 +1,3 @@
-"use client"
-
 import { ROUTES } from "@csk-hub/shared/core/navigation/site"
 import { useTranslations } from "@/core/i18n/translations"
 import { Link } from "@/core/navigation/router"

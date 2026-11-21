@@ -1,5 +1,3 @@
-"use client"
-
 import type { AdministeredUser } from "@csk-hub/contract/client"
 import { app } from "@csk-hub/shared/core/config/app"
 import { parseRoles, USER_ROLE } from "@csk-hub/shared/shared/roles"

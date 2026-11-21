@@ -1,11 +1,7 @@
 import { createRoute, z } from "@hono/zod-openapi"
 import type { Context } from "hono"
-import { type ApiEnv, createRouter, errorResponses } from "@/core/http"
+import { type ApiEnv, createRouter, errorResponses, jsonResponse } from "@/core/http"
 import { notifyUsers, searchNotificationRecipients } from "../service"
-
-function json<T extends z.ZodType>(description: string, schema: T) {
-  return { description, content: { "application/json": { schema } } }
-}
 
 const counts = { accepted: z.int(), failed: z.int(), failureCategories: z.record(z.string(), z.int()) }
 
@@ -47,8 +43,8 @@ const routes = {
       }
     },
     responses: {
-      200: json("How delivery went.", BroadcastResultSchema),
-      400: json("No message, or an empty selection of Users.", BroadcastErrorSchema),
+      200: jsonResponse("How delivery went.", BroadcastResultSchema),
+      400: jsonResponse("No message, or an empty selection of Users.", BroadcastErrorSchema),
       401: errorResponses[401],
       403: errorResponses[403]
     }
@@ -62,7 +58,7 @@ const routes = {
     tags: ["broadcasts"],
     request: { query: z.object({ search: z.string().max(200).optional() }) },
     responses: {
-      200: json(
+      200: jsonResponse(
         "Recipients.",
         z
           .object({

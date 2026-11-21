@@ -1,5 +1,3 @@
-"use client"
-
 import { getPostLoginPath } from "@csk-hub/shared/core/navigation/navigation-utils"
 import { useRef, useState } from "react"
 import { authClient } from "@/core/auth/auth-client"

@@ -1,3 +1,5 @@
+import { eventFormSchema } from "@csk-hub/shared/features/events/form-input"
+import { SHORT_TEXT_MAX_LENGTH, URL_MAX_LENGTH } from "@csk-hub/shared/features/events/limits"
 import {
   EVENT_STATUSES,
   EVENT_TYPES,
@@ -5,22 +7,28 @@ import {
   type EventViolation,
   PARTICIPATION_MODES
 } from "@csk-hub/shared/features/events/model"
-import { eventFormSchema } from "@csk-hub/shared/features/events/ui/editor/form-input"
-import { SHORT_TEXT_MAX_LENGTH, URL_MAX_LENGTH } from "@csk-hub/shared/features/events/ui/limits"
 import { createRoute, z } from "@hono/zod-openapi"
 import type { Context } from "hono"
 import type { RequestAuthorization } from "@/core/authz/authorization"
 import { groupType } from "@/core/db/schema/org-structure"
-import { type ApiEnv, createRouter, errorResponses } from "@/core/http"
+import {
+  type ApiEnv,
+  createRouter,
+  domainErrorCode,
+  errorResponses,
+  instant,
+  jsonBody,
+  jsonResponse
+} from "@/core/http"
 import type { EventAccessResolver } from "../access"
 import { getEventManagementCapabilities, withEventPermission } from "../access"
 import { getCurrentEventPage, listCurrentUpcomingEvents } from "../calendar/query"
 import { createEvent, updateEvent } from "../events"
 import { changeEventStatus, deleteEvent } from "../lifecycle"
 import { archiveLocation, createLocation, updateLocation } from "../locations"
-import { getEventEditor, getEventFormOptions } from "../ui/editor/query"
-import { listManagedEvents } from "../ui/list/query"
-import { listLocations } from "../ui/locations/query"
+import { getEventEditor, getEventFormOptions } from "../read-models/editor/query"
+import { listManagedEvents } from "../read-models/list/query"
+import { listLocations } from "../read-models/locations/query"
 
 const eventCommandErrors = [
   "event-not-found",
@@ -49,21 +57,17 @@ const eventCommandErrors = [
   "invalid-input"
 ] as const satisfies readonly (EventViolation | "invalid-input")[]
 
-/** `title-required` travels as `TITLE_REQUIRED`; clients map it back to translate it. */
-function eventCode(kind: (typeof eventCommandErrors)[number]) {
-  return kind.toUpperCase().replaceAll("-", "_")
-}
-
 const EventErrorSchema = z
   .object({
-    code: z.enum(eventCommandErrors.map(eventCode) as [string, ...string[]]).openapi({
+    code: z.enum(eventCommandErrors.map(domainErrorCode) as [string, ...string[]]).openapi({
       description: "Stable Events failure code: a rule the Event or Location broke. Tolerate unknown codes."
     })
   })
   .openapi("EventError")
 
-const instant = () => z.string().openapi({ format: "date-time" })
-const nullableText = () => z.string().nullable()
+function nullableText() {
+  return z.string().nullable()
+}
 const DocumentSchema = z.record(z.string(), z.unknown()).openapi("EventDescription", {
   description: "The editor's document (ProseMirror JSON) for an Event description."
 })
@@ -71,19 +75,11 @@ const EventTypeSchema = z.enum(EVENT_TYPES)
 const EventStatusSchema = z.enum(EVENT_STATUSES)
 const VoiceFamilySchema = z.enum(["S", "A", "T", "B"])
 
-function json<T extends z.ZodType>(description: string, schema: T) {
-  return { description, content: { "application/json": { schema } } }
-}
-
-function body<T extends z.ZodType>(schema: T) {
-  return { body: { required: true, content: { "application/json": { schema } } } }
-}
-
 const commandFailures = {
-  400: json("The input broke an Event or Location rule.", EventErrorSchema),
+  400: jsonResponse("The input broke an Event or Location rule.", EventErrorSchema),
   401: errorResponses[401],
   403: errorResponses[403],
-  404: json("`EVENT_NOT_FOUND`: no such Event.", EventErrorSchema)
+  404: jsonResponse("`EVENT_NOT_FOUND`: no such Event.", EventErrorSchema)
 }
 
 const UpcomingEventSchema = z.object({
@@ -184,7 +180,9 @@ const EventEditorSchema = z
   })
   .openapi("EventEditor")
 
-const optional = () => z.string().optional()
+function optional() {
+  return z.string().optional()
+}
 
 /** The Event form as submitted, before the module's rules apply. Empty fields are omitted. */
 const EventInputSchema = z
@@ -244,7 +242,7 @@ const routes = {
     summary: "Published and Cancelled Events in the caller's Audience that have not ended, soonest first.",
     tags: ["events"],
     responses: {
-      200: json(
+      200: jsonResponse(
         "Upcoming Events.",
         z
           .object({ items: z.array(UpcomingEventSchema), permissions: z.object({ create: z.boolean() }) })
@@ -261,7 +259,7 @@ const routes = {
     description: "Drafts, Events outside the caller's Audience and missing Events are all 404.",
     tags: ["events"],
     request: { params: z.object({ eventId: z.string() }) },
-    responses: { 200: json("The Event.", EventPageSchema), 401: errorResponses[401], 404: errorResponses[404] }
+    responses: { 200: jsonResponse("The Event.", EventPageSchema), 401: errorResponses[401], 404: errorResponses[404] }
   }),
   listManagedEvents: createRoute({
     method: "get",
@@ -277,7 +275,7 @@ const routes = {
       })
     },
     responses: {
-      200: json(
+      200: jsonResponse(
         "Manageable Events.",
         z
           .object({
@@ -296,7 +294,7 @@ const routes = {
     operationId: "getEventFormOptions",
     summary: "What a new Event's form offers the caller.",
     tags: ["events"],
-    responses: { 200: json("Form options.", EventFormOptionsSchema), 401: errorResponses[401] }
+    responses: { 200: jsonResponse("Form options.", EventFormOptionsSchema), 401: errorResponses[401] }
   }),
   getEventEditor: createRoute({
     method: "get",
@@ -306,7 +304,7 @@ const routes = {
     tags: ["events"],
     request: { params: eventParams },
     responses: {
-      200: json("The editor.", EventEditorSchema),
+      200: jsonResponse("The editor.", EventEditorSchema),
       400: errorResponses[400],
       401: errorResponses[401],
       404: errorResponses[404]
@@ -318,8 +316,8 @@ const routes = {
     operationId: "createEvent",
     summary: "Creates a Draft Event organised by a Group the caller may organise for.",
     tags: ["events"],
-    request: body(EventInputSchema),
-    responses: { 201: json("The Draft.", Done), ...commandFailures }
+    request: jsonBody(EventInputSchema),
+    responses: { 201: jsonResponse("The Draft.", Done), ...commandFailures }
   }),
   updateEvent: createRoute({
     method: "put",
@@ -327,8 +325,8 @@ const routes = {
     operationId: "updateEvent",
     summary: "Saves the whole Event form onto the Event.",
     tags: ["events"],
-    request: { params: eventParams, ...body(EventInputSchema) },
-    responses: { 200: json("Saved.", Done), ...commandFailures }
+    request: { params: eventParams, ...jsonBody(EventInputSchema) },
+    responses: { 200: jsonResponse("Saved.", Done), ...commandFailures }
   }),
   changeEventStatus: createRoute({
     method: "post",
@@ -336,8 +334,8 @@ const routes = {
     operationId: "changeEventStatus",
     summary: "Publishes, cancels or reinstates an Event.",
     tags: ["events"],
-    request: { params: eventParams, ...body(z.object({ status: EventStatusSchema })) },
-    responses: { 200: json("Changed.", Done), ...commandFailures }
+    request: { params: eventParams, ...jsonBody(z.object({ status: EventStatusSchema })) },
+    responses: { 200: jsonResponse("Changed.", Done), ...commandFailures }
   }),
   deleteEvent: createRoute({
     method: "delete",
@@ -346,7 +344,7 @@ const routes = {
     summary: "Deletes an Event with everything recorded for it.",
     tags: ["events"],
     request: { params: eventParams },
-    responses: { 200: json("Deleted.", Done), ...commandFailures }
+    responses: { 200: jsonResponse("Deleted.", Done), ...commandFailures }
   }),
   listLocations: createRoute({
     method: "get",
@@ -355,7 +353,7 @@ const routes = {
     summary: "Every Location, active ones first, with how many Events use each. Admins only.",
     tags: ["events"],
     responses: {
-      200: json("Locations.", z.object({ items: z.array(LocationSchema) }).openapi("Locations")),
+      200: jsonResponse("Locations.", z.object({ items: z.array(LocationSchema) }).openapi("Locations")),
       401: errorResponses[401],
       403: errorResponses[403]
     }
@@ -366,8 +364,8 @@ const routes = {
     operationId: "createLocation",
     summary: "Adds a Location. Admins only.",
     tags: ["events"],
-    request: body(LocationInputSchema),
-    responses: { 201: json("The Location.", Done), ...commandFailures }
+    request: jsonBody(LocationInputSchema),
+    responses: { 201: jsonResponse("The Location.", Done), ...commandFailures }
   }),
   updateLocation: createRoute({
     method: "put",
@@ -375,8 +373,8 @@ const routes = {
     operationId: "updateLocation",
     summary: "Changes a Location. Admins only.",
     tags: ["events"],
-    request: { params: locationParams, ...body(LocationInputSchema) },
-    responses: { 200: json("Saved.", Done), ...commandFailures }
+    request: { params: locationParams, ...jsonBody(LocationInputSchema) },
+    responses: { 200: jsonResponse("Saved.", Done), ...commandFailures }
   }),
   archiveLocation: createRoute({
     method: "post",
@@ -385,7 +383,7 @@ const routes = {
     summary: "Archives a Location; Events that use it keep it. Admins only.",
     tags: ["events"],
     request: { params: locationParams },
-    responses: { 200: json("Archived.", Done), ...commandFailures }
+    responses: { 200: jsonResponse("Archived.", Done), ...commandFailures }
   })
 }
 
@@ -404,7 +402,7 @@ function iso(date: Date | null) {
 }
 
 function failure(c: Context, kind: (typeof eventCommandErrors)[number]) {
-  const code = eventCode(kind)
+  const code = domainErrorCode(kind)
   return kind === "event-not-found" ? c.json({ code }, 404) : c.json({ code }, 400)
 }
 

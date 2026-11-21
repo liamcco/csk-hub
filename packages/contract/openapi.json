@@ -6673,7 +6673,7 @@
     "/api/v1/account/push-subscriptions/remove": {
       "post": {
         "operationId": "removePushSubscription",
-        "summary": "Removes the caller's own binding for an endpoint, as on disabling notifications or signing out.",
+        "summary": "Removes the caller's own binding for an endpoint, as on disabling notifications or signing out. A signed-in User who has become inactive may still remove theirs.",
         "tags": [
           "account"
         ],

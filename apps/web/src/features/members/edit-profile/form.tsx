@@ -1,5 +1,3 @@
-"use client"
-
 import { updateProfileVoices } from "@csk-hub/contract/client"
 import { ROUTES } from "@csk-hub/shared/core/navigation/site"
 import type { EditProfileState } from "@csk-hub/shared/features/members/edit-profile/state"

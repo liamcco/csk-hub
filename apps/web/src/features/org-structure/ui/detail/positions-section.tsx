@@ -1,5 +1,3 @@
-"use client"
-
 import { holdsElectedPosts } from "@csk-hub/shared/features/org-structure/model"
 import { useTranslations } from "@/core/i18n/translations"
 import { InputField, SelectField } from "@/shared/forms/fields"

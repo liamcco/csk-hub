@@ -111,6 +111,23 @@ describe.skipIf(!database)("Account settings over HTTP", () => {
     expect(test.response?.status).toBe(401)
   })
 
+  test("a deactivated User still signed in can remove their own binding, as on signing out", async () => {
+    const member = await h.signedIn()
+    const other = await h.signedIn()
+    const subscription = browserSubscription()
+    const endpoint = subscription.endpoint
+    await registerPushSubscription({ client: member.client, body: subscription })
+    await h.setAccount(member.member.id, { banned: true })
+
+    expect((await removePushSubscription({ client: other.client, body: { endpoint } })).data).toEqual({
+      removed: false
+    })
+    expect((await removePushSubscription({ client: member.client, body: { endpoint } })).data).toEqual({
+      removed: true
+    })
+    expect((await removePushSubscription({ client: h.client(), body: { endpoint } })).response?.status).toBe(401)
+  })
+
   test("activation sets an invited User's first password from their magic-link session", async () => {
     const invited = await h.signedIn()
     // An invited User has a session from the magic link but no password yet.

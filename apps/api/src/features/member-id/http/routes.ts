@@ -2,7 +2,7 @@ import { logger } from "@csk-hub/shared/core/logging"
 import { createRoute, z } from "@hono/zod-openapi"
 import type { Context, MiddlewareHandler } from "hono"
 import { type ApiEnv, createRouter } from "@/core/http"
-import { getMemberIdSession, issueMemberId, type MemberIdContext, MemberIdError, verifyMemberId } from "./service"
+import { getMemberIdSession, issueMemberId, type MemberIdContext, MemberIdError, verifyMemberId } from "../service"
 
 const memberIdErrorCodes = ["UNAUTHENTICATED", "FORBIDDEN", "INVALID_CODE", "INVALID_REQUEST", "UNAVAILABLE"] as const
 

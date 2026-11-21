@@ -1,5 +1,3 @@
-"use client"
-
 import { app } from "@csk-hub/shared/core/config/app"
 import { ADMIN_ROLE, hasAdminRole, USER_ROLE } from "@csk-hub/shared/shared/roles"
 import { MoreHorizontalIcon } from "lucide-react"
@@ -160,7 +158,7 @@ export function UserActions({
       setState({ status: "idle" })
     }
     if (state.status === "error") {
-      toast.add({ type: "error", title: t("memberActionFailed"), description: state.error })
+      toast.add({ type: "error", title: t("memberActionFailed"), description: t(`memberActionErrors.${state.error}`) })
       setState({ status: "idle" })
     }
   }, [closeDialog, userActionConfig, userName, state, t, router])

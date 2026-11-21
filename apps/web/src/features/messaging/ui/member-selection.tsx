@@ -1,5 +1,3 @@
-"use client"
-
 import { XIcon } from "lucide-react"
 import { useTranslations } from "@/core/i18n/translations"
 import { Button } from "@/shared/ui/base/button"

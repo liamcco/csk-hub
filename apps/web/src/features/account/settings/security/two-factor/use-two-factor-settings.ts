@@ -1,5 +1,3 @@
-"use client"
-
 import { useRef, useState } from "react"
 import { useTranslations } from "@/core/i18n/translations"
 import { useAppRouter } from "@/core/navigation/router"

@@ -1,7 +1,5 @@
-"use client"
-
+import { NAME_MAX_LENGTH } from "@csk-hub/shared/features/org-structure/limits"
 import type { GroupType } from "@csk-hub/shared/features/org-structure/model"
-import { NAME_MAX_LENGTH } from "@csk-hub/shared/features/org-structure/ui/limits"
 import { useState } from "react"
 import { useTranslations } from "@/core/i18n/translations"
 import { InputField } from "@/shared/forms/fields"

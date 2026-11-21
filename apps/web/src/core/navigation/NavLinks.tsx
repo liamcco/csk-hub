@@ -1,5 +1,3 @@
-"use client"
-
 import { isActiveRoute } from "@csk-hub/shared/core/navigation/navigation-utils"
 import { Suspense } from "react"
 import { Link, usePathname } from "@/core/navigation/router"

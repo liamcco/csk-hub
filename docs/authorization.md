@@ -169,8 +169,8 @@ specific request inside the transaction used by the domain command. Structure/ca
 operations use `group.managePositions`. All are currently Admin-only. Creating a Group does not
 require a nonexistent Group ID.
 
-Protected screen queries in `ui/choirs`, `ui/groups`, `ui/detail`, `ui/catalogue` and
-`ui/group-summaries.ts` require `org.manage` themselves. Domain commands/read helpers remain
+Protected screen queries in `read-models/choirs`, `read-models/groups`, `read-models/detail`, `read-models/catalogue` and
+`read-models/group-summaries.ts` require `org.manage` themselves. Domain commands/read helpers remain
 session-independent for composition and operations. No period helper or date reinterpretation is
 introduced. Existing results, savepoints, advisory locks and invariant tests remain intact.
 
@@ -353,7 +353,7 @@ Before adopting it, change the following together:
    constraints; same-user holding checks currently do not exclude every cross-user overlap.
 3. Strengthen transactional/range invariants for one effective holder and elected Position rules.
    Coordinate with per-user/Group locking instead of assuming the current indexes enforce ranges.
-4. Update `reads.ts`, `ui/detail/query.ts`, `ui/group-summaries.ts`, other organisational consumers,
+4. Update `reads.ts`, `read-models/detail/query.ts`, `read-models/group-summaries.ts`, other organisational consumers,
    authz relationship policies and fixtures, feature-owned fact reads and relevant schema
    documentation in one change. Update historical Event audience calculations too: the design
    schema currently uses an inclusive end date.

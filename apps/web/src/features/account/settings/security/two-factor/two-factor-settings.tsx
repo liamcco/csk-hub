@@ -1,5 +1,3 @@
-"use client"
-
 import QRCode from "react-qr-code"
 import { useTranslations } from "@/core/i18n/translations"
 import { InputField } from "@/shared/forms/fields"

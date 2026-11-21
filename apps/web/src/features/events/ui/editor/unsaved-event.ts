@@ -1,12 +1,12 @@
 import { eventDocument } from "@csk-hub/shared/features/events/event-document"
+import type { EventFormValues } from "@csk-hub/shared/features/events/form-input"
+import { rows } from "@csk-hub/shared/features/events/form-input"
 import {
   EVENT_TYPES,
   type EventType,
   PARTICIPATION_MODES,
   type ParticipationMode
 } from "@csk-hub/shared/features/events/model"
-import type { EventFormValues } from "@csk-hub/shared/features/events/ui/editor/form-input"
-import { rows } from "@csk-hub/shared/features/events/ui/editor/form-input"
 
 // The Event form's unsaved copy, kept in the tab's session storage by `useUnsavedForm` so a
 // reload does not lose it. The copy is the form's own values, read off the form element.

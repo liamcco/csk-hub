@@ -1,5 +1,3 @@
-"use client"
-
 import { useTranslations } from "@/core/i18n/translations"
 import { useAppRouter } from "@/core/navigation/router"
 import { CommandDialog, type CommandDialogProps } from "@/shared/forms/CommandDialog"

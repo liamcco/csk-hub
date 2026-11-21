@@ -1,5 +1,3 @@
-"use client"
-
 import { passwordPolicy } from "@csk-hub/shared/shared/policy"
 import { type AnyFieldApi, useForm, useSelector } from "@tanstack/react-form"
 import { useRef, useState } from "react"
