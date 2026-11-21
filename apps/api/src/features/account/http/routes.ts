@@ -112,7 +112,9 @@ const routes = {
     method: "post",
     path: "/account/push-subscriptions/remove",
     operationId: "removePushSubscription",
-    summary: "Removes the caller's own binding for an endpoint, as on disabling notifications or signing out.",
+    summary:
+      "Removes the caller's own binding for an endpoint, as on disabling notifications or signing out. " +
+      "A signed-in User who has become inactive may still remove theirs.",
     tags: ["account"],
     request: jsonBody(EndpointSchema),
     responses: {
@@ -201,7 +203,10 @@ accountRouter.openapi(routes.registerPushSubscription, async (c) => {
 })
 
 accountRouter.openapi(routes.removePushSubscription, async (c) => {
-  const userId = await callerId(c)
+  // Signing out removes the binding first, so a signed-in User who has since become inactive may
+  // still remove their own.
+  const { sessionUserId: userId } = await c.var.resolveRequest()
+  if (!userId) return c.json({ code: "UNAUTHENTICATED" as const }, 401)
   try {
     const removed = await unsubscribe(userId, c.req.valid("json").endpoint, c.var.database)
     return c.json({ removed }, 200)

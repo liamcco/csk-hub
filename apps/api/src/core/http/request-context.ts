@@ -10,6 +10,11 @@ export type ResolvedRequest = Readonly<{
   impersonatedBy: string | null
   /** The validated login session's ID when there is an actor, otherwise null. */
   sessionId: string | null
+  /**
+   * The validated session's User even when that User is inactive, otherwise null. Only for letting
+   * someone remove what is theirs, as signing out does; everything else goes through `authorization`.
+   */
+  sessionUserId: string | null
 }>
 
 /**

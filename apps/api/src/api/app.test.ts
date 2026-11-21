@@ -73,7 +73,12 @@ describe("API assembly", () => {
   test("answers a signed-out caller with a stable error code and no shared caching", async () => {
     const api = createApi({
       ...offline,
-      resolveRequest: async () => ({ authorization: authorizationFor(null), impersonatedBy: null, sessionId: null })
+      resolveRequest: async () => ({
+        authorization: authorizationFor(null),
+        impersonatedBy: null,
+        sessionId: null,
+        sessionUserId: null
+      })
     })
 
     const response = await api.request("/api/v1/me")
@@ -89,7 +94,8 @@ describe("API assembly", () => {
       resolveRequest: async () => ({
         authorization: authorizationFor({ userId: "user-1", isAdmin: true }),
         impersonatedBy: "admin-2",
-        sessionId: "session-1"
+        sessionId: "session-1",
+        sessionUserId: "user-1"
       })
     })
 

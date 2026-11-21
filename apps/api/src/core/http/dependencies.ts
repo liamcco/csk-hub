@@ -34,17 +34,19 @@ export function createApiDependencies({
     async resolveRequest(headers) {
       let impersonatedBy: string | null = null
       let sessionId: string | null = null
+      let sessionUserId: string | null = null
       const authorization = await createAuthorization({
         database,
         readSession: async () => {
           const session = await readFreshSession(auth, headers)
           impersonatedBy = session?.session.impersonatedBy ?? null
           sessionId = session?.session.id ?? null
+          sessionUserId = session?.user.id ?? null
           return session
         }
       }).forCurrentRequest()
-      if (!authorization.actor) return { authorization, impersonatedBy: null, sessionId: null }
-      return { authorization, impersonatedBy, sessionId }
+      if (!authorization.actor) return { authorization, impersonatedBy: null, sessionId: null, sessionUserId }
+      return { authorization, impersonatedBy, sessionId, sessionUserId }
     }
   } satisfies ApiDependencies
 }

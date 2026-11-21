@@ -379,7 +379,7 @@ export const registerPushSubscription = <ThrowOnError extends boolean = false>(o
 });
 
 /**
- * Removes the caller's own binding for an endpoint, as on disabling notifications or signing out.
+ * Removes the caller's own binding for an endpoint, as on disabling notifications or signing out. A signed-in User who has become inactive may still remove theirs.
  */
 export const removePushSubscription = <ThrowOnError extends boolean = false>(options: Options<RemovePushSubscriptionData, ThrowOnError>): RequestResult<RemovePushSubscriptionResponses, RemovePushSubscriptionErrors, ThrowOnError> => (options.client ?? client).post<RemovePushSubscriptionResponses, RemovePushSubscriptionErrors, ThrowOnError>({
     url: '/api/v1/account/push-subscriptions/remove',
