@@ -6,7 +6,7 @@ import { createRoot } from "react-dom/client"
 
 registerDom()
 
-// The toolbar reads its labels from next-intl, which wants a provider this test has no
+// The toolbar reads its labels through use-intl, which wants a provider this test has no
 // use for; the labels are not what is under test.
 mock.module("@/core/i18n/translations", () => ({
   useTranslations: () => (key: string) => key,
