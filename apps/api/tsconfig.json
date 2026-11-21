@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "paths": {
+      "@/*": ["./src/*"],
+      "@test/*": ["./test/*"],
+      "@csk-hub/shared/*": ["../../packages/shared/src/*"],
+      "@csk-hub/contract/*": ["../../packages/contract/*"]
+    }
+  },
+  "include": ["src", "test", "scripts", "*.ts", "../../packages/shared/src/core/i18n/use-intl.d.ts"]
+}

@@ -1,54 +1,47 @@
 # Deployment
 
-How CSK Hub is packaged and hosted: one release image, a Compose stack that runs it, and the
-scripts that publish and deploy it. The decision behind this layout is
+How CSK Hub is packaged and hosted: two release images (API and web), a Compose stack that runs
+them, and the scripts that publish and deploy them. The decision behind this layout is
 [ADR 0012](../docs/adr/0012-packaging-lives-in-deploy-and-operations-ship-in-the-image.md).
 
 | File | Purpose |
 | --- | --- |
-| `Dockerfile` | The release image. Build context is the repository root. |
-| `compose.yml` | The stack: `db`, `redis`, `migrate`, `api`, `web` and `proxy`. |
-| `Caddyfile` | The proxy's routes: API paths to `api`, everything else to `web`. |
+| `Dockerfile` | The release images (targets `api` and `web`). Build context is the repository root. |
+| `compose.yml` | The stack: `db`, `redis`, `migrate`, `api` and `web`. |
+| `compose.local.yml` | Local stack only: publishes the database on loopback for `bun run e2e --stack`. |
+| `Caddyfile` | The web server's routes: API paths to `api`, the SPA's files and history fallback for the rest. |
 | `local-stack.sh` | Start, validate, stop and reset the stack locally from this checkout. |
-| `validate-stack.ts` | The checks `local-stack.sh validate` runs through the proxy. |
+| `validate-stack.ts` | The checks `local-stack.sh validate` runs through the stack's origin. |
 | `compose.dev.yml` | Local development PostgreSQL and Redis only, for `bun dev`. |
 | `stack.env.example` | The stack's configuration; copy to `stack.env` or enter it in Portainer. |
-| `publish-image.sh` | Build, check and publish an image from a clean checkout of one commit. |
-| `deploy-image.sh` | Deploy one published image. |
+| `publish-image.sh` | Build, check and publish both images from a clean checkout of one commit. |
+| `deploy-image.sh` | Deploy one published pair of images. |
 
-## The release image
+## The release images
 
-One Bun image runs everything; there is no Node.js in it. It contains the Next.js standalone
-server (`server.js`), the standalone API (`api.js`), the migration SQL (`drizzle/`) and the
-maintenance CLI (`cli.js`), so each release is one artifact.
+The API and the web app build independently, from `deploy/Dockerfile`:
 
-`api.js` is `src/api/server.ts` bundled: Hono on Bun with its own database and Redis
-connections. It contains no Next.js; `src/api/standalone.test.ts` builds it the same way and
-fails if any Next.js module is in its graph.
+- `api` (`--target api`): Bun with the bundled API (`api.js`, `apps/api/src/api/server.ts`), the
+  maintenance CLI (`cli.js`) and the migration SQL (`drizzle/`). There is no Node.js in it.
+  `apps/api/src/api/standalone.test.ts` bundles the API the same way.
+- `web` (`--target web`): Caddy with the SPA's static build (`apps/web/dist`) and the
+  `Caddyfile`. It holds no secrets and needs no database.
 
-Next.js runs on Bun without Node. Verified on the local stack: the production build, sign-in,
-password reset, the admin and org-structure pages and the maintenance commands. One difference
-from Node: Bun logs `unhandledRejection: AbortError` from `node:async_hooks` around some
-navigations (the reset-password page and its redirect), which Node does not. Pages and actions
-complete normally; the Next.js runtime is being retired, so this is accepted rather than
-worked around.
-
-`next build` inlines `NEXT_PUBLIC_VAPID_PUBLIC_KEY` into the browser bundle, so the build
-requires it: set it when publishing, and give the stack the same key as `VAPID_PUBLIC_KEY`. A new
-key pair therefore means a new image.
+Vite inlines `VITE_VAPID_PUBLIC_KEY` into the browser bundle, so the web build requires it as a
+build argument: give the stack the same key as `VAPID_PUBLIC_KEY`. A new key pair therefore means
+a new web image.
 
 ## The stack
 
-`compose.yml` runs everything on the stack's private network. Only `proxy` publishes a port
-(`APP_PORT`); services reach each other by service name (`db`, `redis`, `api:3000`, `web:3000`).
+`compose.yml` runs everything on the stack's private network. Only `web` publishes a port
+(`APP_PORT`); services reach each other by service name (`db`, `redis`, `api:3000`).
 
 | Service | Runs | Connects as |
 | --- | --- | --- |
 | `db`, `redis` | PostgreSQL 17, Redis 7 | |
 | `migrate` | `bun cli.js migrate`, then exits | `csk_hub`, the schema owner |
 | `api` | `bun api.js`: `/api/v1`, Better Auth (`/api/auth`), Member ID (`/api/member-id`), real-time (`/api/realtime`) and the outbox delivery worker | `csk_hub_app`, data only |
-| `web` | `bun server.js`: the Next.js pages | `csk_hub_app`, data only |
-| `proxy` | Caddy: one origin for browsers and the iPhone companion | |
+| `web` | Caddy: the SPA and the API behind it, one origin for browsers and the iPhone companion | |
 
 On every start:
 
@@ -60,10 +53,12 @@ On every start:
 3. `api` starts only if `migrate` exited successfully. A failed migration leaves it stopped, and
    `docker compose logs migrate` says why. Pending migrations apply in one transaction, so a
    failed run changes nothing: redeploying the previous image brings the stack back.
-4. `web` starts once `api` is healthy, then `proxy`.
+4. `web` starts once `api` is healthy.
 
-The proxy routes by path: `/api` and `/api/*` go to `api`, which answers unknown API paths with
-`404 {"code":"NOT_FOUND"}`; everything else goes to `web`. Nothing is compressed or buffered, so
+`web` routes by path: `/api` and `/api/*` go to `api`, which answers unknown API paths with
+`404 {"code":"NOT_FOUND"}`. A path ending in a file extension is a static file or a 404; every
+other path gets the SPA's `index.html` (history fallback), so bookmarks and deep links load. Hashed
+`/assets/*` are cached as immutable; everything else is revalidated. Nothing is compressed or buffered, so
 server-sent events stream as they are written. `/api/realtime/*` has its own route with a 60-second
 upstream read timeout, above the event stream's 15-second heartbeat (Bun's idle timeout in the
 API is 60 seconds too).
@@ -72,22 +67,23 @@ The API delivers the real-time outbox in the background, independently of reques
 pending work on startup and takes over leases abandoned by a stopped runner. Several `api`
 replicas can run at once; leases make each record go out once. On stop (`stop_grace_period`
 30 seconds) it ends event streams, finishes its current delivery wave and exits. See
-[`src/core/realtime/README.md`](../src/core/realtime/README.md) for the logs to monitor.
+[`apps/api/src/core/realtime/README.md`](../apps/api/src/core/realtime/README.md) for the logs to
+monitor.
 
-The web server renders pages from the API at `API_INTERNAL_URL` (`http://api:3000`), forwarding
-the caller's cookie and the public origin as `Origin`. The API accepts unsafe requests only with
-that public origin (`BETTER_AUTH_URL`), however it is reached.
+The API accepts unsafe requests only with the public origin (`BETTER_AUTH_URL`), however it is
+reached.
 
 The database is reached as `db:5432` with `sslmode=disable`: the connection never leaves the
-private network. Everything else in `src/core/db/tls.ts` is unchanged.
+private network. Everything else in `apps/api/src/core/db/tls.ts` is unchanged.
 
 ### Run it locally
 
 Needs Docker and Bun. From the repository root:
 
 ```bash
-deploy/local-stack.sh up         # build csk-hub:local from the working tree and start the stack
-deploy/local-stack.sh validate   # check it through the proxy
+deploy/local-stack.sh up         # build csk-hub-api:local and csk-hub-web:local and start the stack
+deploy/local-stack.sh validate   # check it through its origin
+bun run e2e --stack              # the browser journeys against it (on a freshly reset stack)
 deploy/local-stack.sh logs       # follow the services' logs
 deploy/local-stack.sh down       # stop it, keeping its data
 deploy/local-stack.sh reset      # stop it and delete its database, Redis and certificate data
@@ -96,8 +92,9 @@ deploy/local-stack.sh reset      # stop it and delete its database, Redis and ce
 The Hub is at <https://localhost:8443>. The first `up` writes `deploy/local.env` (ignored by git)
 with fresh secrets and VAPID keys; delete it with `reset` to start over. Caddy serves localhost
 with a certificate from its own authority, which browsers warn about until it is trusted:
-`docker compose -p csk-hub-local cp proxy:/data/caddy/pki/authorities/local/root.crt .` exports
-it.
+`docker compose -p csk-hub-local cp web:/data/caddy/pki/authorities/local/root.crt .` exports
+it. `compose.local.yml` publishes the database on `127.0.0.1:${DB_PORT:-5434}` (set `DB_PORT` in
+`deploy/local.env` when that port is taken) for the journeys to seed their Users.
 
 Email is printed to the logs (`EMAIL_MODE=log`). To sign in, create an Admin and open the link
 from the printed invitation:
@@ -106,17 +103,17 @@ from the printed invitation:
 docker compose -p csk-hub-local exec api bun cli.js admin bootstrap --email you@example.org --name "You"
 ```
 
-`validate` checks, through the proxy: unknown API paths get the API's error and web paths reach
-the web server; Better Auth activation and sign-in for a freshly invited Admin; Member ID issue
-and verify; a protected write that needs Hub's `Origin`; a protected page that the web server
-renders from the API by service name; and real-time delivery: an event stream that is neither
+`validate` checks, through the stack's origin: unknown API paths get the API's error; web paths,
+bookmarks and deep links get the SPA while missing files answer 404; Better Auth activation and
+sign-in for a freshly invited Admin; Member ID issue and verify; a protected write that needs
+Hub's `Origin`; the reads a protected page makes; and real-time delivery: an event stream that is neither
 buffered nor compressed and outlives its heartbeat interval, acknowledgement suppressing the push
 fallback, push retry against a push sink that refuses connections, recovery after an API restart
 and from an abandoned lease, two API runners publishing each record once, and publication retry
 across a Redis restart followed by replay on reconnect. The real-time checks stop and start the
 API and Redis and briefly add containers, so run them against a local stack only.
 
-`up` is also how to apply new migrations: it rebuilds the image and `migrate` runs before the new
+`up` is also how to apply new migrations: it rebuilds the images and `migrate` runs before the new
 `api` starts. The stack's project name is `csk-hub-local`, separate from the development database
 in `compose.dev.yml`, so both can run at once.
 
@@ -129,16 +126,19 @@ deploy/publish-image.sh --ref HEAD --no-push           # build and check only, i
 ```
 
 Publishing checks out exactly that commit in a temporary worktree, so nothing uncommitted reaches
-the image. It runs lint, typecheck and the tests there, builds for `PLATFORM` (default
-`linux/amd64`) and pushes `IMAGE:sha-<commit>` (default `ghcr.io/herr-ek/csk-hub`). It prints the
-tag and the digest; deploy by digest.
+the images. It runs lint, typecheck and the tests there, builds both targets for `PLATFORM`
+(default `linux/amd64`) and pushes `IMAGE-api:sha-<commit>` and `IMAGE-web:sha-<commit>` (default
+`IMAGE` is `ghcr.io/herr-ek/csk-hub`). It needs `VITE_VAPID_PUBLIC_KEY` and prints both pinned
+references; deploy by digest.
 
 - Pushing uses Docker's existing registry login: `docker login ghcr.io` with a token that can
   write packages. Automation would use its built-in registry token instead.
-- `--deploy` calls `deploy-image.sh` with the published `image@digest`. It POSTs the stack's
-  Portainer webhook (`PORTAINER_WEBHOOK_URL`) with `CSK_HUB_IMAGE` set to that image. The webhook
+- `--deploy` calls `deploy-image.sh` with both published `image@digest` references. It POSTs the
+  stack's Portainer webhook (`PORTAINER_WEBHOOK_URL`) with `CSK_HUB_API_IMAGE` and
+  `CSK_HUB_WEB_IMAGE` set to them. The webhook
   URL is a deployment credential, configured separately from registry access.
-- Without `--deploy`, select the release in Portainer by setting `CSK_HUB_IMAGE` and redeploying.
+- Without `--deploy`, select the release in Portainer by setting `CSK_HUB_API_IMAGE` and
+  `CSK_HUB_WEB_IMAGE` and redeploying.
   Either way, `migrate` runs before the new app starts.
 
 A manually triggered release workflow that calls `publish-image.sh --deploy` is planned but not
@@ -146,7 +146,7 @@ added yet; pushing to `master` runs CI only.
 
 ## Maintenance commands
 
-The image ships the maintenance CLI. Run it in the api container's console in Portainer
+The API image ships the maintenance CLI. Run it in the api container's console in Portainer
 (or `docker compose exec api ...` locally); it uses that container's data-only database role and
 email configuration, and none of its commands takes a target.
 
@@ -178,15 +178,16 @@ editable default data owned by Admins after `org bootstrap`.
 
 | Ours | GUD's |
 | --- | --- |
-| The image, its contents and its CPU target | The host, Docker and Portainer |
+| The images, their contents and their CPU target | The host, Docker and Portainer |
 | `compose.yml`, `stack.env` values and secrets | The reverse proxy, TLS and the public hostname |
 | Publishing and choosing releases | Registry pull access from the host |
 | Migrations and maintenance commands | Host-level monitoring and updates |
 | Application data correctness | To be agreed: backups and recovery (below) |
 
 Portainer reads `deploy/compose.yml` by its repository-relative path. Confirm on GUD's setup at
-production rollout, together with the CPU architecture and the webhook's `CSK_HUB_IMAGE`
-override.
+production rollout, together with the CPU architecture and the webhook's `CSK_HUB_API_IMAGE` and
+`CSK_HUB_WEB_IMAGE` overrides. The publish and deploy scripts are untested against a registry and
+Portainer since the split into two images.
 
 ## Backups
 

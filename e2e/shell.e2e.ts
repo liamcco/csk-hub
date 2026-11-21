@@ -10,8 +10,10 @@ test("an ordinary member has no administration link and cannot open administrati
 
   await expect(primary(page).getByRole("link", { name: "Members" })).toBeVisible()
   await expect(primary(page).getByRole("link", { name: "Admin" })).toHaveCount(0)
-  const response = await page.goto("/admin/users")
-  expect(response?.status()).toBe(403)
+  // The SPA serves every web path; the page shows the denial and the API refuses the read itself.
+  await page.goto("/admin/users")
+  await expect(page.getByRole("heading", { level: 1, name: "No access" })).toBeVisible()
+  expect((await page.request.get("/api/v1/users")).status()).toBe(403)
 })
 
 test("a demoted Admin loses administration on their next page load", async ({ page }) => {

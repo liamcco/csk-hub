@@ -1,7 +1,9 @@
-# The stack's single origin. Routing is by path only:
+# The stack's single origin, served by the web image: the SPA's static files plus the API behind it.
+# Routing is by path only:
 #   /api/realtime/*  the standalone API's event stream and acknowledgements
 #   /api, /api/*     the standalone API, which answers unknown API paths itself (404 NOT_FOUND)
-#   everything else  the web server
+#   a path ending in a file extension  that static file, or 404
+#   everything else  the SPA's index.html (history fallback), so bookmarks and deep links load
 # Nothing is compressed or buffered, so server-sent events stream as they are written.
 {
 	admin off
@@ -30,6 +32,19 @@
 	}
 
 	handle {
-		reverse_proxy web:3000
+		root * /srv
+		# Hashed build output never changes under its name; everything else is revalidated.
+		header /assets/* Cache-Control "public, max-age=31536000, immutable"
+		@mutable not path /assets/*
+		header @mutable Cache-Control "no-cache"
+
+		@file path_regexp file \.[A-Za-z0-9]+$
+		handle @file {
+			file_server
+		}
+		handle {
+			try_files {path} /index.html
+			file_server
+		}
 	}
 }

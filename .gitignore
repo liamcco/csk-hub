@@ -1,8 +1,7 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
-/node_modules
-/tools/*/node_modules
+node_modules/
 /.pnp
 .pnp.*
 .yarn/*
@@ -54,3 +53,6 @@ next-env.d.ts
 
 # The local Compose stack's generated secrets (deploy/local-stack.sh)
 /deploy/local.env
+
+# build output
+dist/

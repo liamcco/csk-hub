@@ -9,15 +9,12 @@
     "ignoreUnknown": true,
     "includes": [
       "**",
-      "!node_modules",
-      "!.next",
-      "!dist",
-      "!build",
-      "!next-env.d.ts",
-      "!*.md",
-      "!drizzle",
-      "!types",
-      "!contract"
+      "!**/node_modules",
+      "!**/dist",
+      "!**/*.md",
+      "!apps/api/drizzle",
+      "!packages/contract/client",
+      "!packages/contract/openapi.json"
     ]
   },
   "formatter": {
@@ -65,7 +62,7 @@
   },
   "overrides": [
     {
-      "includes": ["src/shared/ui/base/**"],
+      "includes": ["apps/web/src/shared/ui/base/**"],
       "linter": {
         "rules": {
           "style": {

@@ -7,11 +7,12 @@ For naming, function style, and TSDoc, see [code-style.md](code-style.md). Use t
 ## Contents
 
 - [Design vocabulary](#design-vocabulary)
+- [Workspace packages](#workspace-packages)
 - [Feature modules](#feature-modules)
 - [Dependency direction](#dependency-direction)
 - [Drizzle schema](#drizzle-schema)
 - [Database operations](#database-operations)
-- [Next.js and React](#nextjs-and-react)
+- [Screens and routes](#screens-and-routes)
 - [Reuse and duplication](#reuse-and-duplication)
 - [UI quality](#ui-quality)
 - [Tests](#tests)
@@ -29,20 +30,45 @@ Use the `codebase-design` vocabulary when discussing structure:
 
 Avoid shallow pass-through modules. A module earns its place when deleting it would push complexity back into multiple callers.
 
+## Workspace Packages
+
+The repository is a Bun workspace (isolated linker). Each package declares its own dependencies,
+tsconfig and tests, and builds on its own:
+
+- `apps/api` (`@csk-hub/api`): the Hono API on Bun, the maintenance CLI (`src/cli`), the Drizzle
+  schema and migrations (`drizzle/`) and the local database CLI (`scripts/dev`).
+- `apps/web` (`@csk-hub/web`): the Vite React SPA (TanStack Router and Query).
+- `packages/shared` (`@csk-hub/shared`): code both applications run: domain models and their enum
+  value lists, form schemas, the rich-text document schema, locales and the translation
+  catalogues (`src/messages`). It imports nothing from the apps and uses relative imports only.
+- `packages/contract` (`@csk-hub/contract`): the OpenAPI document and the generated client. Run
+  `bun run api:generate` after changing route schemas and commit the result.
+- `e2e/` (root): the Playwright journeys; `deploy/`: packaging and the Compose stack.
+
+Inside each app `@/*` is that app's `src`; shared and contract code is imported as
+`@csk-hub/shared/<path>` and `@csk-hub/contract/<path>`. The web app reaches the API only over
+HTTP through the contract: it cannot import API modules, so types for API data come from the
+contract (see `apps/web/src/core/api-client/README.md`). Put a module in `packages/shared` only
+when both applications run it.
+
+Each package mirrors the `src` layout below, so a feature may have files in all three: its
+operations and HTTP routes in `apps/api/src/features/<name>`, its screens and queries in
+`apps/web/src/features/<name>`, and its model in `packages/shared/src/features/<name>`.
+
 ## Feature Modules
 
 Prefer feature-oriented modules for product behavior. A future feature should keep its domain logic, write operations, read helpers, tests, and feature-specific UI close together instead of scattering them by technical layer.
 
-The source tree uses four top-level areas plus Next.js and tooling-owned exceptions:
+Each package's source tree uses these top-level areas:
 
 - `src/core`: app infrastructure, app shell wiring, and external adapters.
-- `src/app`: Next.js route topology and framework route files.
-- `src/api`: the HTTP API's composition root. `createApi` mounts Better Auth and feature routers;
-  `runtime.ts` binds it to the database. Next.js hosts it through `src/app/api/[...path]` during
-  the migration. Only `src/app` may import it.
+- `src/app` (web): the route tree (`router.tsx`), the app shell layouts and the lazily loaded page
+  modules (`pages/`).
+- `src/api` (API): the HTTP API's composition root. `createApi` mounts Better Auth and feature
+  routers; `runtime.ts` binds it to the database; `server.ts` serves it. Nothing else imports it.
+- `src/cli` (API): the maintenance CLI shipped in the API image.
 - `src/shared`: cross-feature presentation primitives and generic helpers.
 - `src/features/<feature-name>`: product and domain behavior.
-- `src/proxy.ts`: Next.js proxy convention file.
 
 Use `src/features/<feature-name>` for durable product capabilities, not route groups or user roles. For example, `admin` is a surface, not a feature.
 
@@ -58,9 +84,8 @@ Use `src/shared` only for genuinely cross-feature modules:
 Use `src/core` for infrastructure and app shell modules:
 
 - `src/core/auth`: Better Auth setup, server/client auth objects, plugins, cookie integration, and auth infrastructure tests.
-- `src/core/authz`: application authorization. `@/core/authz` holds denial errors and types;
-  `@/core/authz/request` binds fresh actor resolution and enforcement to the Next.js session, so
-  nothing the API imports may use it (the API resolves authority through `src/core/http`). Pure policies evaluate feature-supplied resource and relationship
+- `src/core/authz`: application authorization. `@/core/authz` holds denial errors and types; the
+  API resolves authority per request through `src/core/http`. Pure policies evaluate feature-supplied resource and relationship
   attributes; only actor resolution reads the database. It depends on auth and database schemas,
   never features. See
   [authorization adoption](authorization.md) before migrating existing guards.
@@ -70,24 +95,21 @@ Use `src/core` for infrastructure and app shell modules:
   request headers. A feature exposes its operations by exporting a router from its public
   entrypoint; `src/api` mounts it under `/api/v1` (Member ID keeps its released
   `/api/member-id` paths). Run `bun run api:generate` after changing
-  route schemas and commit `contract/`. A feature whose public entrypoint exports screens puts
-  its router in an `http/` subfolder with its own `index.ts`, so the API never loads React.
-  The standalone API (`src/api/server.ts`) must not reach Next.js; `src/api/standalone.test.ts`
-  bundles it and fails if it does. Feature operations therefore take the request's resolver or
-  context explicitly instead of defaulting to the Next.js session.
-- `src/core/api-client`: the web application's only way to authoritative behaviour: the generated
-  client (`@contract/client`) bound to the server (`getServerApiClient`, `readForScreen`) or the
-  browser (`browserApiClient`). Migrated screens never import `@/core/db`, `@/core/authz` or
-  feature services. Progress is tracked in `docs/migration/api-slices.md`.
+  route schemas and commit `packages/contract`. A feature puts its router in an `http/`
+  subfolder with its own `index.ts`. Feature operations take the request's resolver or context
+  explicitly.
+- `src/core/api-client` (web): the web application's only way to authoritative behaviour: the
+  generated client (`@csk-hub/contract/client`) bound to the browser (`browserApiClient`).
 - `src/core/email`: email delivery adapters.
-- `src/core/i18n`: locale definitions, locale-cookie handling, next-intl routing/request configuration, and translation loading. See `src/core/i18n/README.md` before adding translated UI.
+- `src/core/i18n`: locale definitions, the locale cookie, the `use-intl` integration and
+  translation loading. See `packages/shared/src/core/i18n/README.md` before adding translated UI.
 - `src/core/preferences`: the application-wide user-preferences contract, including storage, runtime validation, backward-compatible defaults, and atomic partial updates used by app-shell and feature modules.
 
 Do not promote code to shared space just because two files currently look similar. Promote only when the interface is stable and the shared module improves locality.
 
 ### Internationalization
 
-Locale infrastructure belongs in `src/core/i18n`; translation catalogs are application-wide assets in `messages/`. Add user-facing copy to every supported catalog in the same change. Read the [i18n guide](../src/core/i18n/README.md) when changing copy, locale behavior, or translation integration; it owns the detailed conventions.
+Locale infrastructure belongs in `src/core/i18n`; translation catalogs are application-wide assets in `packages/shared/src/messages/`. Add user-facing copy to every supported catalog in the same change. Read the [i18n guide](../packages/shared/src/core/i18n/README.md) when changing copy, locale behavior, or translation integration; it owns the detailed conventions.
 
 ### Workflow-local structure
 
@@ -109,9 +131,9 @@ The subfolders are illustrative workflow boundaries, not a required template. Sh
 
 A feature may carry a `README.md` at its root for rules a reader cannot infer from the code around them — usually an obligation imposed from outside the feature, such as an ADR the feature has to keep satisfying. Keep it to what the code cannot say for itself; conventions that hold across the whole tree belong in this guide instead.
 
-- [`src/features/rich-text/README.md`](../src/features/rich-text/README.md): how a feature consumes the editor, and how to add a node or mark to it — three lists and a stylesheet, no consumer changes.
-- [`src/features/org-structure/README.md`](../src/features/org-structure/README.md): the rules the org-structure module enforces because the database cannot, and why application code writes its tables only through it.
-- [`src/features/events/README.md`](../src/features/events/README.md): the rules the events module enforces because the database cannot, and why its commands check no permissions.
+- [`apps/web/src/features/rich-text/README.md`](../apps/web/src/features/rich-text/README.md): how a feature consumes the editor, and how to add a node or mark to it — three lists and a stylesheet, no consumer changes.
+- [`apps/api/src/features/org-structure/README.md`](../apps/api/src/features/org-structure/README.md): the rules the org-structure module enforces because the database cannot, and why application code writes its tables only through it.
+- [`apps/api/src/features/events/README.md`](../apps/api/src/features/events/README.md): the rules the events module enforces because the database cannot, and why its commands check no permissions.
 
 ## Dependency Direction
 
@@ -122,13 +144,14 @@ Dependencies should point inward toward stable infrastructure and generic helper
 - A feature may import another feature only through that feature's public entrypoint.
 - `src/shared` may import other `src/shared` modules, but not `src/core` or `src/features`.
 - `src/core` may import other `src/core` modules and `src/shared`, but not `src/features`.
-- Framework convention files, such as `src/proxy.ts`, stay where Next.js expects them and delegate inward when their logic grows.
+- Both apps may import `packages/shared`; it imports neither app. Only the web app imports
+  `packages/contract`'s client (the API's own tests use it as an HTTP client).
 
 Prefer public entrypoints at feature and subfeature boundaries. Route files should import screens from entries such as `@/features/user-management`, not from deep implementation files like `@/features/user-management/users-screen`. Inside a feature or subfeature, local imports may target sibling implementation files directly.
 
 ## Drizzle Schema
 
-Keep Drizzle schema files split by ownership under `src/core/db/schema`.
+Keep Drizzle schema files split by ownership under `apps/api/src/core/db/schema`. A model enum's value list lives in the shared model (for example `EVENT_TYPES`), and the schema's `pgEnum` takes it.
 
 - Auth-owned models stay in `auth.ts`.
 - Choir organization models stay in their own schema file.
@@ -139,21 +162,26 @@ When a model decision is hard to reverse or establishes an important domain rule
 
 ## Database Operations
 
-Database infrastructure — the client, schemas and TLS policy — belongs in `src/core/db`. Application code consumes `POSTGRES_URL` and never chooses between local and production; see `src/core/db/README.md`.
+Database infrastructure — the client, schemas and TLS policy — belongs in `apps/api/src/core/db`. Application code consumes `POSTGRES_URL` and never chooses between local and production; see `apps/api/src/core/db/README.md`.
 
-Local database tooling — migrations, Studio, reset and seeding — belongs in the dev CLI in `scripts/dev`, which refuses any database that is not local; see `scripts/dev/README.md`. Commands that run in a deployed environment (migrate, org bootstrap, Admin bootstrap and recovery) are application code in `src/cli` and ship in the release image. Packaging and hosting belong in `deploy/`; see `deploy/README.md` and ADR 0012.
+Local database tooling — migrations, Studio, reset and seeding — belongs in the dev CLI in `apps/api/scripts/dev`, which refuses any database that is not local; see its README. Commands that run in a deployed environment (migrate, org bootstrap, Admin bootstrap and recovery) are application code in `apps/api/src/cli` and ship in the API image. Packaging and hosting belong in `deploy/`; see `deploy/README.md` and ADR 0012.
 
-## Next.js And React
+## Screens And Routes
 
-Keep route files thin. A `page.tsx`, `layout.tsx`, or route handler should compose modules; it should not become the main implementation of a feature.
+Keep route definitions thin. `apps/web/src/app/router.tsx` declares each page's path, access
+gate and loader; the page's screen loads lazily from an area module in `src/app/pages/`, which
+composes feature screens. A route file should not become the main implementation of a feature.
 
 For screens with real behavior, split along meaningful seams:
 
-- route/page module: routing, loading the initial screen, and composing the screen
+- route: path, access gate and the loader that fills the query cache
 - screen module: page-level layout and workflow orchestration
 - feature UI modules: reusable or locally composed UI sections
-- server/write modules: mutations, validation, authorization, and persistence
-- query/read modules: data loading shaped for the screen
+- query modules (`queries.ts`): TanStack Query options over the generated client
+- API operations: mutations, validation, authorization and persistence, behind HTTP routes
+
+Keep query options out of screen modules: the router imports them statically, and a screen
+module it touches lands in the start bundle with everything the screen imports.
 
 Prefer small, named UI modules when they protect locality. Avoid splitting JSX mechanically into tiny fragments that do not reduce knowledge required by callers.
 
@@ -165,49 +193,23 @@ Each read function should serve one caller or one coherent workflow and return a
 
 Focused reads improve locality, make data dependencies explicit, reduce accidental over-fetching, keep return types understandable, and give each workflow a stable testable seam. Avoid a single query function or return type that combines the needs of collection, detail, hierarchy, and other unrelated screens.
 
-Server Components are the default. Use Client Components only for interaction, browser APIs, optimistic state, or controlled UI state. Put `"use client"` as low in the tree as practical.
+### Caching and the session
 
-### Server-side session reads
+Loaders call `ensureQueryData`, so a revisited page renders from the cache and refreshes in the
+background. Real-time events invalidate the queries they affect; nothing refetches on focus or a
+timer. The web app loads the session once at start (`core/auth/session`); sign-in, sign-out, a 401
+and an account-status event reload it. The session only shapes routing and presentation.
 
-Protected reads and commands in Next.js code use `@/core/authz/request`; API routes use the
-request's own `resolveRequest`. `requirePermission` establishes authority and
-returns the authenticated actor, while `can` supplies UI hints. Messaging uses `app.access`
-for fresh active identity, then applies its own Conversation access rules. See
-[the adoption guide](authorization.md) for transaction and resource requirements. Never pass cached session claims or submitted actor IDs as authority.
+### Authority in the API
 
-For presentation metadata, read the request's Better Auth session through
-[`getRequestSession()`](../src/core/auth/session.server.ts), imported from
-`@/core/auth/session.server`. React `cache()` deduplicates it within a Server Component render,
-not across requests or Server Action executions. Treat that snapshot as read-only; it retains
-Better Auth's cookie cache and ordinary refresh behavior. It is not an authorization boundary.
-
-Authz calls the same module's `getFreshRequestSession()` on every operation. That helper bypasses
-the cookie cache and disables refresh so validation cannot attempt a separate-connection write
-during a protected operation. Authz reloads the User's active status and roles; features load
-resource facts and coordinate locks themselves. Native Better Auth endpoints retain their own
-authentication and User/Session permissions.
-
-Both session helpers await `io()` before `auth.api.getSession()`. Better Auth checks the current
-time, and headers alone may resolve during App Shell prerendering. Rendering callers need an
-enclosing `<Suspense>` boundary around session reads and guards. Keep them outside `"use cache"`,
-`"use cache: private"`, and `"use cache: remote"`: `io()` does not provide the intended gate inside
-cache scopes. Do not cache an authorization result.
-
-API operations do not use these helpers or any Next.js request API. They call
-`c.var.resolveRequest()` once per operation, which validates the session named by the request's
-own headers through `readFreshSession` and reloads the User, then use the returned authorization.
-
-Direct `auth.api.getSession()` calls stay confined to the session helpers and `src/proxy.ts`.
-Proxy's cached-session navigation gates are preliminary; protected data and Server Actions
-establish fresh authority themselves. Do not query per-resource policies from Proxy.
-
-### Server-only modules
-
-Add `import "server-only"` to modules that must never enter a client bundle, including database access, private environment variables, filesystem access, privileged server SDKs, and data-access operations that expose sensitive records. Put the guard on the leaf module that contains the server-only behavior so a deep import cannot bypass it.
-
-A public entrypoint may also import `server-only` when the entire module is deliberately a server-side capability. Do not re-export otherwise universal schemas, types, constants, or pure validation through that entrypoint. Give universal code a separate import path so Client Components can use it without crossing a server-only boundary.
-
-Do not add `server-only` to universal modules merely because their current callers happen to run on the server. Files marked with `"use server"` are already compiled in the server layer; they may additionally import `server-only`, but do not need it solely to establish that boundary. Keep Server Actions thin and delegate database access to a guarded server-only data-access module.
+API operations call `c.var.resolveRequest()` once per operation, which validates the session named
+by the request's own headers through `readFreshSession` and reloads the User, then use the
+returned authorization. `requirePermission` establishes authority and returns the authenticated
+actor, while `can` supplies UI hints. Messaging uses `app.access` for fresh active identity, then
+applies its own Conversation access rules. See [the adoption guide](authorization.md) for
+transaction and resource requirements. Never pass cached session claims or submitted actor IDs as
+authority, and do not cache an authorization result. Direct `auth.api.getSession()` calls stay
+confined to `apps/api/src/core/auth/request-session.ts`.
 
 ## Reuse And Duplication
 
@@ -223,7 +225,7 @@ Do not extract too early:
 
 Design mobile-first and responsive from the first implementation pass. Screens should work well on narrow viewports before desktop refinements are added.
 
-Prioritize existing shadcn/ui-style components from `src/shared/ui/base` for common controls, layout primitives, dialogs, menus, tables, forms, feedback, and navigation. Add or adapt reusable UI primitives there when the pattern is genuinely shared; keep feature-specific compositions inside the feature module.
+Prioritize existing shadcn/ui-style components from `apps/web/src/shared/ui/base` for common controls, layout primitives, dialogs, menus, tables, forms, feedback, and navigation. Add or adapt reusable UI primitives there when the pattern is genuinely shared; keep feature-specific compositions inside the feature module.
 
 Prioritize fast perceived feedback:
 

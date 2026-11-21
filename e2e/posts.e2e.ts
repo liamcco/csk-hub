@@ -1,17 +1,7 @@
-import { expect, type Page, test } from "@playwright/test"
-import { fixtures, signIn } from "./support"
+import { expect, test } from "@playwright/test"
+import { fixtures, signIn, writePost as write } from "./support"
 
 const { alto, tenor, admin } = fixtures
-
-async function write(page: Page, title: string, button: "Save draft" | "Publish") {
-  await page.goto("/news/new")
-  await page.getByRole("textbox", { name: "Title", exact: true }).fill(title)
-  await page.getByRole("textbox").last().click()
-  await page.keyboard.type(`${title} body text`)
-  const write = page.waitForRequest((request) => new URL(request.url()).pathname.startsWith("/api/v1/posts"))
-  await page.getByRole("button", { name: button, exact: true }).click()
-  expect((await write).method()).toBe("POST")
-}
 
 test("a published Post reaches another member's feed as unread until they open it", async ({ browser }) => {
   const title = `Rehearsal moved ${Date.now()}`
@@ -52,7 +42,7 @@ test("a Draft stays private to its author, even from an Admin", async ({ browser
   await other.goto("/news")
   await expect(other.getByText(title)).toHaveCount(0)
   await other.goto(editPath)
-  await expect(other.getByRole("heading", { level: 2, name: "This page could not be found." })).toBeVisible()
+  await expect(other.getByRole("heading", { level: 1, name: "Page not found" })).toBeVisible()
   await expect(other.getByRole("textbox", { name: "Title", exact: true })).toHaveCount(0)
 })
 

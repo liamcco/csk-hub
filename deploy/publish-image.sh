@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Build and publish a CSK Hub release image from a clean checkout of one commit.
+# Build and publish the CSK Hub release images (API and web) from a clean checkout of one commit.
 #
 #   deploy/publish-image.sh --ref origin/master            build, check, push; print tag and digest
 #   deploy/publish-image.sh --ref origin/master --deploy   ...then deploy that exact image
@@ -9,9 +9,10 @@
 # registry (`docker login ghcr.io`); deploying uses deploy/deploy-image.sh and its own credentials.
 #
 # Environment:
-#   IMAGE                          repository to publish to (default ghcr.io/herr-ek/csk-hub)
+#   IMAGE                          repository prefix (default ghcr.io/herr-ek/csk-hub); the images
+#                                  are published as ${IMAGE}-api and ${IMAGE}-web
 #   PLATFORM                       target platform (default linux/amd64; confirm GUD's CPU at rollout)
-#   NEXT_PUBLIC_VAPID_PUBLIC_KEY   required; inlined into the browser bundle, so it must match the
+#   VITE_VAPID_PUBLIC_KEY          required; inlined into the browser bundle, so it must match the
 #                                  stack's VAPID_PUBLIC_KEY
 #   ENV_FILE                       environment for the tests (default .env in this checkout)
 #   SKIP_CHECKS=1                  skip lint, typecheck and tests (emergencies only)
@@ -39,8 +40,8 @@ if [[ -z "$ref" ]]; then
   echo "✖ --ref is required, e.g. --ref origin/master." >&2
   exit 1
 fi
-if [[ -z "${NEXT_PUBLIC_VAPID_PUBLIC_KEY:-}" ]]; then
-  echo "✖ NEXT_PUBLIC_VAPID_PUBLIC_KEY is required: the browser bundle needs the stack's VAPID_PUBLIC_KEY." >&2
+if [[ -z "${VITE_VAPID_PUBLIC_KEY:-}" ]]; then
+  echo "✖ VITE_VAPID_PUBLIC_KEY is required: the browser bundle needs the stack's VAPID_PUBLIC_KEY." >&2
   exit 1
 fi
 if [[ "$deploy" == true && "$push" == false ]]; then
@@ -53,7 +54,6 @@ PLATFORM="${PLATFORM:-linux/amd64}"
 repository="$(git rev-parse --show-toplevel)"
 commit="$(git -C "$repository" rev-parse --verify "${ref}^{commit}")"
 short="${commit:0:12}"
-tag="${IMAGE}:sha-${short}"
 
 # A clean checkout of exactly that commit: nothing uncommitted or untracked reaches the image.
 checkout="$(mktemp -d "${TMPDIR:-/tmp}/csk-hub-release.XXXXXX")"
@@ -71,7 +71,6 @@ if [[ "${SKIP_CHECKS:-}" != 1 ]]; then
   (
     cd "$checkout"
     bun install --frozen-lockfile
-    bun install --cwd tools/api-client --frozen-lockfile
     bun run lint
     bun run typecheck
     bun run tst
@@ -80,31 +79,43 @@ else
   echo "⚠  SKIP_CHECKS=1: publishing without lint, typecheck and tests." >&2
 fi
 
-build_args=(
-  --file "$checkout/deploy/Dockerfile"
-  --platform "$PLATFORM"
-  --build-arg "NEXT_PUBLIC_VAPID_PUBLIC_KEY=${NEXT_PUBLIC_VAPID_PUBLIC_KEY}"
-  --label "org.opencontainers.image.revision=${commit}"
-  --label "org.opencontainers.image.source=https://github.com/herr-ek/csk-hub"
-  --tag "$tag"
-)
+# Builds one target (api or web); pushes it unless --no-push, and prints its pinned reference.
+publish() {
+  local target="$1" repository_name="${IMAGE}-$1"
+  local tag="${repository_name}:sha-${short}"
+  local args=(
+    --file "$checkout/deploy/Dockerfile"
+    --target "$target"
+    --platform "$PLATFORM"
+    --label "org.opencontainers.image.revision=${commit}"
+    --label "org.opencontainers.image.source=https://github.com/herr-ek/csk-hub"
+    --tag "$tag"
+  )
+  [[ "$target" == web ]] && args+=(--build-arg "VITE_VAPID_PUBLIC_KEY=${VITE_VAPID_PUBLIC_KEY}")
+  if [[ "$push" == false ]]; then
+    docker buildx build "${args[@]}" --load "$checkout" >&2
+    echo "$tag"
+    return
+  fi
+  local metadata="$checkout/.image-metadata-${target}.json"
+  docker buildx build "${args[@]}" --push --metadata-file "$metadata" "$checkout" >&2
+  local digest
+  digest="$(bun -e "console.log((await Bun.file(process.argv[1]).json())['containerimage.digest'])" "$metadata")"
+  echo "${repository_name}@${digest}"
+}
+
+api_reference="$(publish api)"
+web_reference="$(publish web)"
 
 if [[ "$push" == false ]]; then
-  docker buildx build "${build_args[@]}" --load "$checkout"
-  echo "Built ${tag} locally (not pushed)."
+  echo "Built ${api_reference} and ${web_reference} locally (not pushed)."
   exit 0
 fi
 
-metadata="$checkout/.image-metadata.json"
-docker buildx build "${build_args[@]}" --push --metadata-file "$metadata" "$checkout"
-digest="$(bun -e "console.log((await Bun.file(process.argv[1]).json())['containerimage.digest'])" "$metadata")"
-reference="${IMAGE}@${digest}"
-
 echo "Published:"
-echo "  tag:    ${tag}"
-echo "  digest: ${digest}"
-echo "  image:  ${reference}"
+echo "  api: ${api_reference}"
+echo "  web: ${web_reference}"
 
 if [[ "$deploy" == true ]]; then
-  "$repository/deploy/deploy-image.sh" "$reference"
+  "$repository/deploy/deploy-image.sh" "$api_reference" "$web_reference"
 fi

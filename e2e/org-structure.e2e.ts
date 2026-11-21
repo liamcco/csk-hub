@@ -24,6 +24,7 @@ test("an Admin creates a group through the API and opens it", async ({ page }) =
 
 test("an ordinary member cannot open the organisation administration", async ({ page }) => {
   await signIn(page, alto)
-  const response = await page.goto("/admin/org-structure")
-  expect(response?.status()).toBe(403)
+  await page.goto("/admin/org-structure")
+  await expect(page.getByRole("heading", { level: 1, name: "No access" })).toBeVisible()
+  expect((await page.request.get("/api/v1/groups")).status()).toBe(403)
 })

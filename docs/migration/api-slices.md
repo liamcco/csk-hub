@@ -89,3 +89,12 @@ broadcasts (`/broadcasts`).
   over HTTP (`messaging.test.ts`); the browser journey covers starting, replying and reading.
 - Messaging services accept a `MessagingContext`; callers without one (older unit tests and the
   activity integration suite) fall back to the application database and the Next.js session.
+
+## Resume here (ticket #7, Vite cutover)
+
+The web cutover has its own tracker: [`web-cutover.md`](./web-cutover.md). It lists the decisions
+(use-intl, TanStack route tree in `src/app/router.tsx`, navigation facade, real-time query
+invalidation, two builds in one package), what is done, what is half-done (`e2e/run.ts`,
+`playwright.config.ts`, `package.json` scripts) and the next steps (journeys, typecheck/lint/unit
+tests, code splitting, Compose `web` static server and `api` image targets, docs). The `/api/realtime`
+and `src/proxy.ts` gaps above are resolved by that ticket: the proxy is deleted.

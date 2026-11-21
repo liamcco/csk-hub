@@ -1,20 +1,21 @@
-# The CSK Hub stack: PostgreSQL, Redis, a one-shot migration job, the standalone API, the web server
-# and a reverse proxy that serves both under one origin. migrate, api and web run one release image.
+# The CSK Hub stack: PostgreSQL, Redis, a one-shot migration job, the standalone API and the static
+# web server, which serves the SPA and proxies the API under one origin. migrate and api run the API
+# image; web runs the web image (deploy/Dockerfile targets `api` and `web`).
 # Configuration comes from stack.env (see stack.env.example and README.md); for a local stack,
 # deploy/local-stack.sh writes it and adds compose.local.yml.
 #
 # Start order: db and redis become healthy; migrate applies pending migrations as the schema owner,
 # grants the runtime role data access and exits; api starts only after migrate succeeded; web starts
-# once the API is healthy; proxy last. Only the proxy publishes a port.
+# once the API is healthy. Only web publishes a port.
 
-x-release-image: &release-image ${CSK_HUB_IMAGE:?Set CSK_HUB_IMAGE to the published image, ideally pinned by digest}
+x-api-image: &api-image ${CSK_HUB_API_IMAGE:?Set CSK_HUB_API_IMAGE to the published API image, ideally pinned by digest}
 
 # The schema owner: only migrate connects with it.
 x-owner-url: &owner-url postgresql://csk_hub:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}@db:5432/csk_hub?sslmode=disable
-# The data-only role the API and web server connect as. migrate creates it and sets its password.
+# The data-only role the API connects as. migrate creates it and sets its password.
 x-runtime-url: &runtime-url postgresql://csk_hub_app:${POSTGRES_APP_PASSWORD:?Set POSTGRES_APP_PASSWORD}@db:5432/csk_hub?sslmode=disable
 
-x-app-environment: &app-environment
+x-api-environment: &api-environment
   POSTGRES_URL: *runtime-url
   REDIS_URL: redis://redis:6379
   REDIS_KEY_PREFIX: ${REDIS_KEY_PREFIX:-csk-hub}
@@ -26,7 +27,7 @@ x-app-environment: &app-environment
   SMTP_USER: ${SMTP_USER:-}
   SMTP_PASSWORD: ${SMTP_PASSWORD:-}
   SMTP_FROM: ${SMTP_FROM:-}
-  NEXT_PUBLIC_VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:?Set VAPID_PUBLIC_KEY}
+  VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:?Set VAPID_PUBLIC_KEY}
   VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:?Set VAPID_PRIVATE_KEY}
   CONTACT_EMAIL: ${CONTACT_EMAIL:-webmaster@choir.chs.chalmers.se}
 
@@ -59,7 +60,7 @@ services:
       retries: 20
 
   migrate:
-    image: *release-image
+    image: *api-image
     command: ["bun", "cli.js", "migrate"]
     restart: "no"
     environment:
@@ -72,43 +73,33 @@ services:
   # The standalone Hono API on Bun: /api/v1, Better Auth under /api/auth, Member ID and real-time
   # delivery (/api/realtime and the outbox worker). Several replicas share the outbox through leases.
   api:
-    image: *release-image
+    image: *api-image
     command: ["bun", "api.js"]
     restart: unless-stopped
     # On stop it ends event streams and finishes its current delivery wave, then exits.
     stop_grace_period: 30s
-    environment: *app-environment
+    environment: *api-environment
     depends_on:
       migrate:
         condition: service_completed_successfully
       redis:
         condition: service_healthy
 
-  # The Next.js web server. It reads data through the API by service name.
+  # The static web server (Caddy): the SPA with history fallback for web paths, and the API behind
+  # it. SITE_ADDRESS is the address it serves: https://localhost:8443 locally (Caddy's own
+  # certificate), or plain http behind GUD's TLS-terminating proxy. The VAPID public key is built
+  # into the image; it must match the API's VAPID_PUBLIC_KEY.
   web:
-    image: *release-image
-    restart: unless-stopped
-    environment:
-      <<: *app-environment
-      API_INTERNAL_URL: http://api:3000
-    depends_on:
-      api:
-        condition: service_healthy
-
-  # One origin for browsers. SITE_ADDRESS is the address Caddy serves: https://localhost:8443
-  # locally (Caddy's own certificate), or plain http behind GUD's TLS-terminating proxy.
-  proxy:
-    image: caddy:2-alpine
+    image: ${CSK_HUB_WEB_IMAGE:?Set CSK_HUB_WEB_IMAGE to the published web image, ideally pinned by digest}
     restart: unless-stopped
     environment:
       SITE_ADDRESS: ${SITE_ADDRESS:-http://:8443}
     volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
     ports:
       - "${APP_PORT:-8443}:8443"
     depends_on:
-      web:
+      api:
         condition: service_healthy
 
 volumes:

@@ -1,0 +1,77 @@
+import { newsPostEditPath } from "@csk-hub/shared/core/navigation/navigation-utils"
+import { useSuspenseQuery } from "@tanstack/react-query"
+import { useTranslations } from "@/core/i18n/translations"
+import { PageBreadcrumb } from "@/core/navigation/PageBreadcrumb"
+import { Link } from "@/core/navigation/router"
+import { RichTextContent } from "@/features/rich-text/view"
+import { ContentPage } from "@/shared/layouts/content-page"
+import { buttonVariants } from "@/shared/ui/base/button"
+import { Skeleton } from "@/shared/ui/base/skeleton"
+import { cn } from "@/shared/utils"
+import { ConfirmPostCommand } from "./compose/ConfirmPostCommand"
+import { PostByline } from "./post-byline"
+import { postQuery } from "./query"
+import { PostReadMarker } from "./unread"
+
+/** Changing a published Post, offered only to whoever may make the change. */
+function PostControls({ postId, canChange }: { postId: string; canChange: boolean }) {
+  const t = useTranslations("Posts")
+  if (!canChange) return null
+
+  return (
+    <div className="flex flex-wrap gap-2">
+      <Link
+        href={newsPostEditPath(postId)} // `cn` settles the base border against the outline one, as `Button` does.
+        className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+      >
+        {t("editPost")}
+      </Link>
+      <ConfirmPostCommand command="unpublish" postId={postId} />
+    </div>
+  )
+}
+
+export function PostScreen({ postId }: { postId: string }) {
+  const {
+    data: { post, permissions }
+  } = useSuspenseQuery(postQuery(postId))
+
+  return (
+    <ContentPage>
+      <PostReadMarker postId={post.id} />
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        {/* Lets a long title truncate instead of pushing the controls off the row. */}
+        <div className="min-w-0">
+          <PageBreadcrumb route="news" current={post.title} />
+        </div>
+        <PostControls postId={post.id} canChange={permissions.update} />
+      </div>
+      <article className="flex flex-col gap-4">
+        <header>
+          <h1 className="font-heading text-2xl font-semibold break-words">{post.title}</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            <PostByline authorName={post.authorName} publishedAt={post.publishedAt} editedAt={post.editedAt} />
+          </p>
+        </header>
+        <RichTextContent document={post.body} />
+      </article>
+    </ContentPage>
+  )
+}
+
+export function PostScreenSkeleton() {
+  return (
+    <ContentPage busy>
+      <PageBreadcrumb route="news" current={<Skeleton className="h-4 w-32" />} />
+      <div className="flex flex-col gap-4">
+        <Skeleton className="h-8 w-2/3" />
+        <Skeleton className="h-4 w-48" />
+        <div className="flex flex-col gap-2">
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-3/4" />
+        </div>
+      </div>
+    </ContentPage>
+  )
+}

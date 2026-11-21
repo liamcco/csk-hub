@@ -1,0 +1,157 @@
+import { addDays, type EventStatus, stockholmDate, stockholmLocalDateTime } from "@csk-hub/shared/features/events/model"
+import type { EventFormValues } from "@csk-hub/shared/features/events/ui/editor/form-input"
+import type { GroupType } from "@csk-hub/shared/features/org-structure/model"
+import { type AnyColumn, asc, eq, inArray, isNull, or } from "drizzle-orm"
+import { AuthorizationDeniedError } from "@/core/authz"
+import type { Database } from "@/core/db"
+import { user } from "@/core/db/schema/auth"
+import { event, eventDetail, eventTarget, gig, location, rehearsal, socialEvent } from "@/core/db/schema/events"
+import { listActiveGroups } from "@/features/org-structure"
+import {
+  type EventAccessResolver,
+  getEventManagementScope,
+  managedEventGroupIds,
+  withEventPermission
+} from "../../access"
+import { getEventDeletionImpact } from "../../lifecycle"
+
+export type EventFormOptions = Awaited<ReturnType<typeof getEventFormOptions>>
+
+// Choirs and their Sections first, as most Targets name them, then every other group.
+const GROUP_TYPE_ORDER: Partial<Record<GroupType, number>> = { Choir: 0, Section: 1 }
+
+/**
+ * What the form's pickers offer: active Locations, groups and Users, plus any archived or Inactive
+ * one the Event already uses, so editing it never silently drops a value.
+ */
+export async function getEventFormOptions(
+  kept: { locationIds?: string[]; groupIds?: string[]; userIds?: string[] } = {},
+  database: Database,
+  resolve: EventAccessResolver
+) {
+  return database.transaction(async (database) => {
+    const { access, facts } = await getEventManagementScope(database, resolve)
+    const groupIds = managedEventGroupIds(access, facts)
+    const locations = await database
+      .select({ id: location.id, name: location.name, active: location.active })
+      .from(location)
+      .where(or(eq(location.active, true), keep(location.id, kept.locationIds)))
+      .orderBy(asc(location.name))
+    const groups = await listActiveGroups(database, kept.groupIds)
+    const users = await database
+      .select({ id: user.id, name: user.name, ...(access.actor?.isAdmin ? { email: user.email } : {}) })
+      .from(user)
+      .where(or(isNull(user.banned), eq(user.banned, false), keep(user.id, kept.userIds)))
+      .orderBy(asc(user.name))
+
+    return {
+      canCreate: access.actor?.isAdmin === true || groupIds.length > 0,
+      locations,
+      organiserGroups: groups.filter((group) => access.actor?.isAdmin || groupIds.includes(group.id)),
+      groups: groups.sort(
+        (a, b) =>
+          (GROUP_TYPE_ORDER[a.type] ?? 2) - (GROUP_TYPE_ORDER[b.type] ?? 2) || a.name.localeCompare(b.name, "sv")
+      ),
+      users
+    }
+  })
+}
+
+function keep(column: AnyColumn, ids: string[] | undefined) {
+  return ids && ids.length > 0 ? inArray(column, ids) : undefined
+}
+
+export type EventEditor = NonNullable<Awaited<ReturnType<typeof getEventEditor>>>
+
+/** Everything the admin page of one Event shows and offers, or null when there is no such Event. */
+export async function getEventEditor(eventId: string, database: Database, resolve: EventAccessResolver) {
+  return withEventPermission(
+    "event.read",
+    eventId,
+    undefined,
+    async (db) => {
+      const [row] = await db
+        .select({
+          event,
+          leaderUserId: rehearsal.leaderUserId,
+          responsibleUserId: gig.responsibleUserId,
+          contactName: gig.contactName,
+          contactDetails: gig.contactDetails,
+          costInfo: socialEvent.costInfo
+        })
+        .from(event)
+        .leftJoin(rehearsal, eq(rehearsal.eventId, event.id))
+        .leftJoin(gig, eq(gig.eventId, event.id))
+        .leftJoin(socialEvent, eq(socialEvent.eventId, event.id))
+        .where(eq(event.id, eventId))
+      if (!row) return null
+
+      const targets = await db
+        .select({ groupId: eventTarget.groupId, voiceFamily: eventTarget.voiceFamily })
+        .from(eventTarget)
+        .where(eq(eventTarget.eventId, eventId))
+      const details = await db
+        .select({ label: eventDetail.label, value: eventDetail.value })
+        .from(eventDetail)
+        .where(eq(eventDetail.eventId, eventId))
+        .orderBy(asc(eventDetail.sortOrder))
+      const impact = await getEventDeletionImpact(db, eventId)
+      const stored = row.event
+      const userIds = [row.leaderUserId, row.responsibleUserId].filter((id): id is string => Boolean(id))
+      const groupIds = [stored.organiserGroupId, ...targets.map(({ groupId }) => groupId)].filter((id): id is string =>
+        Boolean(id)
+      )
+      const options = await getEventFormOptions(
+        {
+          locationIds: stored.locationId ? [stored.locationId] : [],
+          groupIds,
+          userIds
+        },
+        db,
+        resolve
+      )
+
+      const values: EventFormValues = {
+        type: stored.type,
+        title: stored.title,
+        description: stored.description,
+        allDay: stored.allDay,
+        startsAt: stockholmLocalDateTime(stored.startsAt),
+        endsAt: stockholmLocalDateTime(stored.endsAt),
+        firstDay: stockholmDate(stored.startsAt),
+        // An all-day Event ends at 00:00 after its last day; a timed one on the day it ends.
+        lastDay: stored.allDay ? addDays(stockholmDate(stored.endsAt), -1) : stockholmDate(stored.endsAt),
+        callTime: stored.callTime ? stockholmLocalDateTime(stored.callTime) : "",
+        respondBy: stored.respondBy ? stockholmLocalDateTime(stored.respondBy) : "",
+        participationMode: stored.participationMode,
+        locationId: stored.locationId ?? "",
+        locationText: stored.locationText ?? "",
+        organiserGroupId: stored.organiserGroupId ?? "",
+        leaderUserId: row.leaderUserId ?? "",
+        responsibleUserId: row.responsibleUserId ?? "",
+        contactName: row.contactName ?? "",
+        contactDetails: row.contactDetails ?? "",
+        costInfo: row.costInfo ?? "",
+        targets: targets.map(({ groupId, voiceFamily }) => ({
+          groupId: groupId ?? "",
+          voiceFamily: voiceFamily ?? ""
+        })),
+        details
+      }
+
+      return {
+        id: stored.id,
+        title: stored.title,
+        status: stored.status as EventStatus,
+        values,
+        options,
+        impact: impact ?? { responses: 0, registrations: 0, attendance: 0 }
+      }
+    },
+    database,
+    resolve
+  ).catch((error: unknown) => {
+    if (error instanceof AuthorizationDeniedError) return null
+    throw error
+  })
+}

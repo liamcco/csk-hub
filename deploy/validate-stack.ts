@@ -57,8 +57,26 @@ const project = process.env.COMPOSE_PROJECT_NAME ?? "csk-hub-local"
 
 function compose(args: string[]) {
   const result = Bun.spawnSync(
-    ["docker", "compose", "--project-name", project, "--file", `${here}compose.yml`, "--env-file", envFile, ...args],
-    { env: { ...process.env, CSK_HUB_IMAGE: process.env.CSK_HUB_IMAGE ?? "csk-hub:local" } }
+    [
+      "docker",
+      "compose",
+      "--project-name",
+      project,
+      "--file",
+      `${here}compose.yml`,
+      "--file",
+      `${here}compose.local.yml`,
+      "--env-file",
+      envFile,
+      ...args
+    ],
+    {
+      env: {
+        ...process.env,
+        CSK_HUB_API_IMAGE: process.env.CSK_HUB_API_IMAGE ?? "csk-hub-api:local",
+        CSK_HUB_WEB_IMAGE: process.env.CSK_HUB_WEB_IMAGE ?? "csk-hub-web:local"
+      }
+    }
   )
   const stdout = result.stdout.toString()
   return { code: result.exitCode, stdout, output: `${stdout}${result.stderr}` }
@@ -177,11 +195,26 @@ checks.push([
 ])
 
 checks.push([
-  "web paths reach the web server",
+  "web paths, bookmarks and deep links get the SPA; missing files do not",
   async () => {
-    const response = await request("/login")
-    check(response.status === 200, `/login answered ${response.status}`)
-    check(response.headers.get("content-type")?.includes("text/html"), "/login is not HTML")
+    const index = await (await request("/")).text()
+    for (const path of ["/login", "/events", `/events/${crypto.randomUUID()}`, "/admin/users?x=1"]) {
+      const response = await request(path)
+      check(response.status === 200, `${path} answered ${response.status}`)
+      check(response.headers.get("content-type")?.includes("text/html"), `${path} is not HTML`)
+      check((await response.text()) === index, `${path} is not the SPA's index.html`)
+    }
+    const script = index.match(/src="(\/assets\/[^"]+\.js)"/)?.[1]
+    check(script, "index.html names no script")
+    const asset = await request(script)
+    check(asset.status === 200, `${script} answered ${asset.status}`)
+    check(asset.headers.get("cache-control")?.includes("immutable"), `${script} is not cached as immutable`)
+    for (const path of ["/assets/missing.js", "/missing.png"]) {
+      const response = await request(path)
+      check(response.status === 404, `${path} answered ${response.status}, not 404`)
+    }
+    const worker = await request("/service-worker.js")
+    check(worker.status === 200, `/service-worker.js answered ${worker.status}`)
   }
 ])
 
@@ -261,11 +294,14 @@ checks.push([
 ])
 
 checks.push([
-  "the web server renders a protected page from the API by service name",
+  "a protected page's reads answer the signed-in User through the same origin",
   async () => {
+    // The SPA renders /me in the browser from these reads (the journeys cover the rendering).
     const page = await request("/me", { cookie })
     check(page.status === 200, `/me answered ${page.status}`)
-    check((await page.text()).includes("Stack Check"), "/me does not show the signed-in User")
+    const capabilities = await request("/api/v1/me/capabilities", { cookie })
+    check(capabilities.status === 200, `/api/v1/me/capabilities answered ${capabilities.status}`)
+    check((await capabilities.json()).user?.name === "Stack Check", "the capabilities do not name the signed-in User")
   }
 ])
 

@@ -14,7 +14,7 @@ type Service = {
 const stack = Bun.YAML.parse(readFileSync(new URL("compose.yml", import.meta.url), "utf8")) as {
   services: Record<string, Service>
 }
-const { api, web, proxy, migrate, db, redis } = stack.services as Record<string, Service>
+const { api, web, migrate, db, redis } = stack.services as Record<string, Service>
 const caddyfile = readFileSync(new URL("Caddyfile", import.meta.url), "utf8")
 
 describe("Compose stack", () => {
@@ -28,16 +28,18 @@ describe("Compose stack", () => {
     expect(migrate?.depends_on?.db).toEqual({ condition: "service_healthy" })
   })
 
-  test("one release image runs migrate, the standalone API and the web server", () => {
+  test("the API image runs migrate and the API; the web image is built and versioned apart", () => {
     expect(migrate?.image).toBeDefined()
     expect(api?.image).toBe(migrate?.image as string)
-    expect(web?.image).toBe(migrate?.image as string)
     expect(api?.command).toEqual(["bun", "api.js"])
+    expect(web?.image).toBeDefined()
+    expect(web?.image).not.toBe(api?.image as string)
   })
 
-  test("only the proxy publishes a port; everything else stays on the private network", () => {
-    for (const service of [db, redis, migrate, api, web]) expect(service?.ports).toBeUndefined()
-    expect(proxy?.ports).toHaveLength(1)
+  test("only the web server publishes a port; everything else stays on the private network", () => {
+    for (const service of [db, redis, migrate, api]) expect(service?.ports).toBeUndefined()
+    expect(web?.ports).toHaveLength(1)
+    expect(Object.keys(stack.services).sort()).toEqual(["api", "db", "migrate", "redis", "web"])
   })
 
   test("migrate owns the schema while the API and web connect as the data-only runtime role", () => {
@@ -50,18 +52,24 @@ describe("Compose stack", () => {
     expect(user(runtime)).toBeDefined()
     expect(user(runtime)).not.toBe(user(owner))
     expect(api?.environment?.POSTGRES_URL).toBe(runtime)
-    expect(web?.environment?.POSTGRES_URL).toBe(runtime)
+  })
+
+  test("the static web server holds no application secrets", () => {
+    expect(Object.keys(web?.environment ?? {})).toEqual(["SITE_ADDRESS"])
   })
 
   test("services reach each other by service name", () => {
     expect(api?.environment?.REDIS_URL).toBe("redis://redis:6379")
-    expect(web?.environment?.API_INTERNAL_URL).toBe("http://api:3000")
+    expect(caddyfile).toMatch(/reverse_proxy api:3000/)
   })
 
-  test("the proxy sends API paths to Hono and everything else to the web server", () => {
+  test("API paths go to Hono; only other paths fall back to the SPA's index.html", () => {
     expect(caddyfile).toContain("@api path /api /api/*")
     expect(caddyfile).toMatch(/handle @api \{\s*reverse_proxy api:3000/)
-    expect(caddyfile).toMatch(/handle \{\s*reverse_proxy web:3000/)
+    const fallback = caddyfile.indexOf("try_files {path} /index.html")
+    expect(fallback).toBeGreaterThan(caddyfile.indexOf("handle @api"))
+    // A missing asset or file answers 404 rather than the page.
+    expect(caddyfile).toMatch(/@file path_regexp [^\n]*\\\.\[/)
     expect(caddyfile).not.toMatch(/\bencode\b/)
   })
 
@@ -71,7 +79,6 @@ describe("Compose stack", () => {
     expect(realtime).toMatch(/flush_interval -1/)
     const timeout = Number(realtime.match(/read_timeout (\d+)s/)?.[1])
     expect(timeout).toBeGreaterThan(15)
-    expect(caddyfile).not.toMatch(/\/api\/realtime[\s\S]*?web:3000[\s\S]*?@api/)
   })
 
   test("the API has time to end streams and finish its delivery wave before it is killed", () => {

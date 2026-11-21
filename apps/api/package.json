@@ -1,0 +1,46 @@
+{
+  "name": "@csk-hub/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "PORT=${PORT:-3001} bun --env-file=../../.env --watch src/api/server.ts",
+    "build": "bun build src/api/server.ts --target=bun --external=pg-native --outfile=dist/api.js && bun build src/cli/index.ts --target=bun --external=pg-native --outfile=dist/cli.js",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit",
+    "db": "bun --env-file=../../.env scripts/dev/index.ts",
+    "db:generate": "bun --env-file=../../.env drizzle-kit generate",
+    "auth:generate": "auth generate --config src/core/auth/index.ts --output src/core/db/schema/auth.ts -y",
+    "contract": "bun scripts/api/export-contract.ts"
+  },
+  "dependencies": {
+    "@csk-hub/shared": "workspace:*",
+    "@better-auth/drizzle-adapter": "1.7.4",
+    "@better-auth/i18n": "^1.7.4",
+    "@better-auth/passkey": "^1.7.4",
+    "@hono/zod-openapi": "^1.6.3",
+    "@tiptap/core": "3.31.3",
+    "better-auth": "^1.7.4",
+    "drizzle-orm": "1.0.0-rc.5",
+    "hono": "^4.13.19",
+    "nodemailer": "^10.0.9",
+    "pg": "^8.23.1",
+    "redis": "^6.3.0",
+    "use-intl": "4.15.1",
+    "web-push": "^3.6.7",
+    "zod": "^4.6.4"
+  },
+  "devDependencies": {
+    "@csk-hub/contract": "workspace:*",
+    "@clack/prompts": "^1.8.1",
+    "@types/bun": "^1.4.2",
+    "@types/node": "^26.5.1",
+    "@types/nodemailer": "^8.0.1",
+    "@types/pg": "^8.23.1",
+    "@types/web-push": "^3.6.4",
+    "archunit": "^2.5.4",
+    "auth": "1.7.4",
+    "drizzle-kit": "1.0.0-rc.5",
+    "typescript": "^7.0.2"
+  }
+}
