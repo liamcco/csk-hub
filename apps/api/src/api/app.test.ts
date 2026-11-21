@@ -39,7 +39,7 @@ describe("API assembly", () => {
   })
 
   test("matches the committed contract", async () => {
-    const committed = await Bun.file("contract/openapi.json").json()
+    const committed = await Bun.file(new URL("../../../../packages/contract/openapi.json", import.meta.url)).json()
     const api = createApi(offline)
 
     // On failure, run `bun run api:generate` and commit the contract and client.
