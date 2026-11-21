@@ -1,0 +1,153 @@
+import { beforeEach, describe, expect, mock, test } from "bun:test"
+
+const requestPasswordResetEndpoint = mock(async () => ({ error: null as null | { code?: string; status?: number } }))
+const resetPasswordEndpoint = mock(async () => ({ error: null as null | { code?: string; status?: number } }))
+const signInEmail = mock(async () => ({ data: { user: { role: "user" } }, error: null }))
+
+mock.module("@/core/auth/auth-client", () => ({
+  authClient: {
+    requestPasswordReset: requestPasswordResetEndpoint,
+    resetPassword: resetPasswordEndpoint,
+    signIn: { email: signInEmail }
+  }
+}))
+
+import { ROUTES } from "@csk-hub/shared/core/navigation/site"
+import { requestPasswordReset, resetPassword } from "./service"
+
+beforeEach(() => {
+  requestPasswordResetEndpoint.mockReset()
+  resetPasswordEndpoint.mockReset()
+  signInEmail.mockReset()
+  signInEmail.mockResolvedValue({ data: { user: { role: "user" } }, error: null })
+})
+
+describe("password reset service", () => {
+  test("requests a password reset successfully", async () => {
+    requestPasswordResetEndpoint.mockResolvedValue({ error: null })
+
+    await expect(requestPasswordReset("user@example.com")).resolves.toEqual({ success: true })
+
+    expect(requestPasswordResetEndpoint).toHaveBeenCalledWith({
+      email: "user@example.com",
+      redirectTo: `${ROUTES.resetPassword}?email=user%40example.com`
+    })
+  })
+
+  test("classifies server errors while requesting a reset as network failures", async () => {
+    requestPasswordResetEndpoint.mockResolvedValue({ error: { code: "INTERNAL_ERROR", status: 500 } })
+
+    await expect(requestPasswordReset("user@example.com")).resolves.toEqual({
+      success: false,
+      kind: "request-network",
+      error: "request-network"
+    })
+  })
+
+  test("normalizes password reset request errors", async () => {
+    requestPasswordResetEndpoint.mockResolvedValue({ error: { code: "BAD_REQUEST", status: 400 } })
+
+    await expect(requestPasswordReset("user@example.com")).resolves.toEqual({
+      success: false,
+      kind: "request-failed",
+      error: "request-failed"
+    })
+  })
+
+  test("classifies invalid reset tokens separately from transient failures", async () => {
+    resetPasswordEndpoint.mockResolvedValue({ error: { code: "INVALID_TOKEN", status: 400 } })
+
+    await expect(resetPassword("expired-token", "user@example.com", "correct horse battery staple")).resolves.toEqual({
+      success: false,
+      kind: "invalid-reset-token",
+      error: "invalid-reset-token"
+    })
+
+    resetPasswordEndpoint.mockResolvedValue({ error: { code: "INTERNAL_ERROR", status: 500 } })
+    await expect(resetPassword("valid-token", "user@example.com", "correct horse battery staple")).resolves.toEqual({
+      success: false,
+      kind: "network",
+      error: "network"
+    })
+  })
+
+  test("handles expired and unknown reset errors", async () => {
+    resetPasswordEndpoint.mockResolvedValue({ error: { code: "TOKEN_EXPIRED", status: 400 } })
+
+    await expect(resetPassword("expired-token", "user@example.com", "correct horse battery staple")).resolves.toEqual({
+      success: false,
+      kind: "invalid-reset-token",
+      error: "invalid-reset-token"
+    })
+
+    resetPasswordEndpoint.mockResolvedValue({ error: { code: "BAD_REQUEST", status: 400 } })
+    await expect(resetPassword("unknown-token", "user@example.com", "correct horse battery staple")).resolves.toEqual({
+      success: false,
+      kind: "unknown",
+      error: "unknown"
+    })
+  })
+
+  test("resets a password successfully", async () => {
+    resetPasswordEndpoint.mockResolvedValue({ error: null })
+
+    await expect(resetPassword("valid-token", "user@example.com", "correct horse battery staple")).resolves.toEqual({
+      success: true,
+      signIn: { success: true, role: "user" }
+    })
+
+    expect(resetPasswordEndpoint).toHaveBeenCalledWith({
+      newPassword: "correct horse battery staple",
+      token: "valid-token"
+    })
+    expect(signInEmail).toHaveBeenCalledWith({
+      email: "user@example.com",
+      password: "correct horse battery staple",
+      rememberMe: true
+    })
+  })
+
+  test("continues to two-factor verification after the password is updated", async () => {
+    resetPasswordEndpoint.mockResolvedValue({ error: null })
+    signInEmail.mockResolvedValue({
+      data: { twoFactorRedirect: true, twoFactorMethods: ["totp", "otp"] },
+      error: null
+    } as never)
+
+    await expect(resetPassword("valid-token", "user@example.com", "correct horse battery staple")).resolves.toEqual({
+      success: true,
+      requiresTwoFactor: true,
+      methods: ["totp", "otp"]
+    })
+  })
+
+  test("keeps the password update successful when automatic sign-in is unavailable", async () => {
+    resetPasswordEndpoint.mockResolvedValue({ error: null })
+    signInEmail.mockRejectedValue(new Error("Network unavailable"))
+
+    await expect(resetPassword("valid-token", "user@example.com", "correct horse battery staple")).resolves.toEqual({
+      success: true,
+      signInRequired: true
+    })
+  })
+
+  test("normalizes reset password exceptions without exposing details", async () => {
+    resetPasswordEndpoint.mockRejectedValue(new Error("database details should not reach the client"))
+
+    await expect(resetPassword("valid-token", "user@example.com", "correct horse battery staple")).resolves.toEqual({
+      success: false,
+      kind: "network",
+      error: "network"
+    })
+  })
+
+  test("normalizes request exceptions without exposing details", async () => {
+    requestPasswordResetEndpoint.mockRejectedValue(new Error("SMTP details should not reach the client"))
+
+    await expect(requestPasswordReset("user@example.com")).resolves.toEqual({
+      success: false,
+      kind: "request-network",
+      error: "request-network"
+    })
+  })
+})

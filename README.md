@@ -27,7 +27,11 @@ Implemented User workflows include:
 
 ## Stack
 
-- [Next.js](https://nextjs.org/) 16 with the App Router and React 19
+- A Bun workspace with two independently built applications:
+  - `apps/api`: a [Hono](https://hono.dev/) HTTP API on Bun, described by an OpenAPI contract
+  - `apps/web`: a [Vite](https://vite.dev/) React 19 SPA with TanStack Router and TanStack Query
+  - `packages/shared` (code both run) and `packages/contract` (the OpenAPI document and the
+    generated TypeScript client)
 - [Better Auth](https://www.better-auth.com/) for authentication
 - [Drizzle ORM](https://orm.drizzle.team/) with PostgreSQL
 - [Bun](https://bun.sh/) for scripts and tests
@@ -36,8 +40,8 @@ Implemented User workflows include:
 ## Local development
 
 Live Conversations, unread badges and notification fallback use optional standard
-SSE/Redis infrastructure. See [real-time setup](src/core/realtime/README.md) for Redis
-configuration and best-effort delivery through Next.js `after()`, with no separate worker.
+SSE/Redis infrastructure. See [real-time setup](apps/api/src/core/realtime/README.md) for Redis
+configuration and the API's supervised delivery worker.
 
 Prerequisites: [Bun](https://bun.sh/), Docker, and OpenSSL.
 
@@ -55,64 +59,55 @@ Prerequisites: [Bun](https://bun.sh/), Docker, and OpenSSL.
    ```
 
    Put the generated value in `BETTER_AUTH_SECRET`. `POSTGRES_URL` already
-   points at the PostgreSQL container defined in `docker-compose.yml`, and
-   `EMAIL_MODE=log` writes auth emails to the server log during local
-   development. Leave `POSTGRES_URL_PROD` blank unless you administer
-   production.
+   points at the PostgreSQL container defined in `deploy/compose.dev.yml`, and
+   `EMAIL_MODE=log` writes auth emails to the API's log during local
+   development. Both applications read this file: the API all of it, the web app only its
+   `VITE_` variables (`VITE_VAPID_PUBLIC_KEY` repeats `VAPID_PUBLIC_KEY`).
 
-3. Start PostgreSQL:
+3. Start PostgreSQL and Redis:
 
    ```bash
-   docker compose up -d
+   docker compose -f deploy/compose.dev.yml up -d
    ```
 
 4. Apply the existing database migrations:
 
    ```bash
-   bun run ops migrate
+   bun run db migrate
    ```
 
-5. Start the development server:
+5. Start the API (port 3001) and the Vite dev server (port 3000), which proxies `/api` to it:
 
    ```bash
    bun run dev
    ```
 
-Open [http://localhost:3000](http://localhost:3000).
+Open [http://localhost:3000](http://localhost:3000). To run the whole stack as it deploys, use
+`deploy/local-stack.sh up` (see [`deploy/README.md`](deploy/README.md)).
 
-### Local admin account
+### Local accounts and demo data
 
-The development seed script currently creates `admin@example.com` with the
-password `password`:
+`bun run db seed-users` adds 100 named, verified example Users with the password `password`:
+`singer-001@example.com` through `singer-100@example.com`. The first three are Admins. These
+are local-development conveniences only; the dev CLI refuses any database that is not local.
 
-```bash
-bun run ops seed-admin
-```
-
-`bun run ops seed-users` adds 100 named, verified example Users with the same password:
-`singer-001@example.com` through `singer-100@example.com`. The first three are Admins.
-
-Both are local-development conveniences only. Change the password immediately,
-and do not use these credentials in a deployed environment. Seeding refuses to
-run against production.
-
-`bun run ops reference-data` creates the Choirs MK, DK and KK with their Sections,
-Styret and the Positions; run it once after migrating (it also runs against production
-with `--prod`). `bun run ops reset` starts the local database over: it erases it, migrates
-it from scratch and creates the reference data.
+`bun run db org-bootstrap` creates the default Choirs MK, DK and KK with their Sections,
+Styret, the Gigmästeri and the Positions on a database that has none. `bun run db reset`
+starts the local database over: it erases it, migrates it from scratch and creates the
+default org structure.
 
 For a populated development environment after migrating, run:
 
 ```bash
-bun run ops seed-demo
+bun run db seed-demo
 ```
 
-This creates the reference data, 100 singers split evenly across the three Choirs and their
+This creates the default org structure, 100 singers split evenly across the three Choirs and their
 Sections, active and archived groups, dated Memberships and Position handovers, Voice
 capabilities, 24 published example Posts and example Events from the coming week on. It is
 safe to repeat and preserves existing credentials and edited Posts. Existing Users are
 retained, so a populated database can have more than 100 Users. The individual `seed-users`, `seed-groups`, `seed-posts` and `seed-events`
-commands are also available; see [local demo data](scripts/ops/README.md#local-demo-data).
+commands are also available; see [local demo data](apps/api/scripts/dev/README.md#local-demo-data).
 
 ## Routes
 
@@ -139,23 +134,24 @@ workflows.
 
 ## Database and auth schema changes
 
-Auth models live in `src/core/db/schema/auth.ts`. If the Better Auth
+Auth models live in `apps/api/src/core/db/schema/auth.ts`. If the Better Auth
 configuration changes, regenerate the auth schema, create a migration, and
 apply it:
 
 ```bash
 bun run auth:generate
 bun run db:generate
-bun run ops migrate
+bun run db migrate
 ```
 
 ## Database operations
 
-Use `bun run ops` for all database operations: migration status, migrations,
-Drizzle Studio and local seeding. It targets the local database unless you pass
-`--prod`. See [`scripts/ops/README.md`](scripts/ops/README.md) for commands and
-production safeguards, and [`src/core/db/README.md`](src/core/db/README.md) for
-how the application connects.
+`bun run db` is the local development database CLI: migration status, migrations,
+Drizzle Studio, reset and seeding. It refuses any database that is not local; see
+[`apps/api/scripts/dev/README.md`](apps/api/scripts/dev/README.md). Deployed environments migrate on every
+deploy and run their maintenance commands (org bootstrap, Admin bootstrap and recovery) in
+the API container; see [`deploy/README.md`](deploy/README.md). How the API connects
+is in [`apps/api/src/core/db/README.md`](apps/api/src/core/db/README.md).
 
 ## Email configuration
 
@@ -166,25 +162,17 @@ Email delivery is controlled by `EMAIL_MODE`:
 - `smtp` sends through Gmail SMTP. Configure `SMTP_HOST` (`smtp.gmail.com`),
   `SMTP_PORT` (`587`), `SMTP_USER`, `SMTP_PASSWORD`, and `SMTP_FROM`.
 
-## Web Analytics
-
-Vercel Web Analytics tracks page views through the shared root layout using
-`@vercel/analytics/next`. Enable Web Analytics in the Vercel project's Analytics
-tab, then deploy the app to start collecting data. No environment variables are
-required. Local development uses the SDK's debug mode without sending analytics.
-
-The proxy excludes `/_vercel/*` so analytics requests bypass authentication and
-locale redirects.
-
 ## Checks and useful commands
 
 ```bash
-bun run tst         # run the test suite
-bun run typecheck   # TypeScript checks
-bun run lint        # Biome checks
-bun run build       # production build
-bun run pr          # tests, lint, and build
-bun run ops         # database status and guarded database operations
+bun --env-file=.env run tst   # every package's tests (the API's need PostgreSQL)
+bun run typecheck             # TypeScript checks for every package and the journeys
+bun run lint                  # Biome checks
+bun run build                 # web to apps/web/dist, API to apps/api/dist
+bun run api:generate          # export the OpenAPI contract and regenerate the client
+bun --env-file=.env run e2e   # Playwright journeys on a disposable database
+bun run pr                    # tests, lint, typecheck and build
+bun run db                    # local database status, migrations, reset and seeds
 ```
 
 See [`GLOSSARY.md`](GLOSSARY.md) for project context and the

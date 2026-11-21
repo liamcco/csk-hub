@@ -1,0 +1,1 @@
+export { memberIdRouter } from "./http"

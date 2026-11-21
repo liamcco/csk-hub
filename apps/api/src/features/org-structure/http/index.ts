@@ -1,0 +1,1 @@
+export { orgStructureRouter } from "./routes"

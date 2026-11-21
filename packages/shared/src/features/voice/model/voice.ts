@@ -1,0 +1,52 @@
+/**
+ * A line someone sings, at either granularity: a family (B) or one of its divisions (B1). Never a
+ * group of people.
+ */
+export type Voice = (typeof VOICES)[number]
+
+/** Every Voice line. The database enum takes this list. */
+export const VOICES = ["S", "A", "T", "B", "S1", "S2", "A1", "A2", "T1", "T2", "B1", "B2"] as const
+
+/** S1 … B2: a Voice line when its family splits, as B1 in TTBB. */
+export type VoiceDivision = Extract<Voice, `${string}${1 | 2}`>
+
+/** S, A, T, B: a whole Voice line in an undivided setting, as B in SATB. */
+export type VoiceFamily = Exclude<Voice, VoiceDivision>
+
+const DIVISIONS_OF_FAMILY: Record<VoiceFamily, VoiceDivision[]> = {
+  S: ["S1", "S2"],
+  A: ["A1", "A2"],
+  T: ["T1", "T2"],
+  B: ["B1", "B2"]
+}
+
+export const VOICE_DIVISIONS: readonly VoiceDivision[] = Object.values(DIVISIONS_OF_FAMILY).flat()
+
+export function isVoiceDivision(voice: unknown): voice is VoiceDivision {
+  return typeof voice === "string" && VOICE_DIVISIONS.some((division) => division === voice)
+}
+
+/** The only place a Voice's family is decided: B1 → B, and B → B. */
+export function familyOf(voice: Voice): VoiceFamily {
+  return (isVoiceDivision(voice) ? voice.charAt(0) : voice) as VoiceFamily
+}
+
+/** The divisions of a family, in score order. */
+export function divisionsOf(family: VoiceFamily): VoiceDivision[] {
+  return DIVISIONS_OF_FAMILY[family]
+}
+
+/**
+ * Whether `outer` contains `inner`: they are equal, or `outer` is the family of the division
+ * `inner`. B contains B and B1; B1 contains only B1.
+ */
+export function contains(outer: Voice, inner: Voice): boolean {
+  return outer === inner || (!isVoiceDivision(outer) && familyOf(inner) === outer)
+}
+
+const SCORE_ORDER: Voice[] = ["S", "S1", "S2", "A", "A1", "A2", "T", "T1", "T2", "B", "B1", "B2"]
+
+/** Orders Voices as a score lists them, top down: S, S1, S2, A … B2. */
+export function compareVoices(a: Voice, b: Voice) {
+  return SCORE_ORDER.indexOf(a) - SCORE_ORDER.indexOf(b)
+}

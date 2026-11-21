@@ -1,0 +1,104 @@
+import { type ApiDependencies, apiError, createRouter, handleApiError } from "@/core/http"
+import { createRealtimeRouter } from "@/core/realtime/http"
+import { accountRouter } from "@/features/account/http"
+import { eventsRouter } from "@/features/events/http"
+import { memberIdRouter } from "@/features/member-id"
+import { membersRouter } from "@/features/members/http"
+import { conversationActivityPolicy } from "@/features/messaging/activity"
+import { messagingRouter } from "@/features/messaging/http"
+import { broadcastsRouter } from "@/features/notification-broadcast/http"
+import { orgStructureRouter } from "@/features/org-structure/http"
+import { postsRouter } from "@/features/posts/http"
+import { usersRouter } from "@/features/user-management/http"
+import { currentActorRouter } from "./current-actor"
+
+const openApiInfo = {
+  title: "CSK Hub API",
+  version: "1.0.0",
+  description: "Authentication endpoints under /api/auth belong to Better Auth and are used through its client."
+}
+
+const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"])
+
+function isHubOrigin(origin: string | undefined, url: string, publicOrigin: string | undefined) {
+  if (!origin) return false
+  try {
+    if (publicOrigin) return new URL(origin).origin === new URL(publicOrigin).origin
+    return new URL(origin).host === new URL(url).host
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Assembles the HTTP API from feature routers. Pure: it opens no listener and touches no
+ * dependency until a request arrives, so tests and the contract export can call it freely.
+ *
+ * Add a feature by exporting a `createRouter()` router from its public entrypoint and mounting it
+ * below under `/api/v1`.
+ */
+export function createApi(dependencies: ApiDependencies) {
+  const api = createRouter()
+
+  api.on(["GET", "POST"], "/api/auth/*", (c) => dependencies.handleAuth(c.req.raw))
+
+  api.use("/api/*", async (c, next) => {
+    c.set("resolveRequest", () => dependencies.resolveRequest(c.req.raw.headers))
+    c.set("database", dependencies.database)
+    c.set("secret", dependencies.secret)
+    c.set("scheduleDelivery", dependencies.scheduleDelivery)
+    c.set("authApi", dependencies.authApi)
+    await next()
+  })
+
+  api.use("/api/v1/*", async (c, next) => {
+    await next()
+    // Every operation is personalised by the caller's session; nothing may be shared-cached.
+    c.header("Cache-Control", "private, no-store")
+  })
+
+  api.use("/api/v1/*", async (c, next) => {
+    // Session cookies authenticate these requests, so state changes must come from Hub itself:
+    // browsers send Origin on unsafe requests, and Hub's own servers and apps set it.
+    if (!SAFE_METHODS.has(c.req.method) && !isHubOrigin(c.req.header("origin"), c.req.url, dependencies.publicOrigin)) {
+      return apiError(c, 403, "FORBIDDEN")
+    }
+    await next()
+  })
+
+  api.use("/api/realtime/*", async (c, next) => {
+    // The same guard, and a cross-origin page may not open the User's event stream either.
+    const origin = c.req.header("origin")
+    const required = !SAFE_METHODS.has(c.req.method) || origin !== undefined
+    if (required && !isHubOrigin(origin, c.req.url, dependencies.publicOrigin)) return c.body(null, 403)
+    await next()
+  })
+
+  const v1 = createRouter()
+    .route("/", currentActorRouter)
+    .route("/", membersRouter)
+    .route("/", postsRouter)
+    .route("/", messagingRouter)
+    .route("/", eventsRouter)
+    .route("/", accountRouter)
+    .route("/", usersRouter)
+    .route("/", orgStructureRouter)
+    .route("/", broadcastsRouter)
+  api.route("/api/v1", v1)
+  // Released before /api/v1; its paths and representations stay frozen for installed clients.
+  api.route("/api/member-id", memberIdRouter)
+  // Paths fixed by the browser's EventSource; Messaging decides who may receive what.
+  api.route("/api/realtime", createRealtimeRouter(conversationActivityPolicy, dependencies.shutdown))
+
+  api.notFound((c) => apiError(c, 404, "NOT_FOUND"))
+  api.onError(handleApiError)
+
+  return api
+}
+
+export type Api = ReturnType<typeof createApi>
+
+/** The OpenAPI 3.0.3 contract generated from the routes' schemas. */
+export function getApiContract(api: Api) {
+  return api.getOpenAPIDocument({ openapi: "3.0.3", info: openApiInfo })
+}

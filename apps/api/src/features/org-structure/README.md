@@ -1,0 +1,146 @@
+# Org structure
+
+Who is in which Group, Choir and Section, and who holds which Position. Groups and Positions are
+both first-class here: Positions are held in Groups, and the rules tying them to Memberships are
+why they share one module. Terminology lives in [`GLOSSARY.md`](../../../GLOSSARY.md#groups); the
+scheme it implements is "Revised scheme (v3)" in the [Groups schema design](../../../docs/schemas/Groups%20-%20DB%20Scheme.md), introduced in #78.
+Voices and what each user can sing are the separate [`voice`](../voice/README.md) feature.
+
+## The write path
+
+Application code writes the tables in `src/core/db/schema/org-structure.ts` only through this
+module, and reads them through its read helpers rather than querying the tables. Features
+adopting `core/authz` must load trusted Membership and Position-holding attributes through this
+module; authz does not query the organisational tables. Existing summary reads omit some authz
+fields, so Group policy adoption needs focused attribute projections. Authz's definition of
+current Memberships and Position holdings must match this module. Administration UI may project
+minimal Group attributes for policy checks before invoking this module's commands. See
+[`docs/authorization.md`](../../../docs/authorization.md) for the adoption contract.
+This is a convention, not a test. The local demo seeds are the deliberate exception: `bun run db
+seed-groups` writes the tables directly and keeps these rules by hand.
+
+The rules below are not database constraints, so going around this module breaks them
+silently:
+
+- A Choir is always CSK-wide. Other Groups are CSK-wide or belong directly to one Choir.
+- Only current members of a Choir can join a Group that belongs to it. Placing a singer in a
+  Section is how they join the Choir, so it starts the Choir Membership when there is none.
+- Every Choir has exactly four Sections, each singing one Voice, and no two overlap (B rules
+  out B1 in the same Choir). Sections are created only with their Choir.
+- A singer is in the Choir and exactly one of its Sections, with one Voice division that the
+  Section's Voice contains: B1 or B2 in KKB, which sings B.
+- A Position holder is a current member, the Group's type allows the Position, and ending a
+  Membership ends the holder's Positions in that Group. In a Group of elected posts, the Board
+  (`holdsElectedPosts`), a member holds at most one Position; elsewhere they may hold several.
+  Leaving a Choir ends Memberships, and Positions, in every Group that belongs to it.
+- A Position may be limited to some Groups of its types, as Gigmästare KK to KK and the
+  Gigmästeri; without a limit, every Group of an allowed type has it. A Group cannot leave the
+  limit while someone holds the Position there.
+- A Voice change ends one Membership row and starts another; history is never rewritten.
+  Leaving a Section ends Positions in it, while a change within one Section keeps them.
+- Groups are archived, never deleted. Archiving a Choir archives its Sections.
+
+The database still enforces what it can: a Choir is CSK-wide and a Section belongs to a Choir;
+one current Membership per user and Group; one current holder per Position and Group; and
+active Group names unique per Choir. Two things are added by hand to the migration because
+Drizzle cannot express them, and are marked in the schema file: `NULLS NOT DISTINCT` on the
+name index, and the `group_member_voice_check` trigger, which requires a Voice exactly on
+Section Memberships and checks that the Section's Voice contains it. `group_member.voice` is a
+`voice_division`, so the database refuses a family on its own.
+
+## Interface
+
+`@/features/org-structure` is server-only. `@/features/org-structure/model` is universal: the
+`GroupType`, `IsoDate` and result types. The Voice types and `familyOf` / `contains` come from
+`@/features/voice/model`.
+
+Every command takes the database client or a transaction as its first argument, so a caller
+can make it one step of a larger transaction; a refused command rolls back only its own
+savepoint. Commands return `{ success: true, data }` or `{ success: false, error }`, where
+`error` is an `OrgStructureViolation`. Rule violations, including constraint violations from
+races, never surface as thrown errors.
+
+- Structure: `createChoir`, `createGroup`, `renameGroup`, `archiveGroup`, `createPosition`,
+  `updatePosition` (`renamePosition`, `setPositionGroupTypes` and `setPositionGroups`, as one
+  change), `allowPositionInGroupTypes`.
+- Membership: `startMembership`, `endMembership`, `placeSinger` (the Voice decides the
+  Section: the one whose Voice contains it), `placeSingerInSection` (refuses a Voice the
+  Section's Voice does not contain), `changeVoice`.
+- Positions: `startPositionHolding`, `endPositionHolding`, `replacePositionHolder` (a handover
+  on the new holder's start date), and `startLinkedPosition` /
+  `endLinkedPosition` for one Position held in several Groups, such as the Board's Sexmästare
+  who leads the Sexmästeri.
+- Reads: `listCurrentGroupMembers`, `listCurrentGroupsOfUser`, `getCurrentPositionHolder`,
+  `listChoirMembersByVoiceFamily`, `listCurrentPositionsOfUser`,
+  `listCurrentChoirAffiliationsOfUsers` (batched Choir/Section summaries), `listActiveGroups`
+  (for pickers, keeping groups already chosen), `listGroupNames` (batched, with each group's type),
+  `lockGroupForReference`, which another feature's command calls in its own transaction to
+  check a group it is about to refer to and hold it against archiving, and
+  `listMembershipsOfUser`: a user's dated Memberships from a date on, from which the events
+  module computes an Event's Audience.
+
+"Current" means no end date. Dates are calendar dates, `YYYY-MM-DD`; a period may end on the
+day the next one starts.
+
+Position writes share advisory locks in this order: the Position catalogue, Position-in-Group
+slots ordered by Group ID, then User IDs in sorted order, before locking or updating Position
+holder rows.
+Assignments and catalogue changes use the same catalogue lock, so an allowance cannot be revoked
+between validation and insertion. Membership-ending commands take the User lock before ending that
+User's holder rows, and do not acquire catalogue or Position-in-Group locks; they therefore cannot
+form a reverse wait cycle with a handover.
+
+## Default structure
+
+`@/features/org-structure/defaults` owns the structure a new environment starts with: MK, DK and
+KK with their Sections and Voices, Styret, the Gigmästeri and the Position catalogue
+(`DEFAULT_ORG_STRUCTURE`). `bootstrapOrgStructure` creates it through this module's commands in
+one transaction, and only while the environment has no group and no Position at all. After that
+the structure belongs to the Admins: a later run never recreates a default they archived,
+renamed or deleted, so none of these names is system data. Only the group types, a schema enum,
+are.
+
+A deployed environment runs it once with `bun cli.js org bootstrap` (see
+[`deploy/README.md`](../../../deploy/README.md)). Locally, `bun run db reset` and
+`bun run db seed-demo` run it, and `bun run db seed-groups` adds example data on top.
+
+## Admin pages
+
+The Admin surface over this module is split by task. `/admin/org-structure` lists the Choirs and
+their Sections, where singers are placed and change Voice; `/admin/org-structure/groups` lists every
+other group and the Position catalogue. Both link to `/admin/org-structure/[groupId]`, whose back
+link returns to the page that lists the group. The feature entrypoint exports their screens;
+everything else lives in `ui/`:
+
+```text
+ui/
+  choirs/      the Choirs and their Sections, for placing singers
+  groups/      every other group, and creating, renaming and archiving groups
+  detail/      one group's Members and Position holders, with their history
+  catalogue/   the Positions, the group types each is allowed in, and any limit to groups
+  group-summaries.ts, group-list.tsx   what both overviews show of a group
+  group-command-dialog.tsx, commands.ts   the shared shape of every admin command
+  screen-reads.ts   the screens' reads through the API
+http/          the Hono routes (`/api/v1/choirs`, `/groups`, `/positions`)
+```
+
+The screens read and write through the HTTP API and its generated client. Every route requires
+`org.manage` for the request's fresh actor, validates its input, and runs one module command in a
+transaction.
+Structure/catalogue operations use `org.manage`; Membership/Voice and holder operations use
+`group.manageMemberships` and `group.managePositions`. All remain Admin-only; an ordinary Position
+holder cannot appoint holders or administer Memberships. Screen queries establish their own
+`org.manage` boundary. Domain commands retain their savepoints, locks and period semantics.
+Domain violations travel as stable codes (`group-name-taken` as `GROUP_NAME_TAKEN`) and the client
+maps them back to `{ status: "error", error }`. It translates
+the kind from `Groups.errors`, so adding an `OrgStructureViolation` means adding its message to
+every catalogue; the typed translation keys fail the typecheck until you do. Reads for a screen
+live beside it (`query.ts`), are shaped for that screen, take the database and leave authorization
+to the route.
+
+## Tests
+
+The tests run against a real, freshly migrated database created beside the local one in
+`POSTGRES_URL` and dropped afterwards (`test/database.ts`). Without a reachable local
+Postgres they are skipped with a warning. Migrations create no rows, so `test-support.ts` builds
+the structure the tests name through the module's own commands.

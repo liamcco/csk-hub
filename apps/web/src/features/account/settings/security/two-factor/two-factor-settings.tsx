@@ -1,0 +1,88 @@
+import QRCode from "react-qr-code"
+import { useTranslations } from "@/core/i18n/translations"
+import { InputField } from "@/shared/forms/fields"
+import { Alert, AlertDescription } from "@/shared/ui/base/alert"
+import { Button } from "@/shared/ui/base/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/base/card"
+import { FieldGroup } from "@/shared/ui/base/field"
+import { Switch } from "@/shared/ui/base/switch"
+import { useTwoFactorSettings } from "./use-two-factor-settings"
+
+export function TwoFactorSettings({ enabled }: { enabled: boolean }) {
+  const t = useTranslations("AccountSettings")
+  const common = useTranslations("Common")
+  const state = useTwoFactorSettings()
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{t("authenticatorTitle")}</CardTitle>
+        <CardDescription>{t("authenticatorDescription")}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        {state.step.kind === "idle" ? (
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-sm">{enabled ? t("twoFactorEnabled") : t("twoFactorPrompt")}</p>
+            <Switch
+              aria-label={t("enableTwoFactor")}
+              checked={enabled}
+              disabled={state.pending}
+              onCheckedChange={state.requestChange}
+            />
+          </div>
+        ) : state.step.kind === "verify" ? (
+          <form onSubmit={state.verifySetup}>
+            <FieldGroup>
+              <p className="font-medium">{t("addAuthenticator")}</p>
+              <p className="text-sm">{t("scanQr")}</p>
+              <div className="mx-auto flex w-fit rounded-xl bg-white p-4">
+                <QRCode value={state.step.totpUri} size={192} aria-label={t("authenticatorQr")} />
+              </div>
+              <InputField label={t("verificationCode")} name="code" inputMode="numeric" required />
+              <div className="flex flex-wrap gap-2">
+                <Button type="submit" disabled={state.pending}>
+                  {state.pending ? t("verifying") : t("verifyAndEnable")}
+                </Button>
+                <Button type="button" variant="outline" onClick={state.cancelChange} disabled={state.pending}>
+                  {common("cancel")}
+                </Button>
+              </div>
+            </FieldGroup>
+          </form>
+        ) : (
+          <form onSubmit={state.changeTwoFactor}>
+            <FieldGroup>
+              <p className="font-medium">{state.step.enable ? t("addAuthenticator") : t("turnOffTwoFactor")}</p>
+              <InputField label={common("password")} type="password" name="password" required />
+              <div className="flex flex-wrap gap-2">
+                <Button type="submit" disabled={state.pending}>
+                  {state.pending ? t("saving") : state.step.enable ? t("addAuthenticator") : t("turnOffTwoFactor")}
+                </Button>
+                <Button type="button" variant="outline" onClick={state.cancelChange} disabled={state.pending}>
+                  {common("cancel")}
+                </Button>
+              </div>
+            </FieldGroup>
+          </form>
+        )}
+        {state.backupCodes?.length ? (
+          <Alert className="mt-4">
+            <AlertDescription>
+              <p>{t("backupCodes")}</p>
+              <ul className="mt-2 grid grid-cols-2 gap-1 font-mono text-xs sm:grid-cols-3">
+                {state.backupCodes.map((backupCode) => (
+                  <li key={backupCode}>{backupCode}</li>
+                ))}
+              </ul>
+            </AlertDescription>
+          </Alert>
+        ) : null}
+        {state.feedback ? (
+          <Alert className="mt-4" variant={state.feedback.type === "error" ? "destructive" : "default"}>
+            <AlertDescription>{state.feedback.message}</AlertDescription>
+          </Alert>
+        ) : null}
+      </CardContent>
+    </Card>
+  )
+}

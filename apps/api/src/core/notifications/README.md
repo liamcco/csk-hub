@@ -1,0 +1,173 @@
+# Push notifications
+
+Messages use the shared [live-delivery workflow](../realtime/README.md) when Redis is
+configured: visible feedback is attempted first, followed by best-effort Web Push fallback.
+Admin broadcasts retain direct bulk Web Push and separately queue in-app feedback when
+Redis is configured; they never enqueue a second push. Settings delivery tests also call
+the immediate low-level push capability. A successful push result means provider acceptance,
+while queued in-app feedback does not imply a successful push.
+
+`@/core/notifications` is the server-only capability for storing web-push subscriptions and delivering a push message. Feature modules own their own authorization, recipient selection, and UI; this module owns the subscription records and the web-push provider interaction.
+
+## Prerequisites
+
+Web push requires a VAPID key pair and a contact email address. Generate the pair once,
+then store it in the environment used to build and run the application:
+
+```sh
+bunx web-push generate-vapid-keys
+```
+
+Set the generated values and a maintained contact address:
+
+```dotenv
+VAPID_PUBLIC_KEY=<generated public key>
+VAPID_PRIVATE_KEY=<matching generated private key>
+VITE_VAPID_PUBLIC_KEY=$VAPID_PUBLIC_KEY
+CONTACT_EMAIL=webmaster@example.org
+```
+
+The API signs pushes with `VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY`. The web app's
+subscription UI reads the same public key as `VITE_VAPID_PUBLIC_KEY`, which Vite inlines into
+the browser bundle. `VAPID_PRIVATE_KEY` must be kept secret and must never reach the web app,
+source control, or client-side build configuration. `CONTACT_EMAIL` is sent to push providers as `mailto:<CONTACT_EMAIL>`;
+use an address that is monitored by the organisation.
+
+Use the same key pair for every deployment that serves the same site, and retain it for
+as long as existing device subscriptions should work. Replacing either key requires
+Users to subscribe again. The web copy of the public key is inlined at build time
+(`VITE_VAPID_PUBLIC_KEY`, the web image's build argument), so rebuild the web image after
+changing it. Browsers also require a secure context (HTTPS, with `localhost` allowed for local
+development), service-worker support, and the User's permission to display
+notifications.
+
+User subscription setup belongs in account settings. Features that only send notifications should not register service workers or write `push_subscription` rows directly.
+
+The browser's PushManager subscription is separate from the current User's server-side binding. Settings must confirm that the endpoint has an active row for the signed-in User before showing notifications as enabled. If a browser subscription exists without that binding, an explicit reconnect action rebinds it to the current User; never return or display the previous owner's identity. Logout attempts to remove that browser endpoint's binding before signing out. Push discovery or revocation errors never prevent sign-out: if server revocation fails after browser discovery, browser unsubscribe is attempted as a fallback. If both fail, the binding may remain active; logout does not guarantee push revocation. A confirmed binding owned by someone else is left untouched.
+
+## Endpoint validation and recovery
+
+Logout waits at most two seconds for push cleanup before starting sign-out. After
+that deadline, late cleanup results cannot start further browser cleanup operations;
+requests already in flight may still complete.
+
+Subscriptions are runtime-validated before registration, rebinding, and delivery.
+Public encryption keys must encode a valid uncompressed P-256 point.
+Supported provider hosts are `fcm.googleapis.com`, `push.services.mozilla.com`,
+`push.apple.com`, and `notify.windows.com` (including subdomains for the latter
+three). HTTPS is required; credentials, fragments, nondefault ports, and hosts
+outside this list are rejected. Channel paths and tokens are opaque to the app;
+the provider validates them. This includes WNS root-path URLs.
+
+Edge on Windows uses WNS ([Microsoft's policy documentation](https://learn.microsoft.com/en-us/deployedge/microsoft-edge-policies/forcebuiltinpushmessagingclient)).
+WNS channel URLs may contain a token at the root path ([WNS URL guidance](https://learn.microsoft.com/en-us/windows/apps/develop/notifications/push-notifications/wns-overview)).
+
+Settings distinguishes a confirmed binding, an absent binding, an unsupported
+endpoint, and a failed lookup. Unsupported endpoints offer explicit browser
+removal. Failed lookups remain unknown and offer retry and browser removal;
+network errors never imply that ownership was checked. Focus refreshes recheck
+ownership and reuse the service-worker registration, registering only if missing.
+Already-granted permission does not trigger another permission request.
+
+This change requires no schema migration, but it changes stored-row lifecycle:
+invalid stored subscriptions are disabled on the next delivery attempt. Expanding
+the supported provider list does not automatically reactivate previously disabled
+rows; an explicit reconnect revalidates and reactivates a supported subscription.
+
+Only active Users (`banned` false or null) are eligible for delivery and the
+recipient picker. Eligibility is checked when recipients are selected; already
+selected or provider-accepted notifications cannot be recalled. Deactivation
+leaves device health unchanged, so reactivation restores delivery to existing
+active bindings without reviving disabled ones.
+
+## Sending a notification
+
+Import the smallest delivery operation that matches the feature's audience:
+
+```ts
+import { sendToAll, sendToUser, sendToUsers } from "@/core/notifications";
+
+const oneUser = await sendToUser(userId, {
+  body: "Rehearsal starts in 30 minutes.",
+});
+const selectedUsers = await sendToUsers(userIds, {
+  body: "The venue has changed.",
+  url: "/events/42",
+});
+const everyone = await sendToAll({
+  body: "The event calendar has been updated.",
+  tag: "events:calendar",
+});
+```
+
+Call these only from server-side feature code, after the feature has authorized the actor and validated its input. For example, the broadcast route (`src/features/notification-broadcast/http`) requires `notification.broadcast` for the request's fresh actor before delivery, and passes the operation's database:
+
+```ts
+broadcastsRouter.openapi(routes.sendBroadcast, async (c) => {
+  const { authorization } = await c.var.resolveRequest()
+  authorization.requirePermission({ action: "notification.broadcast" })
+  const { message, userIds } = c.req.valid("json")
+  const text = message.trim()
+  if (!text) return c.json({ code: "MESSAGE_REQUIRED" as const }, 400)
+
+  return c.json(await sendToUsers(userIds ?? [], { body: text }, c.var.database), 200)
+})
+```
+
+## Delivery result
+
+All send functions resolve to `NotificationDeliveryResult`. The shared diagnostics
+use the closed failure-category union from `types.ts`:
+
+```ts
+import type {
+  NotificationDeliveryFailureCategory,
+  NotificationDeliveryResult,
+} from "./types";
+
+type Diagnostics = {
+  accepted: number;
+  failed: number;
+  failureCategories: Partial<
+    Record<NotificationDeliveryFailureCategory, number>
+  >;
+};
+
+// NotificationDeliveryResult combines Diagnostics with either:
+// { success: true }
+// { success: false, error: "noActiveSubscriptions" | "noRecipients" | "deliveryFailed" }
+```
+
+`accepted` counts subscriptions whose push provider accepted the notification. `failed` counts subscriptions that did not accept it. A successful result means at least one active subscription accepted the notification; it does not guarantee every selected device received it. `failureCategories` contains only sanitized counts such as `timeout`, `providerRejected`, or `bookkeeping`; it never includes endpoints, keys, or message text. Features show accepted/attempted counts and handle the returned error code. Notifications use the application name, `CSK Hub`, as a fixed title and preserve the supplied `body`.
+
+A notification may carry a `url`: a same-origin path, such as `/news/<id>`, that clicking it opens, focusing an open app window when there is one. Any other value throws before delivery. A `tag`, conventionally `<feature>:<id>`, makes a newer notification replace an older one with the same tag instead of stacking.
+
+## Adding notifications to a feature
+
+A feature that notifies Users on its own events, such as a published Post or a new Message, calls the send functions from its server-side write path. Keep these rules:
+
+- The feature decides who is notified and authorizes the actor; this module only delivers.
+- Send after the write has committed, so slow or failed delivery never delays or fails the User's action. Prefer queueing activity with a notification body in the write's transaction (`core/realtime/outbox.ts`) and calling `scheduleDelivery()` after commit: the API's delivery worker then sends the push, with retries.
+- Send only when the write created something. An idempotent retry, such as `appendMessage` returning `created: false`, must not notify twice.
+- Write the text in each recipient's Language (ADR-0004): group recipients by their locale and send each group its own body.
+- Set `url` to the item's permalink and `tag` to `<feature>:<id>`.
+- Whether inactive Users are excluded is still open in #99; follow its decision once made.
+
+Notifying on events the product has said are silent, such as publishing a Post, is a product decision first: record it in an ADR before wiring it in.
+
+When a provider returns HTTP 404 or 410, or stored subscription data fails validation, this module marks that subscription disabled so future sends skip it. It also tracks delivery timestamps and atomically increments failure counts in SQL, avoiding lost increments from concurrent sends. Sanitized failure counts are logged without endpoint, key, or message contents. Features must not mutate those lifecycle fields directly.
+
+Provider sends use concurrency capped at five, a 7-second socket inactivity timeout,
+and a 10-second overall deadline per send. Each attempt uses its own HTTPS agent;
+deadline expiry closes its sockets. Every selected subscription is attempted—there
+is no batch cutoff that skips recipients. Total delivery time grows with the number
+of subscriptions, roughly 12 seconds per group of five at worst, excluding the
+initial database query and scheduling overhead.
+
+Lifecycle bookkeeping is best effort, with a 2-second wait limit per update.
+Provider acceptance remains acceptance even if that write fails or times out;
+a sanitized `bookkeeping` diagnostic records the problem without triggering a resend.
+
+## Finding subscribed Users
+
+`listUsersWithActiveSubscriptions(search)` returns up to 25 Better Auth records with active subscriptions, filtered by name or email. It is intended for an authorized recipient picker. Keep its result inside server-authorized feature flows; it exposes User names and email addresses.

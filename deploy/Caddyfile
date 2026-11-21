@@ -1,0 +1,50 @@
+# The stack's single origin, served by the web image: the SPA's static files plus the API behind it.
+# Routing is by path only:
+#   /api/realtime/*  the standalone API's event stream and acknowledgements
+#   /api, /api/*     the standalone API, which answers unknown API paths itself (404 NOT_FOUND)
+#   a path ending in a file extension  that static file, or 404
+#   everything else  the SPA's index.html (history fallback), so bookmarks and deep links load
+# Nothing is compressed or buffered, so server-sent events stream as they are written.
+{
+	admin off
+	# Locally Caddy issues its own certificate for localhost; installing its root into the
+	# container's trust store is pointless, so it is skipped.
+	skip_install_trust
+}
+
+{$SITE_ADDRESS} {
+	handle /api/realtime/* {
+		reverse_proxy api:3000 {
+			flush_interval -1
+			# Longer than the event stream's 15-second heartbeat, so idle streams are not cut, yet a
+			# stream whose upstream went silent is closed and EventSource reconnects.
+			transport http {
+				read_timeout 60s
+			}
+		}
+	}
+
+	@api path /api /api/*
+	handle @api {
+		reverse_proxy api:3000 {
+			flush_interval -1
+		}
+	}
+
+	handle {
+		root * /srv
+		# Hashed build output never changes under its name; everything else is revalidated.
+		header /assets/* Cache-Control "public, max-age=31536000, immutable"
+		@mutable not path /assets/*
+		header @mutable Cache-Control "no-cache"
+
+		@file path_regexp file \.[A-Za-z0-9]+$
+		handle @file {
+			file_server
+		}
+		handle {
+			try_files {path} /index.html
+			file_server
+		}
+	}
+}

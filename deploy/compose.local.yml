@@ -1,0 +1,6 @@
+# Added by deploy/local-stack.sh for a local stack only: publishes the database on loopback so
+# `bun run e2e --stack` can seed its journey Users. Never use it for a deployed stack.
+services:
+  db:
+    ports:
+      - "127.0.0.1:${DB_PORT:-5434}:5432"
