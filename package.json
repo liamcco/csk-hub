@@ -10,6 +10,7 @@
   "scripts": {
     "dev": "bun run --filter @csk-hub/api --filter @csk-hub/web dev",
     "build": "bun run --cwd apps/web build && bun run --cwd apps/api build",
+    "vercel-build": "bun build apps/api/src/api/runtime.ts --target=node --external=pg-native --outfile=apps/api/dist/vercel.mjs",
     "tst": "bun test ./deploy --dots && bun run --cwd packages/shared test --dots && bun run --cwd apps/api test --dots && bun run --cwd apps/web test --dots",
     "lint": "biome check",
     "typecheck": "tsc --noEmit -p packages/shared && tsc --noEmit -p apps/api && tsc --noEmit -p apps/web && tsc --noEmit -p .",

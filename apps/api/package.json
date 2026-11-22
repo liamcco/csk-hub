@@ -20,6 +20,7 @@
     "@better-auth/passkey": "^1.7.4",
     "@hono/zod-openapi": "^1.6.3",
     "@tiptap/core": "3.31.3",
+    "@vercel/functions": "^3.11.3",
     "better-auth": "^1.7.4",
     "drizzle-orm": "1.0.0-rc.5",
     "hono": "^4.13.19",
