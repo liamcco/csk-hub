@@ -10,9 +10,10 @@ The `csk-hub-dev` project can also deploy the SPA and HTTP API on [Vercel](#verc
 Link the GitHub repository to one Vercel project with the repository root as its Root Directory
 and `main` as its Production Branch. Select **Vite** and **Node.js 24.x** and turn off the
 dashboard overrides for Install Command, Build Command, and Output Directory. The root
-[`vercel.json`](../vercel.json) sets those commands and the SPA fallback. The Function builder
-runs the root `vercel-build` script to bundle the API for Node.js before tracing the JavaScript
-handler in `api/`. The existing workspace typecheck still uses TypeScript 7.
+[`vercel.json`](../vercel.json) sets those commands and the SPA fallback. The build command runs
+the root `vercel-build` script first, which bundles the API to `apps/api/dist/vercel.mjs` for the
+JavaScript handler in `api/` to import, then builds the web app. The existing workspace typecheck
+still uses TypeScript 7.
 
 Enable **Automatically expose System Environment Variables**. Configure these variables for
 the deployment environments you use.
@@ -31,7 +32,8 @@ the deployment environments you use.
 Leave `ENVIRONMENT` unset so the API uses `VERCEL_ENV`. With `REDIS_URL` set, writes that queue
 activity schedule a delivery window of up to 30 seconds through `waitUntil()`. Browsers receive
 live updates over SSE. Pending work after that window resumes when another write schedules
-delivery. Leave `REDIS_URL` unset to disable realtime.
+delivery. Leave `REDIS_URL` unset to disable realtime and all outbox delivery, including push
+notifications, which share the same worker.
 
 Apply pending migrations before releasing a commit that needs the new schema. From `apps/api`,
 run `bun src/cli/index.ts migrate` with `POSTGRES_URL` set to the target database's direct
