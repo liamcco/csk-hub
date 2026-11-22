@@ -3,6 +3,40 @@
 How CSK Hub is packaged and hosted: two release images (API and web), a Compose stack that runs
 them, and the scripts that publish and deploy them. The decision behind this layout is
 [ADR 0012](../docs/adr/0012-packaging-lives-in-deploy-and-operations-ship-in-the-image.md).
+The `csk-hub-dev` project can also deploy the SPA and HTTP API on [Vercel](#vercel).
+
+## Vercel
+
+Link the GitHub repository to one Vercel project with the repository root as its Root Directory
+and `main` as its Production Branch. Select **Vite** and **Node.js 24.x** and turn off the
+dashboard overrides for Install Command, Build Command, and Output Directory. The root
+[`vercel.json`](../vercel.json) sets those commands and the SPA fallback. The Function builder
+runs the root `vercel-build` script to bundle the API for Node.js before tracing the JavaScript
+handler in `api/`. The existing workspace typecheck still uses TypeScript 7.
+
+Enable **Automatically expose System Environment Variables**. Configure these variables for
+the deployment environments you use.
+
+| Variable | Value |
+| --- | --- |
+| `BETTER_AUTH_URL` | Production's canonical HTTPS origin. Preview uses Vercel's deployment and branch hostnames. |
+| `BETTER_AUTH_SECRET` | The Better Auth secret for the environment. |
+| `POSTGRES_URL` | The environment's pooled database connection. The existing TLS policy trusts Supabase's CA. |
+| `REDIS_URL`, `REDIS_KEY_PREFIX` | A reachable Redis 7+ connection for realtime. Use `rediss://` for remote Redis and distinct prefixes for Production and Preview. |
+| `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` | A valid matching key pair for push. |
+| `VITE_VAPID_PUBLIC_KEY` | The same value as `VAPID_PUBLIC_KEY`. Vite embeds it at build time. |
+| `EMAIL_MODE`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM` | Use `smtp` and the provider's STARTTLS settings to deliver invitations, password resets, and email codes. The defaults for host and port are `smtp.gmail.com` and `587`. |
+| `CONTACT_EMAIL` | Optional. Preserve the existing value if configured. |
+
+Leave `ENVIRONMENT` unset so the API uses `VERCEL_ENV`. With `REDIS_URL` set, writes that queue
+activity schedule a delivery window of up to 30 seconds through `waitUntil()`. Browsers receive
+live updates over SSE. Pending work after that window resumes when another write schedules
+delivery. Leave `REDIS_URL` unset to disable realtime.
+
+Apply pending migrations before releasing a commit that needs the new schema. From `apps/api`,
+run `bun src/cli/index.ts migrate` with `POSTGRES_URL` set to the target database's direct
+connection and a schema-owner credential. Vercel builds and requests use the runtime database
+configuration. After the dashboard settings are in place, pushes to `main` deploy automatically.
 
 | File | Purpose |
 | --- | --- |
