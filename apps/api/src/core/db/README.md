@@ -1,15 +1,26 @@
 # Database
 
 The application's database client (`index.ts`), the client factory (`client.ts`), the migration
-runner (`migrate.ts`), Drizzle schemas (`schema/`) and the TLS policy (`tls.ts`).
+runner (`migrate.ts`), Drizzle schemas (`schema/`, see its README), portable SQL (`sql.ts`), the
+MariaDB adapter (`mariadb/`) and the TLS policy (`tls.ts`).
 
 ## The application contract
 
-The application consumes one variable: `POSTGRES_URL`. Locally it comes from `.env` and points
-at the dev Compose container; in the deployed stack it comes from `deploy/compose.yml`.
-Application code never chooses between environments.
+The application consumes one variable: `DATABASE_URL` (or `POSTGRES_URL`, which existing
+deployments set). Locally it comes from `.env` and points at the dev Compose container; in the
+deployed stack it comes from `deploy/compose.yml`. Application code never chooses between
+environments.
 
-`index.ts` reads `POSTGRES_URL` at import and is the application's client. Everything that must
+## PostgreSQL or MariaDB
+
+The URL's scheme picks the database: `postgresql://` or `mariadb://` (`dialect.ts`). The choice is
+made once per process, when the schemas load. Feature code is the same on both: it is typed
+against the PostgreSQL schema, and on MariaDB `mariadb/compat.ts` and the dialect in
+`mariadb/client.ts` supply what the features rely on from PostgreSQL. Raw SQL goes through
+`sql.ts` (`now()`, intervals, JSON fields, `ilike`, advisory locks), never PostgreSQL syntax
+directly. MariaDB 11.4 or later is required.
+
+`index.ts` reads the URL at import and is the application's client. Everything that must
 choose its own database — the dev CLI, the test harness and the release image's commands —
 calls `createDb(url)` from `client.ts` instead, so nothing needs a subprocess or a modified
 environment to reach another database. `migrateDatabase` in `migrate.ts` is the one migration
@@ -18,8 +29,9 @@ runner (drizzle-orm's migrator); see [`drizzle/README.md`](../../../drizzle/READ
 ## Verified TLS
 
 `tls.ts` answers one question: how is a connection string dialled securely? A local database
-(`localhost`, `127.0.0.1`, `[::1]`) is dialled in plain text. Every other connection is verified
-against the Supabase root CA with `rejectUnauthorized: true`, unless its own URL says
+(`localhost`, `127.0.0.1`, `[::1]`) is dialled in plain text. Every other PostgreSQL connection is
+verified against the Supabase root CA, and every other MariaDB connection against the system trust
+store, with `rejectUnauthorized: true`, unless its own URL says
 `sslmode=disable`. The deployed stack uses that for its database on the private Compose network
 (`db:5432`), where there is no certificate to verify; the choice is visible wherever the URL is
 configured, and there is no other switch.

@@ -58,3 +58,37 @@ jobs:
             echo "::error::contract/ is stale. Run 'bun run api:generate' and commit the result."
             exit 1
           fi
+
+  # The API's tests again on MariaDB, the other supported database. Lint, types and the contract
+  # do not depend on the database, so the check job above covers them once.
+  mariadb:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      mariadb:
+        image: mariadb:11.8
+        env:
+          MARIADB_ROOT_PASSWORD: csk_hub
+          MARIADB_DATABASE: csk_hub
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd "healthcheck.sh --connect --innodb_initialized"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      ENVIRONMENT: test
+      # root, so the harness can create its test databases and the migrate test its runtime user.
+      DATABASE_URL: mariadb://root:csk_hub@127.0.0.1:3306/csk_hub
+      BETTER_AUTH_SECRET: ci-only-better-auth-secret
+      NEXT_PUBLIC_VAPID_PUBLIC_KEY: ci-only-vapid-public-key
+      VAPID_PRIVATE_KEY: ci-only-vapid-private-key
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.3
+      - run: bun install --frozen-lockfile
+      - name: Test on MariaDB
+        run: bun run --cwd apps/api test --dots

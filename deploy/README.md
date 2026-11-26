@@ -58,7 +58,7 @@ configuration. After the dashboard settings are in place, pushes to `main` deplo
 The API and the web app build independently, from `deploy/Dockerfile`:
 
 - `api` (`--target api`): Bun with the bundled API (`api.js`, `apps/api/src/api/server.ts`), the
-  maintenance CLI (`cli.js`) and the migration SQL (`drizzle/`). There is no Node.js in it.
+  maintenance CLI (`cli.js`) and the migration SQL (`drizzle/` for PostgreSQL, `drizzle-mariadb/` for MariaDB). There is no Node.js in it.
   `apps/api/src/api/standalone.test.ts` bundles the API the same way.
 - `web` (`--target web`): Caddy with the SPA's static build (`apps/web/dist`) and the
   `Caddyfile`. It holds no secrets and needs no database.

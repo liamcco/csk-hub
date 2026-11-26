@@ -10,7 +10,8 @@ if (!process.env.CSK_ACTIVITY_TEST) {
 // with only the exports they use would otherwise hide the rest from every later test file,
 // depending on run order. Loading the real modules first keeps every name available.
 // The activity suite mocks the database and session modules before loading them itself.
-if (process.env.POSTGRES_URL && !process.env.CSK_ACTIVITY_TEST) await import("@/core/authz")
+if ((process.env.DATABASE_URL || process.env.POSTGRES_URL) && !process.env.CSK_ACTIVITY_TEST)
+  await import("@/core/authz")
 
 mock.module("@csk-hub/shared/core/logging", () => ({
   logger: {

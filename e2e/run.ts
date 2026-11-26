@@ -4,7 +4,7 @@
  *   bun --env-file=.env e2e/run.ts [playwright args]   API + Vite dev server on a disposable database
  *   bun e2e/run.ts --stack [playwright args]           the local Compose stack (deploy/local-stack.sh up)
  *
- * The default mode creates and migrates a throwaway database beside the local POSTGRES_URL, seeds
+ * The default mode creates and migrates a throwaway database beside the local DATABASE_URL, seeds
  * the fixture Users, starts Playwright (which starts the API and the web app on that database) and
  * drops the database afterwards. Real-time journeys need the local Redis (REDIS_URL); they get a
  * key prefix of their own.
@@ -33,7 +33,7 @@ type Target = { url: string; origin: string; environment: Record<string, string 
 async function devTarget(): Promise<Target> {
   const database = await createTestDatabase()
   if (!database) {
-    console.error("The journeys need a reachable local PostgreSQL (POSTGRES_URL). Run `docker compose up -d`.")
+    console.error("The journeys need a reachable local database (DATABASE_URL). Run `docker compose up -d`.")
     process.exit(1)
   }
   const origin = `http://localhost:${E2E_PORT}`
@@ -41,7 +41,7 @@ async function devTarget(): Promise<Target> {
     url: database.url,
     origin,
     environment: {
-      POSTGRES_URL: database.url,
+      DATABASE_URL: database.url,
       ...(process.env.REDIS_URL ? { REDIS_KEY_PREFIX: `csk-e2e-${randomUUID().slice(0, 8)}` } : {})
     },
     drop: () => database.drop()
