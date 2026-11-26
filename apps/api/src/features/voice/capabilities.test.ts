@@ -1,5 +1,6 @@
 import { afterAll, describe, expect, test } from "bun:test"
 import { sql } from "drizzle-orm"
+import { isMariaDb } from "@/core/db/dialect"
 import { user } from "@/core/db/schema/auth"
 import { voiceCapability } from "@/core/db/schema/voice"
 import { createTestDatabase } from "../../../test/database"
@@ -53,13 +54,14 @@ describe.skipIf(!database)("voice capabilities", () => {
       ).rejects.toMatchObject({ cause: { constraint: "voice_division_check" } })
     })
 
-    test("restricts the voice_family domain to families", async () => {
+    // PostgreSQL's domains themselves; MariaDB has none, and its CHECK constraints are tested above.
+    test.skipIf(isMariaDb)("restricts the voice_family domain to families", async () => {
       await expect(Promise.resolve(t.db.execute(sql`SELECT 'B1'::voice_family`))).rejects.toMatchObject({
         cause: { constraint: "voice_family_check" }
       })
     })
 
-    test("compares domain values only through a cast to voice", async () => {
+    test.skipIf(isMariaDb)("compares domain values only through a cast to voice", async () => {
       // Postgres finds no `=` for a domain over an enum, not even against a literal or the same domain.
       await expect(Promise.resolve(t.db.execute(sql`SELECT 'B'::voice_family = 'B'::voice`))).rejects.toMatchObject({
         cause: { code: "42883" }

@@ -1,6 +1,6 @@
 import { afterAll, describe, expect, mock, test } from "bun:test"
 import { AsyncLocalStorage } from "node:async_hooks"
-import { createTestDatabase } from "@test/database"
+import { createTestDatabase, UNIQUE_VIOLATION } from "@test/database"
 import { and, eq } from "drizzle-orm"
 import { user } from "@/core/db/schema/auth"
 import {
@@ -240,7 +240,9 @@ if (!process.env.CSK_GROUP_CREATION_TEST) {
           if (!created) throw new Error("Conversation fixture was not created")
           await tx.insert(groupConversation).values({ ...intent, conversationId: created.id })
         })
-      ).rejects.toMatchObject({ cause: { code: "23505", constraint: "groupConversation_creator_creation_key_unique" } })
+      ).rejects.toMatchObject({
+        cause: { ...UNIQUE_VIOLATION, constraint: "groupConversation_creator_creation_key_unique" }
+      })
     })
 
     test("legacy groups remain valid without a creation key or fingerprint", async () => {

@@ -61,10 +61,9 @@ describe("Group Conversation commands", () => {
       id: `member-${index}`,
       banned: false
     }))
-    selects.push([{ nextMessageSequence: 7 }], [{ leftAt: null }], members)
-    returningRows.push(members.map(({ id }) => ({ userId: id })))
+    selects.push([{ nextMessageSequence: 7 }], [{ leftAt: null }], members, [])
     await addGroupMembers({ conversationId: "group-1", memberIds: members.map(({ id }) => id).reverse() }, messaging)
-    expect(tx.select).toHaveBeenCalledTimes(3)
+    expect(tx.select).toHaveBeenCalledTimes(4)
     expect(tx.insert).toHaveBeenCalledTimes(2)
   })
   test("creates memberships and read cursors including the creator without requiring a Message", async () => {
@@ -188,27 +187,41 @@ describe("Group Conversation commands", () => {
     expect(inserts).toEqual([])
   })
   test("rejoining immediately marks retained history read", async () => {
-    selects.push([{ nextMessageSequence: 7 }], [{ leftAt: null }], [{ id: "member", banned: false }])
-    returningRows.push([{ userId: "member" }])
+    selects.push(
+      [{ nextMessageSequence: 7 }],
+      [{ leftAt: null }],
+      [{ id: "member", banned: false }],
+      [{ userId: "member", leftAt: new Date() }]
+    )
     await addGroupMembers({ conversationId: "group-1", memberIds: ["member"] }, messaging)
-    expect(inserts).toContainEqual([{ conversationId: "group-1", userId: "member", lastReadSequence: 6 }])
+    expect(sets).toEqual([{ joinedAt: expect.any(Date), leftAt: null, historyVisibleThroughSequence: null }])
+    expect(inserts).toEqual([[{ conversationId: "group-1", userId: "member", lastReadSequence: 6 }]])
   })
   test("adding an already active member preserves their unread position", async () => {
-    selects.push([{ nextMessageSequence: 7 }], [{ leftAt: null }], [{ id: "member", banned: false }])
-    returningRows.push([])
+    selects.push(
+      [{ nextMessageSequence: 7 }],
+      [{ leftAt: null }],
+      [{ id: "member", banned: false }],
+      [{ userId: "member", leftAt: null }]
+    )
     await addGroupMembers({ conversationId: "group-1", memberIds: ["member"] }, messaging)
-    expect(inserts).toHaveLength(1)
+    expect(inserts).toEqual([])
+    expect(sets).toEqual([])
   })
   test("a mixed batch initializes read cursors only for new and rejoined members", async () => {
     selects.push(
       [{ nextMessageSequence: 7 }],
       [{ leftAt: null }],
-      ["active", "new", "rejoined"].map((id) => ({ id, banned: false }))
+      ["active", "new", "rejoined"].map((id) => ({ id, banned: false })),
+      [
+        { userId: "active", leftAt: null },
+        { userId: "rejoined", leftAt: new Date() }
+      ]
     )
-    returningRows.push([{ userId: "new" }, { userId: "rejoined" }])
     await addGroupMembers({ conversationId: "group-1", memberIds: ["rejoined", "active", "new", "active"] }, messaging)
+    expect(sets).toEqual([{ joinedAt: expect.any(Date), leftAt: null, historyVisibleThroughSequence: null }])
     expect(inserts).toEqual([
-      ["active", "new", "rejoined"].map((userId) => ({ conversationId: "group-1", userId })),
+      [{ conversationId: "group-1", userId: "new" }],
       ["new", "rejoined"].map((userId) => ({ conversationId: "group-1", userId, lastReadSequence: 6 }))
     ])
   })

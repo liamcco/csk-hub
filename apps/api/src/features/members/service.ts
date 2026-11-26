@@ -1,6 +1,7 @@
-import { and, asc, count, eq, ilike, isNull, ne, or } from "drizzle-orm"
+import { and, asc, count, eq, isNull, ne, or } from "drizzle-orm"
 import type { db } from "@/core/db"
 import { user } from "@/core/db/schema/auth"
+import { ilike } from "@/core/db/sql"
 import {
   listCurrentChoirAffiliationsOfUsers,
   listCurrentGroupsOfUser,

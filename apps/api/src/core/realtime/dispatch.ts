@@ -1,8 +1,9 @@
 import { logger } from "@csk-hub/shared/core/logging"
-import { and, eq, inArray, isNull, lt, lte, or, type SQL, sql } from "drizzle-orm"
+import { and, count, eq, inArray, isNull, lt, lte, or, type SQL, sql } from "drizzle-orm"
 import { env } from "@/core/config/env"
 import { db } from "@/core/db"
 import { activityDelivery } from "@/core/db/schema/activity"
+import { addDays, addMilliseconds, jsonText, millisecondsBetween, now } from "@/core/db/sql"
 import { sendToUser } from "@/core/notifications"
 import { type ActivityBroker, connectActivityBroker, publishActivity } from "@/core/realtime/broker"
 import { type ActivityDeliveryPolicy, type Delivery, isDeliveryAllowed } from "./delivery-access"
@@ -15,39 +16,50 @@ const DISPATCH_CONCURRENCY = 5
  */
 export const MAX_DELIVERY_ATTEMPTS = 12
 
+/** How long a claim owns its deliveries before another worker may take them over. */
+const LEASE_MS = 90_000
+
+/** Locks due, unleased deliveries other workers have not locked, and leases them in the same transaction. */
 async function claimDeliveries(limit: number) {
-  const now = sql`now()`
-  const candidates = db
-    .select({ id: activityDelivery.id })
-    .from(activityDelivery)
-    .where(
-      and(
-        or(isNull(activityDelivery.leaseUntil), lt(activityDelivery.leaseUntil, now)),
-        or(
-          and(isNull(activityDelivery.publishedAt), lte(activityDelivery.publishAfter, now)),
-          and(
-            isNull(activityDelivery.pushCompletedAt),
-            isNull(activityDelivery.acknowledgedAt),
-            lte(activityDelivery.pushAfter, now)
+  return db.transaction(async (tx) => {
+    const candidates = await tx
+      .select({ id: activityDelivery.id })
+      .from(activityDelivery)
+      .where(
+        and(
+          or(isNull(activityDelivery.leaseUntil), lt(activityDelivery.leaseUntil, now())),
+          or(
+            and(isNull(activityDelivery.publishedAt), lte(activityDelivery.publishAfter, now())),
+            and(
+              isNull(activityDelivery.pushCompletedAt),
+              isNull(activityDelivery.acknowledgedAt),
+              lte(activityDelivery.pushAfter, now())
+            )
           )
         )
       )
-    )
-    .orderBy(
-      sql`case when ${activityDelivery.change}->>'conversationId' is not null then 0 else 1 end`,
-      activityDelivery.createdAt
-    )
-    .limit(limit)
-    .for("update", { skipLocked: true })
-  return db
-    .update(activityDelivery)
-    .set({
-      leaseToken: crypto.randomUUID(),
-      leaseUntil: sql`now() + interval '90 seconds'`,
-      attempts: sql`${activityDelivery.attempts} + 1`
-    })
-    .where(inArray(activityDelivery.id, candidates))
-    .returning()
+      .orderBy(
+        sql`case when ${jsonText(activityDelivery.change, "conversationId")} is not null then 0 else 1 end`,
+        activityDelivery.createdAt
+      )
+      .limit(limit)
+      .for("update", { skipLocked: true })
+    if (!candidates.length) return []
+    return tx
+      .update(activityDelivery)
+      .set({
+        leaseToken: crypto.randomUUID(),
+        leaseUntil: addMilliseconds(now(), LEASE_MS),
+        attempts: sql`${activityDelivery.attempts} + 1`
+      })
+      .where(
+        inArray(
+          activityDelivery.id,
+          candidates.map(({ id }) => id)
+        )
+      )
+      .returning()
+  })
 }
 
 async function dispatchOne(
@@ -60,17 +72,17 @@ async function dispatchOne(
     [K in keyof typeof activityDelivery.$inferInsert]?: (typeof activityDelivery.$inferInsert)[K] | SQL
   } = { leaseUntil: null, leaseToken: null }
   const retryMs = Math.min(60_000, 1_000 * 2 ** Math.min(delivery.attempts, 6))
-  const retryAt = sql`now() + (${retryMs} * interval '1 millisecond')`
+  const retryAt = addMilliseconds(now(), retryMs)
   try {
     if (!(await isDeliveryAllowed(policy, delivery))) {
-      updates.publishedAt = sql`now()`
-      updates.pushCompletedAt = sql`now()`
+      updates.publishedAt = now()
+      updates.pushCompletedAt = now()
       return
     }
     if (!delivery.publishedAt) {
       try {
         await publish(delivery.userId, delivery.id)
-        updates.publishedAt = sql`now()`
+        updates.publishedAt = now()
       } catch {
         updates.publishAfter = retryAt
         logger.warn("realtime.publish.retry", { deliveryId: delivery.id })
@@ -81,36 +93,36 @@ async function dispatchOne(
       const [current] = await db
         .select()
         .from(activityDelivery)
-        .where(and(owned, lte(activityDelivery.pushAfter, sql`now()`)))
+        .where(and(owned, lte(activityDelivery.pushAfter, now())))
       if (!current) return
       if (
         current.acknowledgedAt ||
         (await policy.isAlreadyOpened(current)) ||
         !(await isDeliveryAllowed(policy, current))
       ) {
-        updates.pushCompletedAt = sql`now()`
+        updates.pushCompletedAt = now()
       } else if (current.body) {
         const result = await sendToUser(current.userId, {
           body: current.body,
           url: current.href ?? undefined,
           tag: current.id
         })
-        if (result.success || result.error === "noActiveSubscriptions") updates.pushCompletedAt = sql`now()`
+        if (result.success || result.error === "noActiveSubscriptions") updates.pushCompletedAt = now()
         else if (delivery.attempts >= MAX_DELIVERY_ATTEMPTS) {
-          updates.pushCompletedAt = sql`now()`
+          updates.pushCompletedAt = now()
           logger.error("realtime.push.abandoned", { deliveryId: delivery.id, attempts: delivery.attempts })
         } else {
           updates.pushAfter = retryAt
           logger.warn("realtime.push.retry", { deliveryId: delivery.id, attempts: delivery.attempts })
         }
       } else {
-        updates.pushCompletedAt = sql`now()`
+        updates.pushCompletedAt = now()
       }
     }
   } catch {
     updates.publishAfter = retryAt
     if (delivery.pushAfter && delivery.attempts >= MAX_DELIVERY_ATTEMPTS) {
-      updates.pushCompletedAt = sql`now()`
+      updates.pushCompletedAt = now()
       logger.error("realtime.push.abandoned", { deliveryId: delivery.id, attempts: delivery.attempts })
     } else if (delivery.pushAfter) updates.pushAfter = retryAt
     logger.error("realtime.delivery.retry", { deliveryId: delivery.id })
@@ -153,17 +165,16 @@ export async function dispatchActivity(policy: ActivityDeliveryPolicy, signal?: 
  * against the database clock. Null means no work remains. Acknowledged push is not pending.
  */
 export async function nextActivityDelay(): Promise<number | null> {
+  const publishAt = sql`case when ${activityDelivery.publishedAt} is null then ${activityDelivery.publishAfter} end`
+  const pushAt = sql`case when ${activityDelivery.pushCompletedAt} is null and ${activityDelivery.acknowledgedAt} is null
+    then ${activityDelivery.pushAfter} end`
+  const leaseFreeAt = sql`coalesce(${activityDelivery.leaseUntil}, ${now()})`
+  // MariaDB's least and greatest return null for any null argument, where PostgreSQL's skip nulls;
+  // coalescing each argument with the other gives PostgreSQL's answer on both.
+  const dueAt = sql`least(coalesce(${publishAt}, ${pushAt}), coalesce(${pushAt}, ${publishAt}))`
+  const eligibleAt = sql`greatest(${leaseFreeAt}, coalesce(${dueAt}, ${leaseFreeAt}))`
   const [row] = await db
-    .select({
-      delay: sql<number | null>`extract(epoch from (min(greatest(
-      coalesce(${activityDelivery.leaseUntil}, now()),
-      least(
-        case when ${activityDelivery.publishedAt} is null then ${activityDelivery.publishAfter} end,
-        case when ${activityDelivery.pushCompletedAt} is null and ${activityDelivery.acknowledgedAt} is null
-          then ${activityDelivery.pushAfter} end
-      )
-    )) - now())) * 1000`
-    })
+    .select({ delay: millisecondsBetween(now(), sql`min(${eligibleAt})`) })
     .from(activityDelivery)
     .where(
       or(
@@ -180,26 +191,40 @@ export async function nextActivityDelay(): Promise<number | null> {
 
 /** Records still awaiting publication or a due push, and how long the oldest has waited. */
 export async function pendingActivityStats() {
-  const result = await db.execute<{ pending: number; oldest_age_ms: number | null }>(sql`select
-    count(*)::int as pending,
-    extract(epoch from now() - min(${activityDelivery.createdAt})) * 1000 as oldest_age_ms
-    from ${activityDelivery}
-    where ${activityDelivery.publishedAt} is null or (${activityDelivery.pushAfter} is not null
-      and ${activityDelivery.pushCompletedAt} is null and ${activityDelivery.acknowledgedAt} is null)`)
-  const row = result.rows[0]
-  return { pending: Number(row?.pending ?? 0), oldestAgeMs: Math.max(0, Number(row?.oldest_age_ms ?? 0)) }
+  const [row] = await db
+    .select({
+      pending: count(),
+      oldestAgeMs: millisecondsBetween(sql`min(${activityDelivery.createdAt})`, now())
+    })
+    .from(activityDelivery)
+    .where(
+      or(
+        isNull(activityDelivery.publishedAt),
+        and(
+          sql`${activityDelivery.pushAfter} is not null`,
+          isNull(activityDelivery.pushCompletedAt),
+          isNull(activityDelivery.acknowledgedAt)
+        )
+      )
+    )
+  return { pending: Number(row?.pending ?? 0), oldestAgeMs: Math.max(0, Number(row?.oldestAgeMs ?? 0)) }
 }
 
 /** Removes deliveries older than seven days and reports expired unfinished work. */
 export async function pruneActivity() {
-  const result = await db.execute<{ removed: number; unfinished: number }>(sql`with expired as (
-    delete from ${activityDelivery} where ${activityDelivery.createdAt} < now() - interval '7 days'
-    returning published_at, push_after, push_completed_at, acknowledged_at
-  ) select count(*)::int as removed, count(*) filter (where published_at is null or
-    (push_after is not null and push_completed_at is null and acknowledged_at is null))::int as unfinished
-    from expired`)
-  const removed = Number(result.rows[0]?.removed ?? 0)
-  const unfinished = Number(result.rows[0]?.unfinished ?? 0)
+  const expired = await db
+    .delete(activityDelivery)
+    .where(lt(activityDelivery.createdAt, addDays(now(), -7)))
+    .returning({
+      publishedAt: activityDelivery.publishedAt,
+      pushAfter: activityDelivery.pushAfter,
+      pushCompletedAt: activityDelivery.pushCompletedAt,
+      acknowledgedAt: activityDelivery.acknowledgedAt
+    })
+  const removed = expired.length
+  const unfinished = expired.filter(
+    (row) => row.publishedAt === null || (row.pushAfter !== null && !row.pushCompletedAt && !row.acknowledgedAt)
+  ).length
   if (unfinished) logger.warn("realtime.delivery.expired", { count: unfinished })
   if (removed) logger.info("realtime.retention.pruned", { count: removed })
 }

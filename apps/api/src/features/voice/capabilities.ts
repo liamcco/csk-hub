@@ -1,7 +1,8 @@
 import { isVoiceDivision, type VoiceDivision } from "@csk-hub/shared/features/voice/model"
-import { eq, sql } from "drizzle-orm"
+import { eq } from "drizzle-orm"
 import type { db } from "@/core/db"
 import { voiceCapability } from "@/core/db/schema/voice"
+import { lockKey } from "@/core/db/sql"
 
 /** The application database client, or a transaction on it. */
 export type VoiceDatabase = typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0]
@@ -22,7 +23,7 @@ export async function setVoiceCapabilities(
 
   await database.transaction(async (tx) => {
     // Serializes concurrent replacements for one user, which would otherwise collide on the key.
-    await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${`voice:user:${userId}`}))`)
+    await lockKey(tx, `voice:user:${userId}`)
     await tx.delete(voiceCapability).where(eq(voiceCapability.userId, userId))
     const distinct = [...new Set(voices)]
     if (distinct.length > 0) await tx.insert(voiceCapability).values(distinct.map((voice) => ({ userId, voice })))

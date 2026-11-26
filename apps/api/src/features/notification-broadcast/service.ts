@@ -1,8 +1,9 @@
 import type { BroadcastDelivery } from "@csk-hub/shared/features/notification-broadcast/types"
-import { and, eq, ilike, inArray, isNull, or } from "drizzle-orm"
+import { and, eq, inArray, isNull, or } from "drizzle-orm"
 import { env } from "@/core/config/env"
 import type { Database } from "@/core/db"
 import { user } from "@/core/db/schema/auth"
+import { ilike } from "@/core/db/sql"
 import { listUsersWithActiveSubscriptions, sendToAll, sendToUsers } from "@/core/notifications"
 import { queueActivity } from "@/core/realtime/outbox"
 

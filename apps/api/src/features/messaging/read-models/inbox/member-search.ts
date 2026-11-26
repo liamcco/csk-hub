@@ -1,5 +1,6 @@
-import { and, asc, eq, ilike, isNull, ne, or } from "drizzle-orm"
+import { and, asc, eq, isNull, ne, or } from "drizzle-orm"
 import { user } from "@/core/db/schema/auth"
+import { ilike } from "@/core/db/sql"
 import type { MessagingContext } from "../../model/context"
 
 const MEMBER_SEARCH_LIMIT = 20

@@ -1,9 +1,10 @@
 import { createHash } from "node:crypto"
 import { groupMemberIds, normalizeGroupName } from "@csk-hub/shared/features/messaging/model/group-conversation"
 import { MessagingAccessError } from "@csk-hub/shared/features/messaging/model/messaging-error"
-import { and, eq, inArray, sql } from "drizzle-orm"
+import { and, eq, inArray } from "drizzle-orm"
 import { user } from "@/core/db/schema/auth"
 import { conversation, conversationReadState, groupConversation, groupMembership } from "@/core/db/schema/messaging"
+import { lockKey } from "@/core/db/sql"
 import { queueConversationActivity } from "../activity"
 import type { MessagingContext } from "../model/context"
 import type { MessageTransaction } from "../sending"
@@ -39,9 +40,7 @@ export async function createGroupConversation(
       .update(JSON.stringify([name, ids]))
       .digest("hex")
     // Serialize retries for this creator/key before checking whether the original intent committed.
-    await tx.execute(
-      sql`SELECT pg_advisory_xact_lock(hashtext(${JSON.stringify(["group-creation", userId, input.idempotencyKey])}))`
-    )
+    await lockKey(tx, JSON.stringify(["group-creation", userId, input.idempotencyKey]))
     const [existing] = await tx
       .select({ conversationId: groupConversation.conversationId, payloadHash: groupConversation.creationPayloadHash })
       .from(groupConversation)
@@ -85,16 +84,27 @@ export async function addGroupMembers(
     const row = await lockGroupConversation(tx, input.conversationId)
     await requireActiveGroupMember(tx, input.conversationId, userId, "group-management-forbidden")
     await requireActiveUsers(tx, ids)
-    const added = await tx
-      .insert(groupMembership)
-      .values(ids.map((userId) => ({ conversationId: input.conversationId, userId })))
-      .onConflictDoUpdate({
-        target: [groupMembership.conversationId, groupMembership.userId],
-        set: { joinedAt: new Date(), leftAt: null, historyVisibleThroughSequence: null },
-        setWhere: sql`${groupMembership.leftAt} IS NOT NULL`
-      })
-      .returning({ userId: groupMembership.userId })
-    // Only new or rejoined memberships are returned; active members keep their unread position.
+    // With the Conversation locked, the memberships read here are the ones the writes below change.
+    const memberships = await tx
+      .select({ userId: groupMembership.userId, leftAt: groupMembership.leftAt })
+      .from(groupMembership)
+      .where(and(eq(groupMembership.conversationId, input.conversationId), inArray(groupMembership.userId, ids)))
+    const departed = new Set(memberships.filter(({ leftAt }) => leftAt !== null).map(({ userId }) => userId))
+    const current = new Set(memberships.map(({ userId }) => userId))
+    const joining = ids.filter((userId) => !current.has(userId))
+    if (joining.length)
+      await tx
+        .insert(groupMembership)
+        .values(joining.map((userId) => ({ conversationId: input.conversationId, userId })))
+    if (departed.size)
+      await tx
+        .update(groupMembership)
+        .set({ joinedAt: new Date(), leftAt: null, historyVisibleThroughSequence: null })
+        .where(
+          and(eq(groupMembership.conversationId, input.conversationId), inArray(groupMembership.userId, [...departed]))
+        )
+    // Only new or rejoined memberships count; active members keep their unread position.
+    const added = [...joining, ...departed].map((userId) => ({ userId }))
     if (added.length)
       await tx
         .insert(conversationReadState)

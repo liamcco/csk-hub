@@ -1,4 +1,4 @@
-import { and, count, desc, eq, or, sql } from "drizzle-orm"
+import { and, count, desc, eq, exists, or, sql } from "drizzle-orm"
 import { alias } from "drizzle-orm/pg-core"
 import { user } from "@/core/db/schema/auth"
 import {
@@ -12,29 +12,22 @@ import { groupHistoryVisibility } from "../../group-conversations/access"
 import type { MessagingContext } from "../../model/context"
 import { toInboxConversations } from "./view-model"
 
+// The latest Message and the unread count are correlated subqueries rather than lateral joins,
+// which MariaDB lacks; both databases plan them per conversation all the same.
+
 export async function listDirectConversations(context: MessagingContext) {
   const { database, authorize } = context
   const { userId } = await authorize({ action: "app.access" })
   const otherMember = alias(user, "other_member")
 
-  const latestMessage = database
-    .select({ text: message.text, sentAt: message.sentAt })
+  const inConversation = eq(message.conversationId, conversationReadState.conversationId)
+  const latest = (field: typeof message.text | typeof message.sentAt) =>
+    database.select({ field }).from(message).where(inConversation).orderBy(desc(message.sequence)).limit(1)
+  const unread = database
+    .select({ count: count() })
     .from(message)
-    .where(eq(message.conversationId, conversationReadState.conversationId))
-    .orderBy(desc(message.sequence))
-    .limit(1)
-    .as("latest_message")
-
-  const unreadMessages = database
-    .select({ count: count().as("count") })
-    .from(message)
-    .where(
-      and(
-        eq(message.conversationId, conversationReadState.conversationId),
-        sql`${message.sequence} > ${conversationReadState.lastReadSequence}`
-      )
-    )
-    .as("unread_messages")
+    .where(and(inConversation, sql`${message.sequence} > ${conversationReadState.lastReadSequence}`))
+  const latestSentAt = sql<Date>`(${latest(message.sentAt)})`.mapWith(message.sentAt)
 
   const rows = await database
     .select({
@@ -42,9 +35,9 @@ export async function listDirectConversations(context: MessagingContext) {
       otherMemberId: otherMember.id,
       otherMemberName: otherMember.name,
       otherMemberBanned: otherMember.banned,
-      latestMessageText: latestMessage.text,
-      latestMessageSentAt: latestMessage.sentAt,
-      unreadCount: unreadMessages.count
+      latestMessageText: sql<string>`(${latest(message.text)})`,
+      latestMessageSentAt: latestSentAt,
+      unreadCount: sql<number>`(${unread})`.mapWith(Number)
     })
     .from(conversationReadState)
     .innerJoin(directConversation, eq(directConversation.conversationId, conversationReadState.conversationId))
@@ -55,10 +48,14 @@ export async function listDirectConversations(context: MessagingContext) {
         and(eq(directConversation.secondMemberId, userId), eq(otherMember.id, directConversation.firstMemberId))
       )
     )
-    .innerJoinLateral(latestMessage, sql`true`)
-    .innerJoinLateral(unreadMessages, sql`true`)
-    .where(eq(conversationReadState.userId, userId))
-    .orderBy(desc(latestMessage.sentAt))
+    // A direct Conversation shows once it has a Message.
+    .where(
+      and(
+        eq(conversationReadState.userId, userId),
+        exists(database.select({ id: message.id }).from(message).where(inConversation))
+      )
+    )
+    .orderBy(desc(latestSentAt))
 
   return toInboxConversations(rows)
 }
@@ -76,25 +73,21 @@ async function listGroupConversations(context: MessagingContext) {
     eq(message.conversationId, groupMembership.conversationId),
     groupHistoryVisibility(message.sequence, groupMembership.historyVisibleThroughSequence)
   )
-  const latest = database
-    .select({ text: message.text, sentAt: message.sentAt })
-    .from(message)
-    .where(visibleMessage)
-    .orderBy(desc(message.sequence))
-    .limit(1)
-    .as("latest_group_message")
+  const latest = (field: typeof message.text | typeof message.sentAt) =>
+    database.select({ field }).from(message).where(visibleMessage).orderBy(desc(message.sequence)).limit(1)
   const unread = database
-    .select({ count: count().as("count") })
+    .select({ count: count() })
     .from(message)
     .where(and(visibleMessage, sql`${message.sequence} > COALESCE(${conversationReadState.lastReadSequence}, 0)`))
-    .as("group_unread")
   const rows = await database
     .select({
       id: groupMembership.conversationId,
       otherMemberName: groupConversation.name,
-      preview: latest.text,
-      sentAt: sql<Date>`COALESCE(${latest.sentAt}, ${groupConversation.createdAt})`,
-      unreadCount: unread.count,
+      preview: sql<string | null>`(${latest(message.text)})`,
+      sentAt: sql<Date>`COALESCE((${latest(message.sentAt)}), ${groupConversation.createdAt})`.mapWith(
+        groupConversation.createdAt
+      ),
+      unreadCount: sql<number>`(${unread})`.mapWith(Number),
       leftAt: groupMembership.leftAt
     })
     .from(groupMembership)
@@ -106,8 +99,6 @@ async function listGroupConversations(context: MessagingContext) {
         eq(conversationReadState.userId, userId)
       )
     )
-    .leftJoinLateral(latest, sql`true`)
-    .innerJoinLateral(unread, sql`true`)
     .where(eq(groupMembership.userId, userId))
   return rows.map((row) => ({
     ...row,

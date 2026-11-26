@@ -2,6 +2,7 @@ import { afterAll, describe, expect, test } from "bun:test"
 import { eq, sql } from "drizzle-orm"
 import { AuthorizationDeniedError, createAuthorization } from "@/core/authz/authorization"
 import type { AuthorizationSession, PermissionContext, PermissionRequest } from "@/core/authz/model"
+import { isMariaDb } from "@/core/db/dialect"
 import { user } from "@/core/db/schema/auth"
 import { group, groupMember, position, positionHolder } from "@/core/db/schema/org-structure"
 import { listCurrentGroupsOfUser, listCurrentPositionsOfUser } from "@/features/org-structure"
@@ -81,7 +82,10 @@ describe.skipIf(!database)("authorization server enforcement", () => {
     const rollback = new Error("Rollback")
     await expect(
       t.db.transaction(async (tx) => {
-        await expect(Promise.resolve(tx.execute(sql`select 1 / 0`))).rejects.toThrow()
+        // A failed statement aborts a PostgreSQL transaction, so every later query fails. A MariaDB
+        // transaction outlives a failed statement, so the test ends its connection instead.
+        const breaking = isMariaDb ? sql`kill connection connection_id()` : sql`select 1 / 0`
+        await expect(Promise.resolve(tx.execute(breaking))).rejects.toThrow()
         await expect(member.access.can({ action: "post.create" }, tx)).rejects.toThrow()
         await expect(member.access.requirePermission({ action: "post.create" }, tx)).rejects.toThrow()
         throw rollback

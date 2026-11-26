@@ -1,11 +1,11 @@
 import { afterAll, describe, expect, test } from "bun:test"
-import { eq, sql } from "drizzle-orm"
+import { eq } from "drizzle-orm"
 import { type AuthorizationDatabase, AuthorizationDeniedError, createAuthorization } from "@/core/authz/authorization"
 import { session, user } from "@/core/db/schema/auth"
 import { post } from "@/core/db/schema/posts"
 import { createPost } from "@/features/posts/lifecycle"
 import { getEditablePost, getPublishedPost, listNewsFeed, listOwnDrafts } from "@/features/posts/service"
-import { createTestDatabase } from "./database"
+import { createTestDatabase, LOCK_WAIT_TIMEOUT, withLockWaitLimit } from "./database"
 
 const database = await createTestDatabase()
 
@@ -60,11 +60,8 @@ describe.skipIf(!database)("adopted Post authorization", () => {
     const published = await notice(owner.userId, true)
     async function blocked(write: (tx: AuthorizationDatabase) => Promise<unknown>) {
       await expect(
-        t.db.transaction(async (other) => {
-          await other.execute(sql`SET LOCAL lock_timeout = '100ms'`)
-          return write(other)
-        })
-      ).rejects.toMatchObject({ cause: { code: "55P03" } })
+        t.db.transaction((other) => withLockWaitLimit(other, { lockWaitMs: 100 }, () => write(other)))
+      ).rejects.toMatchObject({ cause: LOCK_WAIT_TIMEOUT })
     }
     await t.db.transaction(async (tx) => {
       const [resource] = await tx.select().from(post).where(eq(post.id, published.id)).for("update")

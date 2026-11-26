@@ -1,9 +1,10 @@
 import type { ActivityChange } from "@csk-hub/shared/core/realtime/events"
-import { eq, isNull, or, sql } from "drizzle-orm"
+import { eq, isNull, or } from "drizzle-orm"
 import { env } from "@/core/config/env"
 import type { db } from "@/core/db"
 import { activityDelivery } from "@/core/db/schema/activity"
 import { user } from "@/core/db/schema/auth"
+import { addMilliseconds, now } from "@/core/db/sql"
 
 export type ActivityTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0]
 export type ActivityNotification = { body: string; title?: string; href?: string; push?: boolean }
@@ -29,8 +30,7 @@ export async function queueActivity(
       body: notification?.body,
       title: notification?.title,
       href: notification?.href,
-      pushAfter:
-        notification && notification.push !== false ? sql`now() + (${PUSH_GRACE_MS} * interval '1 millisecond')` : null
+      pushAfter: notification && notification.push !== false ? addMilliseconds(now(), PUSH_GRACE_MS) : null
     }))
   )
   return true
