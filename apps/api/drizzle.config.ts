@@ -15,7 +15,7 @@ const connection = new URL(connectionString)
 
 export default defineConfig({
   dialect: "postgresql",
-  schema: "./src/core/db/schema",
+  schema: "./src/core/db/schema/postgres",
   out: "./drizzle",
   // v1's URL form excludes explicit TLS options. Use fields so Kit keeps our CA policy.
   dbCredentials: {

@@ -1,32 +1,8 @@
-import type { ActivityChange } from "@csk-hub/shared/core/realtime/events"
-import { index, integer, jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core"
-import { user } from "./auth"
+import { isMariaDb } from "../dialect"
+import * as mariadb from "./mariadb/activity"
+import * as postgres from "./postgres/activity"
 
-/** Durable per-User outbox and notification state. Redis only carries these record IDs. */
-export const activityDelivery = pgTable(
-  "activity_delivery",
-  {
-    id: uuid("id").defaultRandom().primaryKey(),
-    userId: text("user_id")
-      .notNull()
-      .references(() => user.id, { onDelete: "cascade" }),
-    change: jsonb("change").$type<ActivityChange>().notNull(),
-    body: text("body"),
-    title: text("title"),
-    href: text("href"),
-    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-    publishedAt: timestamp("published_at", { withTimezone: true }),
-    publishAfter: timestamp("publish_after", { withTimezone: true }).defaultNow().notNull(),
-    pushAfter: timestamp("push_after", { withTimezone: true }),
-    pushCompletedAt: timestamp("push_completed_at", { withTimezone: true }),
-    acknowledgedAt: timestamp("acknowledged_at", { withTimezone: true }),
-    attempts: integer("attempts").default(0).notNull(),
-    leaseUntil: timestamp("lease_until", { withTimezone: true }),
-    leaseToken: uuid("lease_token")
-  },
-  (table) => [
-    index("activity_user_created_idx").on(table.userId, table.createdAt),
-    index("activity_publish_pending_idx").on(table.publishedAt, table.publishAfter),
-    index("activity_push_pending_idx").on(table.pushCompletedAt, table.pushAfter)
-  ]
-)
+// The tables of this process's dialect, typed as PostgreSQL's; see `./README.md`.
+const schema = (isMariaDb ? mariadb : postgres) as unknown as typeof postgres
+
+export const { activityDelivery } = schema

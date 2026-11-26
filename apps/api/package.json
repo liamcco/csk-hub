@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "db": "bun --env-file=../../.env scripts/dev/index.ts",
     "db:generate": "bun --env-file=../../.env drizzle-kit generate",
-    "auth:generate": "auth generate --config src/core/auth/index.ts --output src/core/db/schema/auth.ts -y",
+    "db:generate:mariadb": "bun --env-file=../../.env drizzle-kit generate --config drizzle.mariadb.config.ts",
+    "auth:generate": "auth generate --config src/core/auth/index.ts --output src/core/db/schema/postgres/auth.ts -y",
     "contract": "bun scripts/api/export-contract.ts"
   },
   "dependencies": {
@@ -24,6 +25,7 @@
     "better-auth": "^1.7.4",
     "drizzle-orm": "1.0.0-rc.5",
     "hono": "^4.13.19",
+    "mysql2": "^3.24.6",
     "nodemailer": "^10.0.9",
     "pg": "^8.23.1",
     "redis": "^6.3.0",

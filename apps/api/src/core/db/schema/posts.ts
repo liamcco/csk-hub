@@ -1,77 +1,8 @@
-import type { JSONContent } from "@tiptap/core"
-import { sql } from "drizzle-orm"
-import { check, customType, index, jsonb, pgTable, primaryKey, text, timestamp, uuid } from "drizzle-orm/pg-core"
-import { user } from "./auth"
+import { isMariaDb } from "../dialect"
+import * as mariadb from "./mariadb/posts"
+import * as postgres from "./postgres/posts"
 
-/** Postgres's full-text type; Drizzle has no built-in for it. Read only, never written by the app. */
-const tsvector = customType<{ data: string }>({
-  dataType() {
-    return "tsvector"
-  }
-})
+// The tables of this process's dialect, typed as PostgreSQL's; see `./README.md`.
+const schema = (isMariaDb ? mariadb : postgres) as unknown as typeof postgres
 
-export const post = pgTable(
-  "post",
-  {
-    id: uuid("id").defaultRandom().primaryKey(),
-    title: text("title").notNull(),
-    // The editor's own document, not Markdown and not HTML (ADR-0005). Which nodes it
-    // may hold is the posts feature's decision, enforced before the row is written.
-    body: jsonb("body").$type<JSONContent>().notNull(),
-    // Lexemes for search, derived by Postgres from the text nodes in `body` — so the
-    // words are stored once, and the index cannot fall out of step with them. Built-ins
-    // only, so drizzle-kit can generate the column: the jsonpath picks out text nodes in
-    // document order, and `to_tsvector` indexes the strings of the array it returns.
-    bodySearch: tsvector("body_search").generatedAlwaysAs(
-      sql`to_tsvector('swedish', jsonb_path_query_array("body", 'strict $.**.text')::text)`
-    ),
-    // A Post outlives its author. Erasing a User drops the attribution and leaves the
-    // announcement standing: the News feed is the record of what the choir was told, not
-    // part of the erased User's own history. Null therefore means "author erased", not
-    // "not written by anyone" — every insert sets it.
-    authorId: text("author_id").references(() => user.id, { onDelete: "set null" }),
-    // Null while the Post is a draft, which only its author sees. Unpublishing clears it
-    // again, so a recalled Post is its author's draft and republishing dates it afresh.
-    // Stored with a zone so a Post keeps the same publication instant whatever the server
-    // runs in.
-    publishedAt: timestamp("published_at", { withTimezone: true }),
-    // When a published Post's title or body last changed, shown beside the publish date
-    // so a reader can tell the Post moved under them. Null for a Post untouched since
-    // publishing; unlike `updatedAt`, saving a draft or publishing does not set it.
-    editedAt: timestamp("edited_at", { withTimezone: true }),
-    // When the author threw the draft away. A discarded draft is gone from every view, but
-    // the row stays: Posts are never deleted. Only a draft can be discarded.
-    discardedAt: timestamp("discarded_at", { withTimezone: true }),
-    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true })
-      .defaultNow()
-      .$onUpdate(() => /* @__PURE__ */ new Date())
-      .notNull()
-  },
-  (table) => [
-    index("post_published_at_idx").on(table.publishedAt.desc()),
-    index("post_body_search_idx").using("gin", table.bodySearch),
-    // A published Post is the choir's record, so it is unpublished first, never discarded.
-    check("post_discarded_draft_check", sql`${table.discardedAt} is null or ${table.publishedAt} is null`)
-  ]
-)
-
-// That a User has opened a Post, which is what takes it off their unread badge. Private to
-// that User: it answers "what is new to me", never "who has read this".
-export const postRead = pgTable(
-  "post_read",
-  {
-    userId: text("user_id")
-      .notNull()
-      .references(() => user.id, { onDelete: "cascade" }),
-    postId: uuid("post_id")
-      .notNull()
-      .references(() => post.id, { onDelete: "cascade" }),
-    readAt: timestamp("read_at", { withTimezone: true }).defaultNow().notNull()
-  },
-  (table) => [
-    primaryKey({ columns: [table.userId, table.postId] }),
-    // The key leads with the User; deleting a Post looks its reads up by Post.
-    index("post_read_post_id_idx").on(table.postId)
-  ]
-)
+export const { post, postRead } = schema
