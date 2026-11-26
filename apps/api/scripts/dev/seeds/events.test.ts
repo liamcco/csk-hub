@@ -1,5 +1,6 @@
 import { afterAll, describe, expect, test } from "bun:test"
-import { eq, sql } from "drizzle-orm"
+import { stockholmLocalDateTime } from "@csk-hub/shared/features/events/model/stockholm-time"
+import { eq } from "drizzle-orm"
 import { event, eventDetail, eventTarget, gig, rehearsal, socialEvent } from "@/core/db/schema/events"
 import { bootstrapOrgStructure } from "@/features/org-structure/defaults"
 import { createTestDatabase } from "../../../test/database"
@@ -56,12 +57,12 @@ describe.skipIf(!database)("seedEvents", () => {
     expect(socials).toHaveLength(events.filter(({ type }) => type === "Social").length)
 
     const [first] = await t.db
-      .select({ local: sql<string>`to_char(${event.startsAt} AT TIME ZONE 'Europe/Stockholm', 'YYYY-MM-DD HH24:MI')` })
+      .select({ startsAt: event.startsAt })
       .from(event)
       .where(eq(event.title, "KK rehearsal"))
       .orderBy(event.startsAt)
       .limit(1)
-    expect(first?.local).toBe("2026-10-22 18:30")
+    expect(first && stockholmLocalDateTime(first.startsAt)).toBe("2026-10-22T18:30")
 
     const [korMote] = events.filter(({ type }) => type === "Körmöte")
     expect(

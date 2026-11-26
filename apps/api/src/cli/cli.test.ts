@@ -1,10 +1,16 @@
 import { afterAll, describe, expect, test } from "bun:test"
-import { cpSync, mkdtempSync, rmSync, writeFileSync } from "node:fs"
+import { cpSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { fileURLToPath } from "node:url"
 import { sql } from "drizzle-orm"
+import { createConnection } from "mysql2/promise"
 import { Client } from "pg"
+import { isMariaDb } from "@/core/db/dialect"
+import { mariaDbPoolOptions } from "@/core/db/mariadb/client"
+import { migrationsFolderName } from "@/core/db/migrate"
+import { executeRows } from "@/core/db/sql"
+import { secureConnection } from "@/core/db/tls"
 import { createTestDatabase } from "../../test/database"
 
 const ROOT = fileURLToPath(new URL("../..", import.meta.url))
@@ -48,6 +54,53 @@ describe("release image CLI", () => {
   })
 })
 
+/** The migration ledger, which each dialect keeps in its own place. */
+const LEDGER = isMariaDb ? "`__drizzle_migrations`" : "drizzle.__drizzle_migrations"
+/** A runtime role's refusal of a statement it has no privilege for. */
+const DENIED = isMariaDb ? { errno: 1142 } : { code: "42501" }
+/** A quoted identifier in hand-written SQL. */
+const q = (name: string) => (isMariaDb ? `\`${name}\`` : `"${name}"`)
+
+/** Runs one statement as the role in `url`, resolving its rows. */
+async function asRole(url: string, statement: string): Promise<unknown[]> {
+  if (isMariaDb) {
+    const connection = await createConnection(mariaDbPoolOptions(secureConnection(url)))
+    try {
+      const [rows] = await connection.query(statement)
+      return rows as unknown[]
+    } finally {
+      await connection.end()
+    }
+  }
+  const client = new Client({ connectionString: url })
+  await client.connect()
+  try {
+    return (await client.query(statement)).rows
+  } finally {
+    await client.end()
+  }
+}
+
+const empty = await createTestDatabase(null)
+
+describe.skipIf(!empty)("release image migrate on an empty database", () => {
+  const t = empty as NonNullable<typeof empty>
+  afterAll(() => t.drop())
+
+  test("applies pending migrations and exits 0, needing only DATABASE_URL", async () => {
+    const { code, stdout } = await runCli(["migrate"], {
+      DATABASE_URL: t.url,
+      BETTER_AUTH_SECRET: undefined,
+      VAPID_PRIVATE_KEY: undefined
+    })
+
+    expect(code).toBe(0)
+    expect(stdout).toContain("Migrations applied")
+    const [ledger] = await executeRows<{ count: number }>(t.db, sql.raw(`select count(*) as count from ${LEDGER}`))
+    expect(Number(ledger?.count)).toBeGreaterThan(0)
+  }, 60_000)
+})
+
 const database = await createTestDatabase()
 
 describe.skipIf(!database)("release image migrate", () => {
@@ -58,30 +111,10 @@ describe.skipIf(!database)("release image migrate", () => {
     for (const folder of folders) rmSync(folder, { recursive: true, force: true })
     await t.drop()
     // Roles belong to the whole server, not the dropped database.
-    const admin = new Client({ connectionString: process.env.POSTGRES_URL })
-    await admin.connect()
-    for (const role of roles) await admin.query(`DROP ROLE IF EXISTS "${role}"`)
-    await admin.end()
+    const owner = process.env.DATABASE_URL || process.env.POSTGRES_URL || ""
+    for (const role of roles)
+      await asRole(owner, isMariaDb ? `DROP USER IF EXISTS '${role}'@'%'` : `DROP ROLE IF EXISTS "${role}"`)
   })
-
-  test("applies pending migrations and exits 0, needing only POSTGRES_URL", async () => {
-    await t.db.execute(sql`DROP SCHEMA "drizzle" CASCADE`)
-    await t.db.execute(sql`DROP SCHEMA "public" CASCADE`)
-    await t.db.execute(sql`CREATE SCHEMA "public"`)
-
-    const { code, stdout } = await runCli(["migrate"], {
-      POSTGRES_URL: t.url,
-      BETTER_AUTH_SECRET: undefined,
-      VAPID_PRIVATE_KEY: undefined
-    })
-
-    expect(code).toBe(0)
-    expect(stdout).toContain("Migrations applied")
-    const { rows } = await t.db.execute<{ count: number }>(
-      sql`select count(*)::int as count from drizzle.__drizzle_migrations`
-    )
-    expect(rows[0]?.count).toBeGreaterThan(0)
-  }, 60_000)
 
   test("gives the runtime role data access only, and rotates its password on every run", async () => {
     const role = `csk_hub_runtime_${crypto.randomUUID().replaceAll("-", "").slice(0, 8)}`
@@ -92,54 +125,46 @@ describe.skipIf(!database)("release image migrate", () => {
       url.password = password
       return url.toString()
     }
-    async function asRuntime(statement: string) {
-      const client = new Client({ connectionString: runtimeUrl("second-password") })
-      await client.connect()
-      try {
-        return await client.query(statement)
-      } finally {
-        await client.end()
-      }
-    }
+    const asRuntime = (statement: string) => asRole(runtimeUrl("second-password"), statement)
 
     for (const password of ["first-password", "second-password"]) {
       const { code, stdout } = await runCli(["migrate"], {
-        POSTGRES_URL: t.url,
-        POSTGRES_RUNTIME_URL: runtimeUrl(password)
+        DATABASE_URL: t.url,
+        DATABASE_RUNTIME_URL: runtimeUrl(password)
       })
       expect(code).toBe(0)
       expect(stdout).toContain(role)
     }
 
-    await asRuntime(
-      `INSERT INTO "location" ("id", "name") VALUES ('00000000-0000-4000-8000-000000000001', 'Runtime role check')`
-    )
-    expect(
-      (await asRuntime(`SELECT "name" FROM "location" WHERE "id" = '00000000-0000-4000-8000-000000000001' FOR UPDATE`))
-        .rows
-    ).toEqual([{ name: "Runtime role check" }])
-    await asRuntime(`DELETE FROM "location" WHERE "id" = '00000000-0000-4000-8000-000000000001'`)
+    const id = "'00000000-0000-4000-8000-000000000001'"
+    await asRuntime(`INSERT INTO ${q("location")} (${q("id")}, ${q("name")}) VALUES (${id}, 'Runtime role check')`)
+    expect(await asRuntime(`SELECT ${q("name")} FROM ${q("location")} WHERE ${q("id")} = ${id} FOR UPDATE`)).toEqual([
+      { name: "Runtime role check" }
+    ])
+    await asRuntime(`DELETE FROM ${q("location")} WHERE ${q("id")} = ${id}`)
     for (const statement of [
       "CREATE TABLE runtime_probe (id int)",
-      'DROP TABLE "location"',
-      'ALTER TABLE "location" ADD COLUMN x int'
+      `DROP TABLE ${q("location")}`,
+      `ALTER TABLE ${q("location")} ADD COLUMN x int`
     ]) {
-      await expect(asRuntime(statement)).rejects.toMatchObject({ code: "42501" })
+      await expect(asRuntime(statement)).rejects.toMatchObject(DENIED)
     }
-    await expect(asRuntime("SELECT count(*) FROM drizzle.__drizzle_migrations")).rejects.toMatchObject({
-      code: "42501"
-    })
+    await expect(asRuntime(`SELECT count(*) FROM ${LEDGER}`)).rejects.toMatchObject(DENIED)
   }, 60_000)
 
   test("exits non-zero when a migration fails, so Compose never starts the app", async () => {
     const folder = mkdtempSync(join(tmpdir(), "csk-migrations-"))
     folders.push(folder)
-    cpSync(join(ROOT, "drizzle"), folder, { recursive: true })
+    cpSync(join(ROOT, migrationsFolderName), folder, { recursive: true })
     const broken = join(folder, "29991231235959_broken")
-    cpSync(join(ROOT, "drizzle", "20261102205910_add-realtime-delivery"), broken, { recursive: true })
+    const [latest] = readdirSync(join(ROOT, migrationsFolderName))
+      .filter((name) => /^\d{14}_/.test(name))
+      .sort()
+      .reverse()
+    cpSync(join(ROOT, migrationsFolderName, latest as string), broken, { recursive: true })
     writeFileSync(join(broken, "migration.sql"), "SELECT * FROM a_table_that_does_not_exist;")
 
-    const { code, stderr } = await runCli(["migrate"], { POSTGRES_URL: t.url, MIGRATIONS_FOLDER: folder })
+    const { code, stderr } = await runCli(["migrate"], { DATABASE_URL: t.url, MIGRATIONS_FOLDER: folder })
 
     expect(code).toBe(1)
     expect(stderr).toContain("Migration failed")
@@ -165,7 +190,7 @@ describe.skipIf(!database)("release image migrate", () => {
 
     const { code, stderr } = await runCli(
       ["admin", "recover", "--email", "nobody@example.test"],
-      { POSTGRES_URL: t.url },
+      { DATABASE_URL: t.url },
       [join(outdir, "cli.js")]
     )
 

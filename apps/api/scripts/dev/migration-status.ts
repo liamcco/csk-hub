@@ -1,6 +1,10 @@
 import { fileURLToPath } from "node:url"
 import { readMigrationFiles } from "drizzle-orm/migrator"
+import { createConnection } from "mysql2/promise"
 import { Client } from "pg"
+import { isMariaDb } from "@/core/db/dialect"
+import { mariaDbPoolOptions } from "@/core/db/mariadb/client"
+import { migrationsFolderName } from "@/core/db/migrate"
 import { secureConnection } from "@/core/db/tls"
 import type { LocalDatabase } from "./local-database"
 
@@ -14,7 +18,7 @@ export type MigrationStatus =
   | { kind: "unreachable"; host: string; reason: string }
   | { kind: "ok"; host: string; applied: string[]; pending: string[] }
 
-export const MIGRATIONS_FOLDER = fileURLToPath(new URL("../../drizzle", import.meta.url))
+export const MIGRATIONS_FOLDER = fileURLToPath(new URL(`../../${migrationsFolderName}`, import.meta.url))
 
 /** Read the ordered local migrations using the same parser and SQL hashes as Drizzle. */
 export function readMigrations() {
@@ -34,19 +38,10 @@ export async function statusOf(
 ): Promise<MigrationStatus> {
   const { host } = database
   const entries = readMigrations()
-  const client = new Client({
-    ...secureConnection(database.url),
-    connectionTimeoutMillis: timeout,
-    query_timeout: timeout
-  })
+  const ledger = isMariaDb ? mariaDbLedger(database.url, timeout) : postgresLedger(database.url, timeout)
 
   try {
-    await client.connect()
-
-    const { rows } = await client.query<{ name: string | null; hash: string }>(
-      // Reading the row as JSON also works before v1's migrator adds the name column.
-      `select to_jsonb(m)->>'name' as name, hash from drizzle.__drizzle_migrations m`
-    )
+    const rows = await ledger.read()
     const appliedNames = new Set(rows.flatMap((row) => (row.name === null ? [] : [row.name])))
     const legacyHashes = new Set(rows.filter((row) => row.name === null).map((row) => row.hash))
     const applied = entries.filter((entry) => appliedNames.has(entry.name) || legacyHashes.has(entry.hash))
@@ -67,7 +62,38 @@ export async function statusOf(
 
     return { kind: "unreachable", host, reason: describeError(error) }
   } finally {
-    await client.end().catch(() => {})
+    await ledger.close().catch(() => {})
+  }
+}
+
+type LedgerRow = { name: string | null; hash: string }
+
+/** PostgreSQL's ledger, `drizzle.__drizzle_migrations`. */
+function postgresLedger(url: string, timeout: number) {
+  const client = new Client({ ...secureConnection(url), connectionTimeoutMillis: timeout, query_timeout: timeout })
+  return {
+    async read() {
+      await client.connect()
+      const { rows } = await client.query<LedgerRow>(
+        // Reading the row as JSON also works before v1's migrator adds the name column.
+        `select to_jsonb(m)->>'name' as name, hash from drizzle.__drizzle_migrations m`
+      )
+      return rows
+    },
+    close: () => client.end()
+  }
+}
+
+/** MariaDB's ledger, `__drizzle_migrations` in the application's own database; it has always had names. */
+function mariaDbLedger(url: string, timeout: number) {
+  const connecting = createConnection({ ...mariaDbPoolOptions(secureConnection(url)), connectTimeout: timeout })
+  return {
+    async read() {
+      const connection = await connecting
+      const [rows] = await connection.query({ sql: "select name, hash from __drizzle_migrations", timeout })
+      return rows as LedgerRow[]
+    },
+    close: async () => (await connecting).end()
   }
 }
 
@@ -85,8 +111,8 @@ function describeError(error: unknown): string {
   return message || code || String(error)
 }
 
-/** Postgres 3F000 (undefined schema) and 42P01 (undefined table). */
+/** PostgreSQL 3F000 (undefined schema) and 42P01 (undefined table); MariaDB 1146 (no such table). */
 function isMissingLedger(error: unknown): boolean {
-  const code = (error as { code?: string })?.code
-  return code === "3F000" || code === "42P01"
+  const { code, errno } = (error ?? {}) as { code?: string; errno?: number }
+  return code === "3F000" || code === "42P01" || errno === 1146
 }

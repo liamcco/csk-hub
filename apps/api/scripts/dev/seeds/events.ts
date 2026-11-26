@@ -1,4 +1,5 @@
-import { and, asc, eq, isNull, or, type SQL, sql } from "drizzle-orm"
+import { stockholmInstant } from "@csk-hub/shared/features/events/model/stockholm-time"
+import { and, asc, eq, isNull, or } from "drizzle-orm"
 import type { PgInsertValue } from "drizzle-orm/pg-core"
 import type { db as applicationDb } from "@/core/db"
 import { user } from "@/core/db/schema/auth"
@@ -22,11 +23,10 @@ import { group } from "@/core/db/schema/org-structure"
  *
  * It writes the tables directly, so scripts never depend on a feature, and keeps the Events rules
  * by hand: every Rehearsal, Gig and Social has its extension row, the Participation mode is the
- * type's default, and the database turns Stockholm wall-clock times into instants.
+ * type's default, and Stockholm wall-clock times are turned into instants here.
  */
 
 type Database = typeof applicationDb | Parameters<Parameters<typeof applicationDb.transaction>[0]>[0]
-// Column values may be SQL, so the database can read Stockholm wall-clock times.
 type EventValues = PgInsertValue<typeof event> & { title: string }
 
 const TIME_ZONE = "Europe/Stockholm"
@@ -60,9 +60,11 @@ const CHOIRS = [
   }
 ] as const
 
-/** A Stockholm wall-clock time on the day `days` after `from`, as the database's instant. */
-function at(from: string, days: number, time: string): SQL<Date> {
-  return sql<Date>`(${`${addDays(from, days)} ${time}`}::timestamp AT TIME ZONE ${TIME_ZONE})`
+/** A Stockholm wall-clock time on the day `days` after `from`, as an instant. */
+function at(from: string, days: number, time: string): Date {
+  const instant = stockholmInstant(`${addDays(from, days)}T${time}`)
+  if (!instant) throw new Error(`Stockholm skips ${addDays(from, days)} ${time}.`)
+  return instant
 }
 
 /** Today in Stockholm, `YYYY-MM-DD`. */
