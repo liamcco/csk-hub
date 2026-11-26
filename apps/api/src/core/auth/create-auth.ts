@@ -6,6 +6,7 @@ import { app } from "@csk-hub/shared/core/config/app"
 import { type BetterAuthOptions, type BetterAuthPlugin, betterAuth } from "better-auth"
 import { admin, emailOTP, magicLink, openAPI, testUtils, twoFactor, username } from "better-auth/plugins"
 import type { db } from "@/core/db"
+import { isMariaDb } from "@/core/db/dialect"
 import * as schema from "@/core/db/schema/auth"
 
 const authPlugins = [
@@ -71,7 +72,8 @@ export function createAuth({ database, baseURL, production, hostPlugins = [], se
     ...(secret ? { secret } : {}),
     ...(advanced ? { advanced } : {}),
     database: drizzleAdapter(database, {
-      provider: "pg",
+      // Joins stay off (Better Auth's default): on MariaDB, Drizzle's relational queries need LATERAL.
+      provider: isMariaDb ? "mysql" : "pg",
       schema
     }),
     emailAndPassword: {

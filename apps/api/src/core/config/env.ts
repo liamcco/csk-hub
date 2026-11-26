@@ -9,7 +9,10 @@ const envSchema = z
     VERCEL_URL: z.string().min(1).optional(),
     VERCEL_BRANCH_URL: z.string().min(1).optional(),
 
-    POSTGRES_URL: z.string(),
+    // The application database. `DATABASE_URL` names PostgreSQL (postgresql://) or MariaDB
+    // (mariadb://); `POSTGRES_URL` is the name existing PostgreSQL deployments set. One is required.
+    DATABASE_URL: z.string().optional(),
+    POSTGRES_URL: z.string().optional(),
 
     REDIS_URL: z
       .string()
@@ -41,6 +44,9 @@ const envSchema = z
     CONTACT_EMAIL: z.email().default("webmaster@choir.chs.chalmers.se")
   })
   .superRefine((data, context) => {
+    if (!data.DATABASE_URL && !data.POSTGRES_URL) {
+      context.addIssue({ code: "custom", path: ["DATABASE_URL"], message: "Set DATABASE_URL (or POSTGRES_URL)" })
+    }
     if (data.EMAIL_MODE === "smtp") {
       if (!data.SMTP_USER) {
         context.addIssue({
@@ -69,7 +75,7 @@ if (!parsed.success) {
   process.exit(1)
 }
 
-const env = parsed.data
+const env = { ...parsed.data, DATABASE_URL: (parsed.data.DATABASE_URL || parsed.data.POSTGRES_URL) as string }
 const isProduction = env.ENVIRONMENT === "production"
 
 export { env, isProduction }
