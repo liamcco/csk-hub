@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "PORT=${PORT:-3001} bun --env-file=../../.env --watch src/api/server.ts",
     "build": "bun build src/api/server.ts --target=bun --external=pg-native --outfile=dist/api.js && bun build src/cli/index.ts --target=bun --external=pg-native --outfile=dist/cli.js",
+    "build:node": "bun build src/api/node-server.ts --target=node --external=pg-native --outfile=dist/node-server.mjs && bun build src/cli/index.ts --target=node --conditions=react-server --external=pg-native --outfile=dist/cli.mjs",
     "test": "bun test",
     "typecheck": "tsc --noEmit",
     "db": "bun --env-file=../../.env scripts/dev/index.ts",
