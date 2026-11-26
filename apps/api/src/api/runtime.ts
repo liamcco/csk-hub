@@ -9,6 +9,9 @@ import { DispatchWakeup } from "@/core/realtime/dispatch-wakeup"
 import { conversationActivityPolicy } from "@/features/messaging/activity"
 import { createApi } from "./app"
 
+// Vercel-only: this module is bundled into apps/api/dist/vercel.mjs and never imported by the
+// Docker stack (server.ts starts its own long-running worker there). Vercel has no shared process
+// for a worker, so outbox delivery runs per request inside waitUntil() instead.
 let activeDelivery: { wakeup: DispatchWakeup; signal: AbortSignal; promise: Promise<void> } | undefined
 
 function runActivityDelivery(): Promise<void> {

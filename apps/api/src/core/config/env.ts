@@ -1,10 +1,14 @@
 import { z } from "zod"
 
+// Vercel injects VERCEL_ENV (and VERCEL_URL / VERCEL_BRANCH_URL) on every deployment. When
+// ENVIRONMENT is unset, the app takes its environment from VERCEL_ENV. Docker and local runs do
+// not set VERCEL_*, so they use ENVIRONMENT or its default, "development".
 const environment = process.env.ENVIRONMENT || process.env.VERCEL_ENV
 
 const envSchema = z
   .object({
     ENVIRONMENT: z.enum(["development", "test", "preview", "production"]).default("development"),
+    // Vercel-only: set by the platform, never by the operator. See the note above `environment`.
     VERCEL_ENV: z.enum(["development", "preview", "production"]).optional(),
     VERCEL_URL: z.string().min(1).optional(),
     VERCEL_BRANCH_URL: z.string().min(1).optional(),
