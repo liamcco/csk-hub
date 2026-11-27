@@ -3,7 +3,8 @@
 How CSK Hub is packaged and hosted: two release images (API and web), a Compose stack that runs
 them, and the scripts that publish and deploy them. The decision behind this layout is
 [ADR 0012](../docs/adr/0012-packaging-lives-in-deploy-and-operations-ship-in-the-image.md).
-The `csk-hub-dev` project can also deploy the SPA and HTTP API on [Vercel](#vercel).
+The `csk-hub-dev` project can also deploy the SPA and HTTP API on [Vercel](#vercel), and a host
+with Node.js but no Docker can run both as [one Node process](#shared-hosting-with-nodejs).
 
 ## Vercel
 
@@ -52,6 +53,74 @@ configuration. After the dashboard settings are in place, pushes to `main` deplo
 | `stack.env.example` | The stack's configuration; copy to `stack.env` or enter it in Portainer. |
 | `publish-image.sh` | Build, check and publish both images from a clean checkout of one commit. |
 | `deploy-image.sh` | Deploy one published pair of images. |
+
+## Shared hosting with Node.js
+
+On a host that runs Node.js but not Bun or Docker, such as a CloudLinux/DirectAdmin account with
+Phusion Passenger, the API and the web app run as one Node process, on MariaDB.
+`apps/api/src/api/node-server.ts` is `server.ts` on Node's HTTP server. It also serves the web
+build from `WEB_ROOT`, routed as the `Caddyfile` routes the stack: `/api` and `/api/*` go to the
+API, a path with a file extension is that file, and every other path is `index.html`.
+
+### Build and upload
+
+Build on a machine with Bun. The web build takes its `VITE_` variables from the environment at
+build time:
+
+```bash
+(cd apps/api && bun run build:node)   # dist/node-server.mjs and dist/cli.mjs, Node bundles
+(cd apps/web && bun run build)        # apps/web/dist
+```
+
+Upload to one directory outside the web root:
+
+```text
+node-server.mjs   cli.mjs           from apps/api/dist
+drizzle-mariadb/  from apps/api
+web/              from apps/web/dist
+app.cjs           Passenger's startup file: import("./node-server.mjs")
+package.json      { "name": "csk-hub", "private": true }
+```
+
+The bundles have no dependencies to install. Passenger loads the startup file as CommonJS, so
+`app.cjs` imports the ES module bundle.
+
+### Configure and start
+
+Create the application in the control panel (or `cloudlinux-selector create`) with Node.js 24
+(the version it has been tested on), that directory as its root, `app.cjs` as its startup file
+and the domain as its URL. Set its environment there: `DATABASE_URL` (`mariadb://user:password@localhost:3306/database`),
+`BETTER_AUTH_URL`, `BETTER_AUTH_SECRET`, `ENVIRONMENT=production`, `WEB_ROOT` (the absolute path
+of `web/`), the `VAPID_` keys and the email settings. Then, in that directory with the same
+variables set (the control panel's virtual environment, `nodevenv/<app>/<version>/bin/activate`,
+puts that Node.js on the path but does not set the application's variables):
+
+```bash
+node cli.mjs migrate          # on every release, before restarting
+node cli.mjs org bootstrap    # once
+node cli.mjs admin bootstrap --email person@example.org --name "Person"
+```
+
+Restart the application after uploading a new release (`cloudlinux-selector restart`, or
+`touch tmp/restart.txt`). If the domain's document root holds a placeholder `index.html`, move it
+away: the web server serves it before it hands requests to Passenger.
+
+### Limitations
+
+- **No realtime.** Such hosts have no Redis, so `REDIS_URL` stays unset: the delivery worker does
+  nothing, so new Messages and Posts appear on reload rather than live, and they send no push
+  notifications. An Admin's notification broadcast and the test notification are sent directly
+  and still work.
+- **One database user.** The control panel's user owns the schema and the application connects
+  as it; `DATABASE_RUNTIME_URL` is left unset, so there is no data-only role (see the
+  [database README](../apps/api/src/core/db/README.md#rights-the-database-user-needs)).
+- **Passenger manages the process.** It may stop the application when idle, so the first request
+  after a pause waits for a cold start, and it may run more than one process. Both are harmless
+  without realtime; with Redis, each process would run its own worker, as ADR 0014 expects.
+- **Logs** go to the application's `stderr.log`, including the emails `EMAIL_MODE=log` writes.
+- **TLS** is the host's: the web server terminates it, and the certificate for the domain is
+  issued in the control panel.
+- MariaDB itself has the [limitations listed beside the database client](../apps/api/src/core/db/README.md#limitations-on-mariadb).
 
 ## The release images
 

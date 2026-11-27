@@ -32,3 +32,6 @@ every query, and over Drizzle alone, which has no dialect-neutral builder.
 - Drizzle's relational queries (and Better Auth's `joins`) need LATERAL, so they stay off.
 - The compatibility layer patches Drizzle's MySQL builders, which are pinned to 1.0.0-rc.5;
   upgrading Drizzle means re-running both test suites before anything else.
+- Some behaviour still differs: text sort order, timestamp precision, the rights the database
+  user needs, and the advisory-lock table. [`src/core/db/README.md`](../../apps/api/src/core/db/README.md#limitations-on-mariadb)
+  lists them.

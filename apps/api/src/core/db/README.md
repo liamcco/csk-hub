@@ -60,3 +60,46 @@ drizzle-kit's bundled config, with no file-tracing configuration.
 Supabase exposes a transaction pooler on port 6543 and a direct connection on port 5432.
 Migrations cannot run through the transaction pooler, so any database that is migrated must be
 reached through a direct connection.
+
+## Limitations on MariaDB
+
+What differs on MariaDB, beyond the schema spellings in [`schema/README.md`](schema/README.md).
+The design behind it is [ADR 0015](../../../../../docs/adr/0015-postgresql-and-mariadb-from-one-schema-and-one-set-of-queries.md).
+
+### Rights the database user needs
+
+- **Tests** create and drop a `csk_hub_test_*` database beside the configured one for each suite
+  (`test/database.ts`). Without the right to create them, the database tests are skipped.
+- **The runtime user.** With `DATABASE_RUNTIME_URL` set, `migrate` creates that user and grants
+  it data access (`runtime-role.ts`). On MariaDB that takes `CREATE USER` and `GRANT OPTION` on the
+  application's database. `deploy/mariadb-dev-grants.sql` grants both, and the test rights, to the
+  dev Compose user.
+- **Shared hosting** (DirectAdmin, cPanel) usually allows neither. There the application
+  connects as the one user the control panel creates, which also owns the schema: leave
+  `DATABASE_RUNTIME_URL` unset. The tests are not run on such a host.
+
+### Behaviour that differs
+
+- **Text comparison.** The baseline migration sets `utf8mb4_uca1400_nopad_as_cs`, so equality
+  and `like` are case- and accent-sensitive, and trailing spaces count, as on PostgreSQL.
+  Case-insensitive search goes through `ilike` in `sql.ts`, which lowercases both sides; it is
+  still accent-sensitive, as PostgreSQL's `ilike` is.
+- **Sort order.** Text sorts by the Unicode root collation, where å, ä and ö sort with a and o
+  rather than after z. PostgreSQL sorts by its database's collation, so a list ordered by name
+  can come out in a different order on the two databases.
+- **Timestamps** are `datetime(3)`: stored to the millisecond, where PostgreSQL keeps
+  microseconds. The application only reads milliseconds, but a timestamp written by hand with
+  more precision is truncated.
+- **Lock timeouts** (`innodb_lock_wait_timeout`, `max_statement_time`) belong to the connection,
+  not the transaction, and the lock timeout counts whole seconds. Only the tests set them
+  (`withLockWaitLimit` in `test/database.ts`).
+- **Advisory locks** are rows of `advisory_lock`, one per key, which are never deleted (see
+  `lockKey` in `sql.ts`). Message sending locks on the author and idempotency key, so the table
+  grows by one 64-byte row per sent Message. It needs no maintenance, but it can be emptied
+  safely while the application is stopped.
+- **Voice domains.** PostgreSQL's `voice_division` and `voice_family` domains are CHECK
+  constraints with the same names on MariaDB. Values outside them are rejected by the same name,
+  but there is no type to cast to, so the two tests of the domains' cast behaviour run on
+  PostgreSQL only (`features/voice/capabilities.test.ts`).
+- **No relational queries.** Drizzle's `db.query` and Better Auth's `joins` need LATERAL and
+  stay off; feature code uses the query builder.
