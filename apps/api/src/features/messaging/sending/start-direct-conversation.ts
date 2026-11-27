@@ -1,7 +1,8 @@
 import { validateMessageBody } from "@csk-hub/shared/features/messaging/model/message-body"
 import { MessagingAccessError } from "@csk-hub/shared/features/messaging/model/messaging-error"
-import { and, eq, sql } from "drizzle-orm"
+import { and, eq } from "drizzle-orm"
 import { conversation, conversationReadState, directConversation } from "@/core/db/schema/messaging"
+import { lockKey } from "@/core/db/sql"
 import type { MessagingContext } from "../model/context"
 import { appendMessage } from "./append-message"
 import { requireActiveDirectRecipient } from "./direct-recipient"
@@ -26,7 +27,7 @@ export async function startDirectConversation(input: StartDirectConversationInpu
 
     // A pair may own only one Direct Conversation. This lock makes simultaneous first messages
     // wait for one another, so the second request finds the Conversation made by the first.
-    await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${`${firstMemberId}:${secondMemberId}`}))`)
+    await lockKey(tx, `${firstMemberId}:${secondMemberId}`)
 
     const [existing] = await tx
       .select({ conversationId: directConversation.conversationId })

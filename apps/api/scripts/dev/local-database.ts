@@ -20,14 +20,14 @@ export class NotLocalDatabaseError extends Error {
 export function requireLocalDatabase(url: string | undefined): LocalDatabase {
   if (!url) {
     throw new NotLocalDatabaseError(
-      'POSTGRES_URL is not set. Copy it from .env.example — with the dev Compose stack the value is:\n  POSTGRES_URL="postgresql://csk_hub:csk_hub@localhost:5433/csk_hub"'
+      'DATABASE_URL is not set. Copy it from .env.example — with the dev Compose stack the value is:\n  DATABASE_URL="postgresql://csk_hub:csk_hub@localhost:5433/csk_hub"\nor, for MariaDB:\n  DATABASE_URL="mariadb://csk_hub:csk_hub@localhost:3307/csk_hub"'
     )
   }
 
   const host = describeHost(url)
   if (!isLocal(url)) {
     throw new NotLocalDatabaseError(
-      `The dev CLI is only for local development and refuses ${host}. Point POSTGRES_URL at a database on this machine.`
+      `The dev CLI is only for local development and refuses ${host}. Point DATABASE_URL at a database on this machine.`
     )
   }
 

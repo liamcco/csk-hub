@@ -1,5 +1,6 @@
 import { afterAll, describe, expect, mock, test } from "bun:test"
-import { eq, sql } from "drizzle-orm"
+import { LOCK_WAIT_TIMEOUT, withLockWaitLimit } from "@test/database"
+import { eq } from "drizzle-orm"
 import { AUTHORIZATION_DENIED, AuthorizationDeniedError, createAuthorization } from "@/core/authz/authorization"
 import { user } from "@/core/db/schema/auth"
 import { event } from "@/core/db/schema/events"
@@ -244,11 +245,8 @@ describe.skipIf(!database)("Event delegation at protected entrypoints", () => {
             tx.update(event).set({ organiserGroupId: null }).where(eq(event.id, stored.id))
         ]) {
           await expect(
-            t.db.transaction(async (tx) => {
-              await tx.execute(sql`SET LOCAL lock_timeout = '100ms'`)
-              return operation(tx)
-            })
-          ).rejects.toMatchObject({ cause: { code: "55P03" } })
+            t.db.transaction((tx) => withLockWaitLimit<unknown>(tx, { lockWaitMs: 100 }, () => operation(tx)))
+          ).rejects.toMatchObject({ cause: LOCK_WAIT_TIMEOUT })
         }
       },
       t.db,

@@ -1,7 +1,7 @@
 import { afterAll, describe, expect, mock, test } from "bun:test"
 import { AsyncLocalStorage } from "node:async_hooks"
-import { createTestDatabase } from "@test/database"
-import { and, eq, sql } from "drizzle-orm"
+import { createTestDatabase, LOCK_WAIT_TIMEOUT, withLockWaitLimit } from "@test/database"
+import { and, eq } from "drizzle-orm"
 import { user } from "@/core/db/schema/auth"
 import {
   conversation,
@@ -41,16 +41,16 @@ if (!process.env.CSK_MESSAGING_READ_LOCK_TEST) {
       transaction: async (work: (tx: MessageTransaction) => Promise<unknown>) => {
         const hold = holdNextTransaction
         holdNextTransaction = undefined
-        return testDb.transaction(async (tx) => {
-          await tx.execute(sql`SET LOCAL lock_timeout = '300ms'`)
-          await tx.execute(sql`SET LOCAL statement_timeout = '2s'`)
-          const result = await work(tx)
-          if (hold) {
-            hold.ready()
-            await hold.release
-          }
-          return result
-        })
+        return testDb.transaction((tx) =>
+          withLockWaitLimit(tx, { lockWaitMs: 300, statementMs: 2_000 }, async () => {
+            const result = await work(tx)
+            if (hold) {
+              hold.ready()
+              await hold.release
+            }
+            return result
+          })
+        )
       }
     }
   }))
@@ -149,7 +149,7 @@ if (!process.env.CSK_MESSAGING_READ_LOCK_TEST) {
         const f = await fixture("group")
         await whileTransactionOpen(f[read], async () => {
           await expect(identity.run(f.reader, () => leaveGroupConversation(f.id, messaging))).rejects.toMatchObject({
-            cause: { code: "55P03" }
+            cause: LOCK_WAIT_TIMEOUT
           })
         })
         await identity.run(f.reader, () => leaveGroupConversation(f.id, messaging))

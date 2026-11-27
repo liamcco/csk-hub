@@ -1,9 +1,8 @@
-import { jsonb, pgTable, text } from "drizzle-orm/pg-core"
-import { user } from "./auth"
+import { isMariaDb } from "../dialect"
+import * as mariadb from "./mariadb/user-preferences"
+import * as postgres from "./postgres/user-preferences"
 
-export const userPreferences = pgTable("user_preferences", {
-  userId: text("user_id")
-    .primaryKey()
-    .references(() => user.id, { onDelete: "cascade" }),
-  preferences: jsonb("preferences").notNull()
-})
+// The tables of this process's dialect, typed as PostgreSQL's; see `./README.md`.
+const schema = (isMariaDb ? mariadb : postgres) as unknown as typeof postgres
+
+export const { userPreferences } = schema

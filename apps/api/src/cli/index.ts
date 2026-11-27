@@ -4,7 +4,8 @@ import { parseArgs } from "node:util"
 import { getBaseURL } from "@/core/auth/base-url"
 import { type Auth, createAuth } from "@/core/auth/create-auth"
 import { createDb, type Db } from "@/core/db/client"
-import { migrateDatabase } from "@/core/db/migrate"
+import { configuredDatabaseUrl } from "@/core/db/dialect"
+import { migrateDatabase, migrationsFolderName } from "@/core/db/migrate"
 import { provisionRuntimeRole } from "@/core/db/runtime-role"
 import { bootstrapOrgStructure } from "@/features/org-structure/defaults"
 import { type AdminOutcome, bootstrapAdmin, recoverAdmin } from "./admin"
@@ -64,20 +65,21 @@ async function main(argv: string[]): Promise<number> {
 }
 
 /**
- * Apply pending migrations and exit: the Compose `migrate` service. It needs only POSTGRES_URL (a
- * role that owns the schema), so it never loads the rest of the application's configuration.
+ * Apply pending migrations and exit: the Compose `migrate` service. It needs only DATABASE_URL (or
+ * POSTGRES_URL), naming a role that owns the schema, so it never loads the rest of the
+ * application's configuration.
  *
- * With POSTGRES_RUNTIME_URL set, it then creates or updates that URL's role with data-only access,
- * so the API and web containers never connect with schema privileges.
+ * With DATABASE_RUNTIME_URL (or POSTGRES_RUNTIME_URL) set, it then creates or updates that URL's
+ * role with data-only access, so the API and web containers never connect with schema privileges.
  */
 async function migrate(): Promise<number> {
-  const url = process.env.POSTGRES_URL
-  if (!url) throw new UsageError("POSTGRES_URL is not set.")
+  const url = configuredDatabaseUrl()
+  if (!url) throw new UsageError("DATABASE_URL is not set.")
   const database = createDb(url)
   try {
-    await migrateDatabase(database, { migrationsFolder: process.env.MIGRATIONS_FOLDER ?? "drizzle" })
+    await migrateDatabase(database, { migrationsFolder: process.env.MIGRATIONS_FOLDER ?? migrationsFolderName })
     console.log("Migrations applied; the database is up to date.")
-    const runtimeUrl = process.env.POSTGRES_RUNTIME_URL
+    const runtimeUrl = process.env.DATABASE_RUNTIME_URL || process.env.POSTGRES_RUNTIME_URL
     if (runtimeUrl) {
       const role = await provisionRuntimeRole(database, runtimeUrl)
       console.log(`Runtime role ${role} has data access only.`)
@@ -115,7 +117,7 @@ type Runtime = { auth: Auth; database: Db }
 async function withRuntime(work: (runtime: Runtime) => Promise<number>): Promise<number> {
   const { env, isProduction } = await import("@/core/config/env")
 
-  const database = createDb(env.POSTGRES_URL)
+  const database = createDb(env.DATABASE_URL)
   try {
     const auth = createAuth({ database, baseURL: getBaseURL(env), production: isProduction })
     return await work({ auth, database })

@@ -1,6 +1,7 @@
 import { eq, sql } from "drizzle-orm"
 import { type Database, db } from "@/core/db"
 import { userPreferences } from "@/core/db/schema/user-preferences"
+import { jsonValue, portable } from "@/core/db/sql"
 import {
   type UserPreferences,
   type UserPreferencesUpdate,
@@ -49,12 +50,24 @@ export async function updateUserPreferences(
     .values({ userId, preferences })
     .onConflictDoUpdate({
       target: userPreferences.userId,
-      set: {
-        preferences: sql`CASE
-          WHEN jsonb_typeof(${userPreferences.preferences}) = 'object'
-            THEN ${userPreferences.preferences} || excluded.preferences
-          ELSE excluded.preferences
-        END`
-      }
+      set: { preferences: mergedPreferences(preferences) }
     })
+}
+
+/**
+ * The stored preferences with `update`'s fields replaced: a shallow merge, as PostgreSQL's `||`
+ * does, so a field set to null stays present. A stored value that is not an object is replaced.
+ */
+function mergedPreferences(update: UserPreferencesUpdate) {
+  const stored = userPreferences.preferences
+  return portable({
+    postgresql: sql`CASE
+      WHEN jsonb_typeof(${stored}) = 'object' THEN ${stored} || excluded.preferences
+      ELSE excluded.preferences
+    END`,
+    mariadb: Object.entries(update).reduce(
+      (merged, [field, value]) => sql`json_set(${merged}, ${`$."${field}"`}, ${jsonValue(value)})`,
+      sql`if(json_type(${stored}) = 'OBJECT', ${stored}, json_object())`
+    )
+  })
 }

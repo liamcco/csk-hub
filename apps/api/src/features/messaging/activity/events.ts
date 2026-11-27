@@ -1,10 +1,11 @@
 import { conversationPath } from "@csk-hub/shared/core/navigation/navigation-utils"
-import { and, eq, isNull, or, sql } from "drizzle-orm"
+import { and, eq, isNull, lte, or } from "drizzle-orm"
 import { env } from "@/core/config/env"
 import { db } from "@/core/db"
 import { activityDelivery } from "@/core/db/schema/activity"
 import { user } from "@/core/db/schema/auth"
 import { conversationReadState, directConversation, groupMembership } from "@/core/db/schema/messaging"
+import { jsonInteger, jsonText } from "@/core/db/sql"
 import type { ActivityTransaction } from "@/core/realtime/outbox"
 import { queueActivity } from "@/core/realtime/outbox"
 
@@ -94,9 +95,9 @@ export async function acknowledgeConversationActivity(
     .where(
       and(
         eq(activityDelivery.userId, userId),
-        sql`${activityDelivery.change}->>'kind' = 'message.created'`,
-        sql`${activityDelivery.change}->>'conversationId' = ${conversationId}`,
-        sql`(${activityDelivery.change}->>'sequence')::integer <= ${sequence}`,
+        eq(jsonText(activityDelivery.change, "kind"), "message.created"),
+        eq(jsonText(activityDelivery.change, "conversationId"), conversationId),
+        lte(jsonInteger(activityDelivery.change, "sequence"), sequence),
         isNull(activityDelivery.acknowledgedAt)
       )
     )

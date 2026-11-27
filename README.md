@@ -33,7 +33,7 @@ Implemented User workflows include:
   - `packages/shared` (code both run) and `packages/contract` (the OpenAPI document and the
     generated TypeScript client)
 - [Better Auth](https://www.better-auth.com/) for authentication
-- [Drizzle ORM](https://orm.drizzle.team/) with PostgreSQL
+- [Drizzle ORM](https://orm.drizzle.team/) with PostgreSQL or MariaDB
 - [Bun](https://bun.sh/) for scripts and tests
 - TypeScript, Tailwind CSS, and Biome
 
@@ -58,8 +58,9 @@ Prerequisites: [Bun](https://bun.sh/), Docker, and OpenSSL.
    openssl rand -base64 32
    ```
 
-   Put the generated value in `BETTER_AUTH_SECRET`. `POSTGRES_URL` already
-   points at the PostgreSQL container defined in `deploy/compose.dev.yml`, and
+   Put the generated value in `BETTER_AUTH_SECRET`. `DATABASE_URL` already
+   points at the PostgreSQL container defined in `deploy/compose.dev.yml` (to work on
+   MariaDB instead, use the commented MariaDB URL and start Compose with `--profile mariadb`), and
    `EMAIL_MODE=log` writes auth emails to the API's log during local
    development. Both applications read this file: the API all of it, the web app only its
    `VITE_` variables (`VITE_VAPID_PUBLIC_KEY` repeats `VAPID_PUBLIC_KEY`).
@@ -165,7 +166,7 @@ Email delivery is controlled by `EMAIL_MODE`:
 ## Checks and useful commands
 
 ```bash
-bun --env-file=.env run tst   # every package's tests (the API's need PostgreSQL)
+bun --env-file=.env run tst   # every package's tests (the API's need PostgreSQL or MariaDB)
 bun run typecheck             # TypeScript checks for every package and the journeys
 bun run lint                  # Biome checks
 bun run build                 # web to apps/web/dist, API to apps/api/dist

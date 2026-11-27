@@ -3,6 +3,7 @@ import { spawnSync } from "node:child_process"
 import { parseArgs } from "node:util"
 import { intro, isCancel, log, outro, select } from "@clack/prompts"
 import { createDb } from "@/core/db/client"
+import { configuredDatabaseUrl, isMariaDb } from "@/core/db/dialect"
 import { migrateDatabase } from "@/core/db/migrate"
 import { bootstrapOrgStructure } from "@/features/org-structure/defaults"
 import { type LocalDatabase, NotLocalDatabaseError, requireLocalDatabase } from "./local-database"
@@ -16,7 +17,8 @@ import { seedPosts } from "./seeds/posts"
 import { seedUsers } from "./seeds/users"
 
 /**
- * The local development database CLI. It only ever reaches the local database in POSTGRES_URL;
+ * The local development database CLI. It only ever reaches the local database in DATABASE_URL
+ * (or POSTGRES_URL), PostgreSQL or MariaDB;
  * production maintenance runs inside the deployed environment (see `deploy/README.md`).
  *
  *   bun run db [command] [--yes]
@@ -57,9 +59,10 @@ async function run(command: Command, database: LocalDatabase, { yes }: { yes: bo
   if (command === "reset") return resetLocalDatabase(database, { skipConfirmation: yes })
   if (command === "studio") {
     log.info("Starting Drizzle Studio — press Ctrl+C to return.")
-    const studio = spawnSync("bunx", ["drizzle-kit", "studio"], {
+    const config = isMariaDb ? ["--config", "drizzle.mariadb.config.ts"] : []
+    const studio = spawnSync("bunx", ["drizzle-kit", "studio", ...config], {
       stdio: "inherit",
-      env: { ...process.env, POSTGRES_URL: database.url }
+      env: { ...process.env, DATABASE_URL: database.url, POSTGRES_URL: database.url }
     })
     return studio.status ?? 1
   }
@@ -170,7 +173,7 @@ async function main(): Promise<number> {
     return 1
   }
 
-  const database = requireLocalDatabase(process.env.POSTGRES_URL)
+  const database = requireLocalDatabase(configuredDatabaseUrl())
   intro(`csk-hub dev database  ${DIM}(${database.host})${RESET}`)
 
   if (command !== undefined) {

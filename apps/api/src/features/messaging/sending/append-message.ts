@@ -2,6 +2,7 @@ import { MessagingAccessError } from "@csk-hub/shared/features/messaging/model/m
 import { and, eq, sql } from "drizzle-orm"
 import type { db } from "@/core/db"
 import { conversation, conversationReadState, message } from "@/core/db/schema/messaging"
+import { lockKey } from "@/core/db/sql"
 import { queueMessageActivity } from "../activity"
 
 /** The Drizzle transaction type inferred from this application's database client. */
@@ -26,7 +27,7 @@ async function lockSendIntent(
 ) {
   // A retry uses the same key. Locking that key means two concurrent retries become one result,
   // even if a buggy client sends them to different Conversations.
-  await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${`${input.authorUserId}:${input.idempotencyKey}`}))`)
+  await lockKey(tx, `${input.authorUserId}:${input.idempotencyKey}`)
 }
 
 async function lockConversation(tx: MessageTransaction, conversationId: string) {

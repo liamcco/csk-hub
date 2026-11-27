@@ -1,7 +1,9 @@
 import { afterAll, describe, expect, test } from "bun:test"
 import { sql } from "drizzle-orm"
+import { isMariaDb } from "@/core/db/dialect"
 import { user } from "@/core/db/schema/auth"
 import { group } from "@/core/db/schema/org-structure"
+import { executeRows } from "@/core/db/sql"
 import { createTestDatabase } from "../../test/database"
 import { NotLocalDatabaseError } from "./local-database"
 import { readMigrations } from "./migration-status"
@@ -29,10 +31,9 @@ describe.skipIf(!database)("resetLocalDatabase", () => {
     expect(await resetLocalDatabase({ url: t.url, host: "test" }, { skipConfirmation: true })).toBe(0)
 
     expect(await t.db.select().from(user)).toEqual([])
-    const { rows } = await t.db.execute<{ applied: number }>(
-      sql`select count(*)::int as applied from drizzle.__drizzle_migrations`
-    )
-    expect(rows).toEqual([{ applied: readMigrations().length }])
+    const ledger = sql.raw(isMariaDb ? "`__drizzle_migrations`" : "drizzle.__drizzle_migrations")
+    const [applied] = await executeRows<{ count: number }>(t.db, sql`select count(*) as count from ${ledger}`)
+    expect(Number(applied?.count)).toBe(readMigrations().length)
     expect((await t.db.select({ name: group.name }).from(group)).map(({ name }) => name)).toContain("KKB")
   }, 60_000)
 })

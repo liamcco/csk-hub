@@ -1,10 +1,14 @@
 import { afterAll, describe, expect, test } from "bun:test"
 import { sql } from "drizzle-orm"
+import { isMariaDb } from "@/core/db/dialect"
 import { migrateDatabase } from "@/core/db/migrate"
 import { createTestDatabase } from "../../test/database"
 import { readMigrations, statusOf } from "./migration-status"
 
 const database = await createTestDatabase()
+
+/** The ledger: PostgreSQL's in its own schema, MariaDB's beside the application's tables. */
+const ledger = sql.raw(isMariaDb ? "`__drizzle_migrations`" : "drizzle.__drizzle_migrations")
 
 describe.skipIf(!database)("migration history upgrade", () => {
   const t = database as NonNullable<typeof database>
@@ -13,7 +17,7 @@ describe.skipIf(!database)("migration history upgrade", () => {
   const target = { url: t?.url, host: "test" }
 
   test("matches v1 migrations by name even when their timestamps differ", async () => {
-    await t.db.execute(sql`update drizzle.__drizzle_migrations set created_at = 0`)
+    await t.db.execute(sql`update ${ledger} set created_at = 0`)
     const status = await statusOf(target)
     expect(status).toEqual({
       kind: "ok",
@@ -23,14 +27,15 @@ describe.skipIf(!database)("migration history upgrade", () => {
     })
   })
 
-  test("reads a legacy ledger without changing it, then upgrades without rerunning SQL", async () => {
+  // PostgreSQL's history predates Drizzle v1; MariaDB's ledger has always been a v1 ledger.
+  test.skipIf(isMariaDb)("reads a legacy ledger without changing it, then upgrades without rerunning SQL", async () => {
     // These two 0.x entries shared a second. Their converted folder timestamps were
     // moved to preserve ordering; Drizzle must use SQL hashes to backfill both names.
     const document = "20261003210246_post-body-to-document"
     const search = "20261003210247_post-body-search"
     for (const entry of readMigrations()) {
       const when = entry.name === document ? 1791061365358 : entry.name === search ? 1791061365683 : entry.folderMillis
-      await t.db.execute(sql`update drizzle.__drizzle_migrations set created_at = ${when} where name = ${entry.name}`)
+      await t.db.execute(sql`update ${ledger} set created_at = ${when} where name = ${entry.name}`)
     }
     await t.db.execute(sql`alter table drizzle.__drizzle_migrations drop column name, drop column applied_at`)
 
@@ -56,7 +61,7 @@ describe.skipIf(!database)("migration history upgrade", () => {
 
   test("reports an older migration missing by name even when its SQL hash still matches", async () => {
     const first = readMigrations()[0] as ReturnType<typeof readMigrations>[number]
-    await t.db.execute(sql`update drizzle.__drizzle_migrations set name = 'missing' where name = ${first.name}`)
+    await t.db.execute(sql`update ${ledger} set name = 'missing' where name = ${first.name}`)
     const status = await statusOf(target)
     expect(status.kind).toBe("ok")
     if (status.kind !== "ok") throw new Error("Ledger could not be read")
@@ -64,7 +69,7 @@ describe.skipIf(!database)("migration history upgrade", () => {
   })
 
   test("reports every migration pending when the ledger is absent", async () => {
-    await t.db.execute(sql`drop schema drizzle cascade`)
+    await t.db.execute(isMariaDb ? sql`drop table ${ledger}` : sql`drop schema drizzle cascade`)
     expect(await statusOf(target)).toEqual({
       kind: "ok",
       host: "test",

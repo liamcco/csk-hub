@@ -193,7 +193,7 @@ describe.skipIf(!database)("complete local demo seed", () => {
   })
 
   test("the dev CLI runs the complete demo again without duplicating it", async () => {
-    const repeated = await runDevCli(["seed-demo"], { POSTGRES_URL: url })
+    const repeated = await runDevCli(["seed-demo"], { DATABASE_URL: url })
     expect(repeated.stderr).toBe("")
     expect(repeated.code).toBe(0)
     expect(repeated.stdout).toContain("Created 0 users")

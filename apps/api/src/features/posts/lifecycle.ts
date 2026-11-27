@@ -1,6 +1,7 @@
 import type { RichTextDocument } from "@csk-hub/shared/features/rich-text/document"
 import { and, eq, isNotNull, isNull, sql } from "drizzle-orm"
 import { post } from "@/core/db/schema/posts"
+import { isDistinctFrom, jsonDiffers, now } from "@/core/db/sql"
 import { queuePublicActivity } from "@/core/realtime/outbox"
 import { isPostId, type PostsDatabase } from "./service"
 
@@ -38,7 +39,7 @@ export async function createPost(
         ...input.content,
         authorId: input.authorId,
         // The database clock, which the unread and feed reads compare against.
-        publishedAt: input.publish ? sql`now()` : null
+        publishedAt: input.publish ? now() : null
       })
       .returning({ id: post.id })
 
@@ -61,7 +62,7 @@ export async function saveDraft(
   return database.transaction(async (tx) => {
     const [saved] = await tx
       .update(post)
-      .set({ ...input.content, ...(input.publish ? { publishedAt: sql`now()` } : {}) })
+      .set({ ...input.content, ...(input.publish ? { publishedAt: now() } : {}) })
       .where(draftOf(input.postId, input.authorId))
       .returning({ id: post.id })
 
@@ -82,11 +83,11 @@ export async function editPublishedPost(
   if (!isPostId(input.postId)) return null
 
   const { title, body } = input.content
-  // The comparison reads the row as it was before this update; jsonb equality ignores key
+  // The comparison reads the row as it was before this update; JSON equality ignores key
   // order, so only a different document counts as an edit.
   const editedAt = sql`case
-    when ${post.title} is distinct from ${title} or ${post.body} is distinct from ${JSON.stringify(body)}::jsonb
-    then now() else ${post.editedAt} end`
+    when ${isDistinctFrom(post.title, title)} or ${jsonDiffers(post.body, body)}
+    then ${now()} else ${post.editedAt} end`
 
   return database.transaction(async (tx) => {
     const [saved] = await tx

@@ -1,6 +1,6 @@
 import type { IsoDate, OrgStructureResult, OrgStructureViolation } from "@csk-hub/shared/features/org-structure/model"
-import { sql } from "drizzle-orm"
 import type { db } from "@/core/db"
+import { lockKey } from "@/core/db/sql"
 
 /** The application database client, or a transaction on it. Every groups command accepts either. */
 export type OrgStructureDatabase = typeof db | OrgStructureTransaction
@@ -62,17 +62,17 @@ export async function runOrgStructureCommand<T>(
  * such as "one Section per Choir" hold under concurrent requests.
  */
 export async function lockUser(tx: OrgStructureTransaction, userId: string) {
-  await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${`org-structure:user:${userId}`}))`)
+  await lockKey(tx, `org-structure:user:${userId}`)
 }
 
 /** Serializes changes to a Position's catalogue rules with holding assignments. */
 export async function lockPositionCatalogue(tx: OrgStructureTransaction, positionId: string) {
-  await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${`org-structure:position-catalogue:${positionId}`}))`)
+  await lockKey(tx, `org-structure:position-catalogue:${positionId}`)
 }
 
 /** Serializes holding checks and inserts for one Position in one Group. */
 export async function lockPositionSlot(tx: OrgStructureTransaction, groupId: string, positionId: string) {
-  await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${`org-structure:position:${groupId}:${positionId}`}))`)
+  await lockKey(tx, `org-structure:position:${groupId}:${positionId}`)
 }
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/

@@ -1,7 +1,8 @@
-import { and, eq, ilike, isNull, or } from "drizzle-orm"
+import { and, eq, isNull, or } from "drizzle-orm"
 import { type Database, db } from "@/core/db"
 import { user } from "@/core/db/schema/auth"
 import { pushSubscription } from "@/core/db/schema/notifications"
+import { ilike } from "@/core/db/sql"
 import { parseNotificationSubscription, parsePushEndpoint } from "./subscription-validation"
 
 /**

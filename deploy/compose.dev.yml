@@ -1,5 +1,7 @@
 # Local development services: PostgreSQL on localhost:5433 and Redis on localhost:6379.
 #   docker compose -f deploy/compose.dev.yml up -d
+# MariaDB on localhost:3307, for working on MariaDB support (DATABASE_URL in .env.example):
+#   docker compose -f deploy/compose.dev.yml --profile mariadb up -d
 # The project name keeps the volumes the old root docker-compose.yml created, so moving the file
 # here does not lose local data.
 name: csk-hub
@@ -25,6 +27,22 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  mariadb:
+    image: mariadb:11.8
+    profiles: [mariadb]
+    restart: unless-stopped
+    environment:
+      MARIADB_USER: csk_hub
+      MARIADB_PASSWORD: csk_hub
+      MARIADB_DATABASE: csk_hub
+      MARIADB_ROOT_PASSWORD: csk_hub_root
+    ports:
+      - "3307:3306"
+    volumes:
+      - mariadb_data:/var/lib/mysql
+      - ./mariadb-dev-grants.sql:/docker-entrypoint-initdb.d/zz-grants.sql:ro
+
 volumes:
   redis_data:
   postgres_data:
+  mariadb_data:

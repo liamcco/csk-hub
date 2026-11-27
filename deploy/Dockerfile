@@ -39,6 +39,7 @@ ENV NODE_ENV=production \
     PORT=3000
 COPY --from=api-build /app/apps/api/dist/api.js /app/apps/api/dist/cli.js ./
 COPY --from=api-build /app/apps/api/drizzle ./drizzle
+COPY --from=api-build /app/apps/api/drizzle-mariadb ./drizzle-mariadb
 USER bun
 EXPOSE 3000
 HEALTHCHECK --interval=15s --timeout=5s --start-period=30s --retries=3 \

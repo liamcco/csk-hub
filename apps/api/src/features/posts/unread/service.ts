@@ -3,6 +3,7 @@ import { and, count, eq, gt, isNotNull, lte, notExists, sql } from "drizzle-orm"
 import { z } from "zod"
 import type { Database } from "@/core/db"
 import { post, postRead } from "@/core/db/schema/posts"
+import { addDays, now } from "@/core/db/sql"
 import { queueActivity } from "@/core/realtime/outbox"
 
 /**
@@ -21,8 +22,8 @@ const postIdSchema = z.uuid()
 function unreadBy(database: Database, userId: string) {
   return and(
     isNotNull(post.publishedAt),
-    gt(post.publishedAt, sql`now() - make_interval(days => ${UNREAD_HORIZON_DAYS})`),
-    lte(post.publishedAt, sql`now()`),
+    gt(post.publishedAt, addDays(now(), -UNREAD_HORIZON_DAYS)),
+    lte(post.publishedAt, now()),
     notExists(
       database
         .select({ postId: postRead.postId })
@@ -66,7 +67,7 @@ export async function markPostRead(database: Database, userId: string, postId: s
           .select({
             userId: sql<string>`${userId}`.as("user_id"),
             postId: post.id,
-            readAt: sql<Date>`now()`.as("read_at")
+            readAt: now().as("read_at")
           })
           .from(post)
           .where(and(eq(post.id, postId), isNotNull(post.publishedAt)))
@@ -83,14 +84,14 @@ export async function markPostRead(database: Database, userId: string, postId: s
 export async function nextUnreadPostChangeAt(database: Database, userId: string): Promise<number | null> {
   const [row] = await database
     .select({
-      at: sql<string | null>`min(case when ${post.publishedAt} > now()
-    then ${post.publishedAt} else ${post.publishedAt} + interval '30 days' end)`
+      at: sql<Date | null>`min(case when ${post.publishedAt} > ${now()}
+    then ${post.publishedAt} else ${addDays(post.publishedAt, UNREAD_HORIZON_DAYS)} end)`.mapWith(post.publishedAt)
     })
     .from(post)
     .where(
       and(
         isNotNull(post.publishedAt),
-        gt(post.publishedAt, sql`now() - interval '30 days'`),
+        gt(post.publishedAt, addDays(now(), -UNREAD_HORIZON_DAYS)),
         notExists(
           database
             .select({ id: postRead.postId })

@@ -24,4 +24,23 @@ describe("secureConnection", () => {
   test("a disabled sslmode does not make a database local", () => {
     expect(isLocalDatabase("postgresql://csk_hub:secret@db:5432/csk_hub?sslmode=disable")).toBe(false)
   })
+
+  test("dials a local MariaDB without TLS", () => {
+    expect(secureConnection("mariadb://csk_hub:csk_hub@localhost:3307/csk_hub")).toEqual({
+      connectionString: "mariadb://csk_hub:csk_hub@localhost:3307/csk_hub"
+    })
+  })
+
+  test("verifies a remote MariaDB against the system trust store, whatever sslmode asks for", () => {
+    expect(secureConnection("mariadb://u:p@db.example.com:3306/csk?sslmode=require")).toEqual({
+      connectionString: "mariadb://u:p@db.example.com:3306/csk",
+      ssl: { rejectUnauthorized: true }
+    })
+  })
+
+  test("dials a private-network MariaDB in plain text only when the URL says sslmode=disable", () => {
+    expect(secureConnection("mariadb://csk_hub:secret@db:3306/csk_hub?sslmode=disable")).toEqual({
+      connectionString: "mariadb://csk_hub:secret@db:3306/csk_hub"
+    })
+  })
 })
